@@ -1,0 +1,25 @@
+{
+  "name": "e-market-monorepo",
+  "version": "1.0.0",
+  "description": "E-Market Serverless E-Commerce Monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix client && npm install --prefix admin && npm install --prefix api",
+    "ci:all": "npm ci && npm ci --prefix client && npm ci --prefix admin && npm ci --prefix api",
+    "dev": "npx concurrently -n \"API,CLIENT,ADMIN\" -c \"blue,green,magenta\" \"npm run dev --prefix api\" \"npm run dev --prefix client\" \"npm run dev --prefix admin\"",
+    "dev:api": "npm run dev --prefix api",
+    "dev:client": "npm run dev --prefix client",
+    "dev:admin": "npm run dev --prefix admin",
+    "db:seed": "npm run seed --prefix api",
+    "db:migrate": "npm run migrate --prefix api",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "husky": "^9.1.7"
+  },
+  "overrides": {
+    "shell-quote": "^1.11.0"
+  }
+}

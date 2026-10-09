@@ -1,0 +1,44 @@
+name: 💡 Feature Request
+description: Suggest a new feature or improvement for E-Market.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve E-Market! Please share the details of your feature idea using the form below. Well-scoped proposals are much more likely to be implemented quickly.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem or gap does this feature address?
+      placeholder: Briefly explain why this feature is needed and what pain point it solves.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How do you envision this feature working or looking?
+      placeholder: Describe the feature's behavior, UI, or API in as much detail as possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered other approaches? If so, why did you rule them out?
+      placeholder: List any alternative solutions or workarounds you evaluated.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context & Visuals
+      description: Include mockups, screenshots, links to similar implementations, or any other supporting material.
+      placeholder: Paste links or drag & drop images here.
+    validations:
+      required: false

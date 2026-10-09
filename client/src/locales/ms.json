@@ -1,0 +1,85 @@
+{
+    "common": {
+        "loading": "Sedang dimuatkan...",
+        "error": "Ralat telah berlaku",
+        "retry": "Cuba Lagi",
+        "searchPlaceholder": "Cari produk...",
+        "addToCart": "Tambah ke Beg Alışveriş",
+        "outOfStock": "Kehabisan Stok",
+        "currency": "RM"
+    },
+    "header": {
+        "home": "Laman Utama",
+        "shop": "Kedai",
+        "bio": "Bio",
+        "kilang": "Kilang",
+        "trackOrder": "Jejak Pesanan",
+        "adminPanel": "Panel Admin"
+    },
+    "home": {
+        "featuredProducts": "Produk Pilihan",
+        "categoryResults": "Hasil Kategori",
+        "noProducts": "Tiada produk ditemui dalam kategori ini.",
+        "allCategories": "Semua Kategori"
+    },
+    "cart": {
+        "title": "Beg Saya",
+        "empty": "Beg anda masih kosong.",
+        "subtotal": "Jumlah Kecil",
+        "checkout": "Teruskan ke Pembayaran",
+        "continueShopping": "Teruskan Membeli-Belah",
+        "remove": "Padam"
+    },
+    "checkout": {
+        "title": "Halaman Pembayaran",
+        "personalInfo": "Maklumat Peribadi",
+        "shippingInfo": "Maklumat Penghantaran",
+        "paymentInfo": "Maklumat Pembayaran",
+        "name": "Nama",
+        "surname": "Nama Akhir",
+        "email": "E-mel",
+        "state": "Negeri",
+        "city": "Bandar / Daerah",
+        "address": "Alamat",
+        "zipCode": "Poskod",
+        "phone": "No. Telefon",
+        "cardNumber": "Nombor Kad",
+        "expiryDate": "Tarikh Luput",
+        "cvc": "CVC",
+        "cardHolderName": "Nama Pemegang Kad",
+        "submitPayment": "Bayar Sekarang",
+        "processing": "Sedang Diproses..."
+    },
+    "productDetail": {
+        "description": "Keterangan Produk",
+        "category": "Kategori",
+        "stock": "Status Stok",
+        "inStock": "Ada Stok",
+        "quantity": "Kuantiti"
+    },
+    "status": {
+        "success": "Transaksi Berjaya",
+        "failure": "Transaksi Gagal",
+        "paymentSuccessful": "Pembayaran anda telah berjaya diterima.",
+        "paymentFailed": "Berlaku ralat semasa proses pembayaran.",
+        "orderNumber": "Nombor Pesanan Anda",
+        "backToHome": "Kembali ke Laman Utama"
+    },
+    "orders": {
+        "status": "Status",
+        "cancelOrder": "Batalkan Pesanan",
+        "cancelConfirm": "Adakah anda pasti ingin membatalkan pesanan ini?",
+        "cancelReason": "Sebab Pembatalan (Pilihan)",
+        "whatsappSupport": "Bantuan WhatsApp",
+        "cancelSuccess": "Pesanan anda berjaya dibatalkan.",
+        "cancelError": "Proses pembatalan tidak berjaya.",
+        "date": "Tarikh",
+        "total": "Jumlah",
+        "items": "Barangan",
+        "pending": "Dalam Menunggu",
+        "processing": "Sedang Disediakan",
+        "shipped": "Telah Dihantar",
+        "delivered": "Telah Diterima",
+        "cancelled": "Dibatalkan"
+    }
+}
