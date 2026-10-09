@@ -5,7 +5,10 @@ import {
   Layers,
   Tag,
   ShoppingBag,
+  Truck,
+  CreditCard,
   CornerDownLeft,
+  BarChart3,
   Settings as SettingsIcon,
   LogOut,
   Plus,
@@ -13,11 +16,22 @@ import {
   Trash2,
   Upload,
   TrendingUp,
-  ShoppingBag as OrdersIcon,
   Eye,
   X,
   Sun,
-  Moon
+  Moon,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  PackageCheck,
+  DollarSign,
+  Users,
+  Percent,
+  FileText,
+  ShieldCheck,
+  MapPin,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 
 const getApiUrl = () => {
@@ -33,10 +47,6 @@ const getApiUrl = () => {
 };
 
 const API_URL = getApiUrl();
-
-// Admin endpoints are called on the panel's own origin: the admin Worker forwards
-// /api/* to the API through a service binding, so the Cloudflare Access session
-// (and its signed Cf-Access-Jwt-Assertion header) covers every admin request.
 const isLocalhost = typeof window !== 'undefined' &&
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const ADMIN_API_URL = isLocalhost ? 'http://localhost:8787' : '';
@@ -63,17 +73,17 @@ export default function App() {
   const [returns, setReturns] = useState([]);
   const [settings, setSettings] = useState({
     kargoAgirlikCarpani: 15.00,
-    ucretsizKargoAltLimit: 5000.00,
+    ucretsizKargoAltLimit: 100.00,
     kargoPolitikaTuru: 'SABIT_UCRET',
-    kargoSabitUcret: 0,
+    kargoSabitUcret: 8.00,
     kargoFiyatListesi: '[]',
     maintenanceMode: false,
-    siteAdi: '',
-    iletisimEmail: '',
-    whatsappNumarasi: '',
-    telefon: '',
-    adres: '',
-    instagramUrl: '',
+    siteAdi: "DIN'O EMPIRE",
+    iletisimEmail: 'dinoempire.my@gmail.com',
+    whatsappNumarasi: '60132359647',
+    telefon: '016-6911020',
+    adres: 'Kawasan Perusahaan Kuala Ketil, Kedah',
+    instagramUrl: 'https://www.instagram.com/lemunilaziz/',
     facebookUrl: '',
     twitterUrl: '',
     youtubeUrl: '',
@@ -81,7 +91,7 @@ export default function App() {
     gtmContainerId: '',
     ga4MeasurementId: '',
     googleMerchantToken: '',
-    hakkindaMetni: ''
+    hakkindaMetni: 'Portaj Kilang Kuala Ketil & Barangan Terpilih Malaysia.'
   });
   const [stats, setStats] = useState({
     totalSales: 0,
@@ -89,12 +99,10 @@ export default function App() {
     activeProducts: 0,
     pendingReturns: 0
   });
-  const [copiedFeed, setCopiedFeed] = useState(false);
 
-  // Loading States
   const [loading, setLoading] = useState(false);
 
-  // Modals & Form States
+  // Modals & Forms
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
@@ -113,63 +121,32 @@ export default function App() {
   const [editingBrand, setEditingBrand] = useState(null);
   const [brandForm, setBrandForm] = useState({ ad: '', logoUrl: '', sira: 0, aktif: true });
 
-  // --- New UX/UI Table States (Sorting, Filtering, Selection) ---
-  // Sort configs
+  // Sorting, Filtering
   const [productSort, setProductSort] = useState({ key: 'ad', direction: 'asc' });
-  const [categorySort, setCategorySort] = useState({ key: 'sira', direction: 'asc' });
-  const [brandSort, setBrandSort] = useState({ key: 'sira', direction: 'asc' });
-  const [orderSort, setOrderSort] = useState({ key: 'olusturulmaTarihi', direction: 'desc' });
-  const [returnSort, setReturnSort] = useState({ key: 'olusturulmaTarihi', direction: 'desc' });
-
-  // Filtering / Search configs
   const [productSearch, setProductSearch] = useState('');
   const [productFilterCategory, setProductFilterCategory] = useState('');
   const [productFilterBrand, setProductFilterBrand] = useState('');
   const [productFilterStatus, setProductFilterStatus] = useState('');
 
-  const [categorySearch, setCategorySearch] = useState('');
-  const [categoryFilterStatus, setCategoryFilterStatus] = useState('');
-
-  const [brandSearch, setBrandSearch] = useState('');
-  const [brandFilterStatus, setBrandFilterStatus] = useState('');
-
   const [orderSearch, setOrderSearch] = useState('');
   const [orderFilterStatus, setOrderFilterStatus] = useState('');
-  const [orderFilterFatura, setOrderFilterFatura] = useState('');
-
-  const [returnSearch, setReturnSearch] = useState('');
-  const [returnFilterStatus, setReturnFilterStatus] = useState('');
-
-  // Multi-Selection states
-  const [selectedProductIds, setSelectedProductIds] = useState([]);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
-  const [selectedBrandIds, setSelectedBrandIds] = useState([]);
-
-  // Clear selections on tab change
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setSelectedProductIds([]);
-    setSelectedCategoryIds([]);
-    setSelectedBrandIds([]);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [activeTab]);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderStatusForm, setOrderStatusForm] = useState({
-    durum: '', kargoTakipNo: '', kargoFirmasi: '', faturaNo: '', faturaDurumu: 'DUZENLENMEDI', adminNotu: ''
+    durum: '', kargoTakipNo: '', kargoFirmasi: '', faturaNo: '', faturaDurumu: 'BELUM_DIKELUARKAN', adminNotu: ''
   });
 
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState(null);
-  const [returnStatusForm, setReturnStatusForm] = useState({ durum: 'ONAYLANDI', adminNotu: '', manuelIadeKodu: '' });
+  const [returnStatusForm, setReturnStatusForm] = useState({ durum: 'DILULUSKAN', adminNotu: '', manuelIadeKodu: '' });
 
   const calculateStats = (ords, prods, rets) => {
     const totalSales = ords
-      .filter(o => o.durum === 'TESLIM_EDILDI' || o.durum === 'TAMAMLANDI')
+      .filter(o => o.durum === 'TESLIM_EDILDI' || o.durum === 'TAMAMLANDI' || o.durum === 'DIHANTAR' || o.durum === 'SELESAI')
       .reduce((sum, o) => sum + parseFloat(o.toplamTutar || 0), 0);
     const activeProducts = prods.filter(p => p.aktif).length;
-    const pendingReturns = rets.filter(r => r.durum === 'ONAY_BEKLENIYOR').length;
+    const pendingReturns = rets.filter(r => r.durum === 'ONAY_BEKLENIYOR' || r.durum === 'MENUNGGU_KELULUSAN').length;
 
     setStats({
       totalSales,
@@ -179,7 +156,6 @@ export default function App() {
     });
   };
 
-  // Sign-in and sign-out are handled by Cloudflare Access.
   const handleLogout = () => {
     window.location.assign('/cdn-cgi/access/logout');
   };
@@ -188,7 +164,6 @@ export default function App() {
     try {
       const res = await fetch(url, { ...options, credentials: 'same-origin' });
       if (res.status === 401 || res.status === 403) {
-        // Access session expired: reloading sends the browser back through Access.
         window.location.reload();
         throw new Error('UNAUTHORIZED');
       }
@@ -230,175 +205,21 @@ export default function App() {
       }
       if (rets.status === 'success') setReturns(rets.data);
       if (setts.status === 'success') setSettings(setts.data);
+      else if (setts && typeof setts === 'object') setSettings(prev => ({ ...prev, ...setts }));
 
     } catch (e) {
-      if (e.message === 'UNAUTHORIZED') {
-        console.warn('Cloudflare Access oturumu yenileniyor...');
-      } else {
-        console.error('Veri yükleme hatası:', e);
+      if (e.message !== 'UNAUTHORIZED') {
+        console.error('Ralat memuatkan data:', e);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Cloudflare Access has already authenticated the user before the page loads.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  // Image Cropper States & Event Handlers
-  const [cropState, setCropState] = useState({
-    isOpen: false,
-    imageSrc: '',
-    type: '',
-    file: null
-  });
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const handleCropMouseDown = (e) => {
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - offset.x,
-      y: e.clientY - offset.y
-    });
-  };
-
-  const handleCropMouseMove = (e) => {
-    if (!isDragging) return;
-    setOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
-  };
-
-  const handleCropMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleCropTouchStart = (e) => {
-    if (e.touches.length !== 1) return;
-    setIsDragging(true);
-    setDragStart({
-      x: e.touches[0].clientX - offset.x,
-      y: e.touches[0].clientY - offset.y
-    });
-  };
-
-  const handleCropTouchMove = (e) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    setOffset({
-      x: e.touches[0].clientX - dragStart.x,
-      y: e.touches[0].clientY - dragStart.y
-    });
-  };
-
-  // Triggers the interactive Image Cropper Modal
-  const handleImageResizeAndUpload = (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropState({
-        isOpen: true,
-        imageSrc: reader.result,
-        type: type,
-        file: file
-      });
-      setZoom(1);
-      setOffset({ x: 0, y: 0 });
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  // Performs actual canvas cropping & direct R2 upload
-  const executeCropAndUpload = () => {
-    if (!cropState.file) return;
-    setLoading(true);
-
-    const img = new Image();
-    img.src = cropState.imageSrc;
-    img.onload = () => {
-      const boxSize = 300;
-      const canvasSize = 800;
-
-      const naturalWidth = img.naturalWidth;
-      const naturalHeight = img.naturalHeight;
-
-      let W, H;
-      if (naturalWidth > naturalHeight) {
-        W = boxSize;
-        H = boxSize * (naturalHeight / naturalWidth);
-      } else {
-        H = boxSize;
-        W = boxSize * (naturalWidth / naturalHeight);
-      }
-
-      const X_start = (boxSize - W) / 2;
-      const Y_start = (boxSize - H) / 2;
-
-      const W_s = W * zoom;
-      const H_s = H * zoom;
-
-      const X_s = X_start + offset.x - (W_s - W) / 2;
-      const Y_s = Y_start + offset.y - (H_s - H) / 2;
-
-      const scaleFactor = canvasSize / boxSize;
-
-      const W_c = W_s * scaleFactor;
-      const H_c = H_s * scaleFactor;
-      const X_c = X_s * scaleFactor;
-      const Y_c = Y_s * scaleFactor;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = canvasSize;
-      canvas.height = canvasSize;
-      const ctx = canvas.getContext('2d');
-
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvasSize, canvasSize);
-      ctx.drawImage(img, X_c, Y_c, W_c, H_c);
-
-      canvas.toBlob(async (blob) => {
-        const webpFile = new File([blob], cropState.file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
-        const formData = new FormData();
-        formData.append('file', webpFile);
-
-        try {
-          const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/upload`, {
-            method: 'POST',
-            body: formData
-          });
-          const data = await res.json();
-          if (data.status === 'success') {
-            if (cropState.type === 'product') setProductForm(prev => ({ ...prev, resimUrl: data.key }));
-            if (cropState.type === 'category') setCategoryForm(prev => ({ ...prev, resim: data.key }));
-            if (cropState.type === 'brand') setBrandForm(prev => ({ ...prev, logoUrl: data.key }));
-            setCropState(prev => ({ ...prev, isOpen: false }));
-          } else {
-            alert('Görsel yüklenemedi: ' + data.errorMessage);
-          }
-        } catch (err) {
-          if (err.message !== 'UNAUTHORIZED') {
-            console.error(err);
-            alert('Görsel sunucuya yüklenirken bağlantı hatası oluştu!');
-          }
-        } finally {
-          setLoading(false);
-        }
-      }, 'image/webp', 0.85);
-    };
-  };
-
-  // Product CRUD
   const saveProduct = async (e) => {
     e.preventDefault();
     const url = editingProduct
@@ -409,9 +230,7 @@ export default function App() {
     try {
       const res = await adminRequest(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productForm)
       });
       const data = await res.json();
@@ -420,251 +239,45 @@ export default function App() {
         setEditingProduct(null);
         fetchData();
       } else {
-        alert('Kaydetme hatası: ' + data.errorMessage);
+        alert('Ralat menyimpan: ' + data.errorMessage);
       }
     } catch (err) {
       if (err.message !== 'UNAUTHORIZED') {
         console.error(err);
-        alert('İstek gönderilirken hata oluştu.');
+        alert('Ralat menghantar permintaan.');
       }
-    }
-  };
-
-  // --- UX/UI Sorting & Filtering Helpers ---
-  const handleSort = (key, currentSort, setSort) => {
-    let direction = 'asc';
-    if (currentSort.key === key && currentSort.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSort({ key, direction });
-  };
-
-  const getSortedData = (data, sortConfig, resolveNestedVal = null) => {
-    if (!sortConfig.key) return data;
-
-    return [...data].sort((a, b) => {
-      let valA = a[sortConfig.key];
-      let valB = b[sortConfig.key];
-
-      if (resolveNestedVal) {
-        valA = resolveNestedVal(a, sortConfig.key);
-        valB = resolveNestedVal(b, sortConfig.key);
-      }
-
-      if (valA === undefined || valA === null) valA = '';
-      if (valB === undefined || valB === null) valB = '';
-
-      if (typeof valA === 'string') {
-        return sortConfig.direction === 'asc'
-          ? valA.localeCompare(valB, 'tr-TR')
-          : valB.localeCompare(valA, 'tr-TR');
-      } else {
-        return sortConfig.direction === 'asc'
-          ? (valA > valB ? 1 : -1)
-          : (valA < valB ? 1 : -1);
-      }
-    });
-  };
-
-  const renderSortIndicator = (currentSort, key) => {
-    if (currentSort.key !== key) return <span className="sort-indicator">↕</span>;
-    return currentSort.direction === 'asc'
-      ? <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▲</span>
-      : <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▼</span>;
-  };
-
-  // --- Bulk Deletion Actions ---
-  const bulkDeleteProducts = async (ids) => {
-    if (!confirm(`Seçilen ${ids.length} ürünü silmek istediğinize emin misiniz?`)) return;
-    setLoading(true);
-    try {
-      const deletePromises = ids.map(id =>
-        adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' })
-      );
-      await Promise.all(deletePromises);
-      setSelectedProductIds([]);
-      fetchData();
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Toplu silme sırasında bir hata oluştu.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const bulkDeleteCategories = async (ids) => {
-    if (!confirm(`Seçilen ${ids.length} kategoriyi silmek istediğinize emin misiniz?`)) return;
-    setLoading(true);
-    try {
-      const deletePromises = ids.map(id =>
-        adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' })
-      );
-      await Promise.all(deletePromises);
-      setSelectedCategoryIds([]);
-      fetchData();
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Toplu silme sırasında bir hata oluştu.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const bulkDeleteBrands = async (ids) => {
-    if (!confirm(`Seçilen ${ids.length} markayı silmek istediğinize emin misiniz?`)) return;
-    setLoading(true);
-    try {
-      const deletePromises = ids.map(id =>
-        adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' })
-      );
-      await Promise.all(deletePromises);
-      setSelectedBrandIds([]);
-      fetchData();
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Toplu silme sırasında bir hata oluştu.');
-      }
-    } finally {
-      setLoading(false);
     }
   };
 
   const deleteProduct = async (id) => {
-    if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
+    if (!confirm('Adakah anda pasti ingin memadam produk ini?')) return;
     try {
-      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, {
-        method: 'DELETE'
-      });
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.status === 'success') {
-        fetchData();
-      }
+      if (data.status === 'success') fetchData();
     } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Silme hatası.');
-      }
+      if (err.message !== 'UNAUTHORIZED') alert('Ralat memadam produk.');
     }
   };
 
-  // Category CRUD
-  const saveCategory = async (e) => {
-    e.preventDefault();
-    const url = editingCategory
-      ? `${ADMIN_API_URL}/api/v1/admin/categories/${editingCategory.id}`
-      : `${ADMIN_API_URL}/api/v1/admin/categories`;
-    const method = editingCategory ? 'PUT' : 'POST';
-
-    try {
-      const res = await adminRequest(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(categoryForm)
-      });
-      if ((await res.json()).status === 'success') {
-        setShowCategoryModal(false);
-        setEditingCategory(null);
-        fetchData();
-      }
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Kategori kaydedilemedi.');
-      }
-    }
-  };
-
-  const deleteCategory = async (id) => {
-    if (!confirm('Kategoriyi silmek istediğinizden emin misiniz?')) return;
-    try {
-      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, {
-        method: 'DELETE'
-      });
-      fetchData();
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Kategori silinemedi.');
-      }
-    }
-  };
-
-  // Brand CRUD
-  const saveBrand = async (e) => {
-    e.preventDefault();
-    const url = editingBrand
-      ? `${ADMIN_API_URL}/api/v1/admin/brands/${editingBrand.id}`
-      : `${ADMIN_API_URL}/api/v1/admin/brands`;
-    const method = editingBrand ? 'PUT' : 'POST';
-
-    try {
-      const res = await adminRequest(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(brandForm)
-      });
-      if ((await res.json()).status === 'success') {
-        setShowBrandModal(false);
-        setEditingBrand(null);
-        fetchData();
-      }
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Marka kaydedilemedi.');
-      }
-    }
-  };
-
-  const deleteBrand = async (id) => {
-    if (!confirm('Markayı silmek istediğinizden emin misiniz?')) return;
-    try {
-      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, {
-        method: 'DELETE'
-      });
-      fetchData();
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Marka silinemedi.');
-      }
-    }
-  };
-
-  // Order Detail & Update
   const viewOrder = async (order) => {
     try {
       const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/orders/${order.id}`);
       const data = await res.json();
       if (data.status === 'success') {
-        const fullOrder = data.data;
-        setSelectedOrder(fullOrder);
+        setSelectedOrder(data.data);
         setOrderStatusForm({
-          durum: fullOrder.durum,
-          kargoTakipNo: fullOrder.kargoTakipNo || '',
-          kargoFirmasi: fullOrder.kargoFirmasi || '',
-          faturaNo: fullOrder.faturaNo || '',
-          faturaDurumu: fullOrder.faturaDurumu || 'DUZENLENMEDI',
+          durum: data.data.durum,
+          kargoTakipNo: data.data.kargoTakipNo || '',
+          kargoFirmasi: data.data.kargoFirmasi || '',
+          faturaNo: data.data.faturaNo || '',
+          faturaDurumu: data.data.faturaDurumu || 'BELUM_DIKELUARKAN',
           adminNotu: ''
         });
         setShowOrderModal(true);
-      } else {
-        alert('Sipariş detayları yüklenemedi: ' + data.errorMessage);
       }
     } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Sipariş detayları yüklenirken hata oluştu.');
-      }
+      if (err.message !== 'UNAUTHORIZED') alert('Ralat memuatkan butiran.');
     }
   };
 
@@ -673,9 +286,7 @@ export default function App() {
     try {
       const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/orders/${selectedOrder.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderStatusForm)
       });
       if ((await res.json()).status === 'success') {
@@ -683,203 +294,225 @@ export default function App() {
         fetchData();
       }
     } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Sipariş güncellenemedi.');
-      }
+      if (err.message !== 'UNAUTHORIZED') alert('Gagal mengemas kini.');
     }
   };
 
-  // Return Detail & Update
-  const viewReturn = (ret) => {
-    setSelectedReturn(ret);
-    setReturnStatusForm({
-      durum: 'ONAYLANDI',
-      adminNotu: ret.adminNotu || '',
-      manuelIadeKodu: ret.manuelIadeKodu || ''
-    });
-    setShowReturnModal(true);
-  };
-
-  const saveReturnStatus = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/returns/${selectedReturn.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(returnStatusForm)
-      });
-      if ((await res.json()).status === 'success') {
-        setShowReturnModal(false);
-        fetchData();
-      }
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('İade talebi güncellenemedi.');
-      }
-    }
-  };
-
-  // Settings Save
   const saveSettings = async (e) => {
     e.preventDefault();
     try {
       const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
       if ((await res.json()).status === 'success') {
-        alert('Sistem ayarları başarıyla güncellendi.');
+        alert('Tetapan sistem berjaya dikemas kini.');
         fetchData();
       }
     } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') {
-        console.error(err);
-        alert('Ayarlar kaydedilemedi.');
-      }
+      if (err.message !== 'UNAUTHORIZED') alert('Gagal menyimpan tetapan.');
     }
   };
 
-  // Dashboard Main View
+  // Nav Items (10 Expanded Menus)
+  const navItems = [
+    { id: 'dashboard', label: 'Papan Pemuka', icon: LayoutDashboard },
+    { id: 'products', label: 'Katalog Produk', icon: Package },
+    { id: 'categories', label: 'Kategori', icon: Layers },
+    { id: 'brands', label: 'Jenama', icon: Tag },
+    { id: 'orders', label: 'Pesanan Pelanggan', icon: ShoppingBag },
+    { id: 'shipping', label: 'Penghantaran & Kurier', icon: Truck },
+    { id: 'payment', label: 'Pembayaran ToyyibPay', icon: CreditCard },
+    { id: 'returns', label: 'Permohonan Pulang', icon: CornerDownLeft },
+    { id: 'analytics', label: 'Analitik Jualan', icon: BarChart3 },
+    { id: 'settings', label: 'Tetapan Kedai', icon: SettingsIcon }
+  ];
+
   return (
     <div className="admin-layout">
-      {/* Sidebar Navigation */}
+      {/* Visual Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="sidebar-logo">E</div>
-          <span className="sidebar-title">E-Market Admin</span>
+        <div className="sidebar-brand flex items-center gap-3 px-4 py-6 border-b border-white/10">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-black text-xl shadow-lg">
+            D
+          </div>
+          <div>
+            <span className="sidebar-title font-black text-amber-500 tracking-wider text-lg block">DIN'O EMPIRE</span>
+            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Portal Pentadbir</span>
+          </div>
         </div>
-        <nav className="nav-menu">
-          <li className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('dashboard')}>
-              <LayoutDashboard size={18} /> Kontrol Paneli
-            </button>
-          </li>
-          <li className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('products')}>
-              <Package size={18} /> Ürün Yönetimi
-            </button>
-          </li>
-          <li className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('categories')}>
-              <Layers size={18} /> Kategoriler
-            </button>
-          </li>
-          <li className={`nav-item ${activeTab === 'brands' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('brands')}>
-              <Tag size={18} /> Markalar
-            </button>
-          </li>
-          <li className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('orders')}>
-              <ShoppingBag size={18} /> Siparişler
-            </button>
-          </li>
-          <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('returns')}>
-              <CornerDownLeft size={18} /> İade Talepleri
-            </button>
-          </li>
-          <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('settings')}>
-              <SettingsIcon size={18} /> Sistem Ayarları
-            </button>
-          </li>
+
+        <nav className="nav-menu py-4 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <li key={item.id} className={`nav-item px-3 ${isActive ? 'active' : ''}`}>
+                <button
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${isActive ? 'bg-amber-500 text-slate-950 shadow-lg scale-[1.02]' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <Icon size={20} className={isActive ? 'text-slate-950' : 'text-amber-500'} />
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
         </nav>
-        <div className="sidebar-footer">
-          <button className="btn btn-secondary" onClick={toggleTheme} style={{ width: '100%', gap: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            <span>{theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}</span>
+
+        <div className="sidebar-footer p-4 border-t border-white/10 space-y-2">
+          <button className="btn btn-secondary w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/10 text-xs font-bold hover:bg-white/5" onClick={toggleTheme}>
+            {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-indigo-400" />}
+            <span>{theme === 'dark' ? 'Tema Cerah' : 'Tema Gelap'}</span>
           </button>
-          <button className="btn btn-secondary" onClick={handleLogout} style={{ width: '100%', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LogOut size={16} /> Oturumu Kapat
+          <button className="btn btn-secondary w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/10" onClick={handleLogout}>
+            <LogOut size={16} /> Log Keluar
           </button>
         </div>
       </aside>
 
-      {/* Main Content Pane */}
-      <main className="main-content">
+      {/* Main Visual Content */}
+      <main className="main-content p-6 max-w-7xl mx-auto">
         {loading && (
-          <div style={{ position: 'fixed', top: 20, right: 20, background: 'var(--color-primary)', color: '#000', padding: '10px 20px', borderRadius: '30px', fontWeight: 'bold', fontSize: '13px', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
-            <div style={{ width: '12px', height: '12px', border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%' }} className="animate-spin" />
-            İşlem Yapılıyor...
+          <div className="fixed top-6 right-6 bg-amber-500 text-slate-950 px-5 py-2.5 rounded-full font-bold text-xs shadow-2xl z-50 flex items-center gap-2 animate-bounce">
+            <RefreshCw size={16} className="animate-spin" />
+            <span>Sedang Diproses...</span>
           </div>
         )}
 
-        {/* Tab 1: Dashboard */}
+        {/* 1. Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <div>
-            <div className="content-header">
-              <h1 className="content-title">Genel Durum</h1>
-            </div>
-
-            <div className="dashboard-grid">
-              <div className="card">
-                <div className="kpi-title">Toplam Ciro</div>
-                <div className="kpi-value">₺{stats.totalSales.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div>
-                <div className="kpi-trend up"><TrendingUp size={14} /> Teslim Edilen Siparişler</div>
+          <div className="space-y-8">
+            <div className="flex justify-between items-center bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-6 rounded-2xl border border-amber-500/20">
+              <div>
+                <h1 className="text-2xl font-black text-white flex items-center gap-3">
+                  <Sparkles className="text-amber-500" size={28} />
+                  Gambaran Keseluruhan Kedai
+                </h1>
+                <p className="text-xs text-gray-400 mt-1">Status semasa jualan, pesanan, dan inventori Kilang Kuala Ketil</p>
               </div>
-              <div className="card">
-                <div className="kpi-title">Toplam Sipariş</div>
-                <div className="kpi-value">{stats.totalOrders}</div>
-                <div className="kpi-trend"><OrdersIcon size={14} /> Toplam Alışveriş</div>
-              </div>
-              <div className="card">
-                <div className="kpi-title">Aktif Ürün Sayısı</div>
-                <div className="kpi-value">{stats.activeProducts}</div>
-                <div className="kpi-trend"><Package size={14} /> Satıştaki Benzersiz Ürün</div>
-              </div>
-              <div className="card">
-                <div className="kpi-title">Bekleyen İade Talebi</div>
-                <div className="kpi-value">{stats.pendingReturns}</div>
-                <div className="kpi-trend down"><CornerDownLeft size={14} /> Onay Bekleyen İadeler</div>
+              <div className="flex gap-2">
+                <span className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5">
+                  <ShieldCheck size={16} /> FPX / ToyyibPay Aktif
+                </span>
               </div>
             </div>
 
-            <div className="card">
-              <h2 className="mb-4">Son Siparişler</h2>
-              <div className="table-container">
-                <table className="admin-table">
+            {/* Visual KPI Cards Grid (>70% Iconography & SVGs) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-slate-900/80 p-6 rounded-2xl border border-amber-500/20 shadow-xl relative overflow-hidden group hover:border-amber-500 transition-all">
+                <div className="absolute right-3 top-3 p-3 rounded-xl bg-amber-500/10 text-amber-500">
+                  <DollarSign size={28} />
+                </div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Jumlah Jualan</span>
+                <div className="text-3xl font-black text-amber-500 mb-2">RM {stats.totalSales.toFixed(2)}</div>
+                <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-bold">
+                  <TrendingUp size={14} /> <span>100% Pembayaran Telah Disahkan</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/80 p-6 rounded-2xl border border-blue-500/20 shadow-xl relative overflow-hidden group hover:border-blue-500 transition-all">
+                <div className="absolute right-3 top-3 p-3 rounded-xl bg-blue-500/10 text-blue-400">
+                  <ShoppingBag size={28} />
+                </div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Jumlah Pesanan</span>
+                <div className="text-3xl font-black text-blue-400 mb-2">{stats.totalOrders}</div>
+                <div className="flex items-center gap-1 text-[11px] text-blue-400 font-bold">
+                  <PackageCheck size={14} /> <span>Pesanan Masuk</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/80 p-6 rounded-2xl border border-emerald-500/20 shadow-xl relative overflow-hidden group hover:border-emerald-500 transition-all">
+                <div className="absolute right-3 top-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <Package size={28} />
+                </div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Produk Aktif</span>
+                <div className="text-3xl font-black text-emerald-400 mb-2">{stats.activeProducts}</div>
+                <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-bold">
+                  <CheckCircle2 size={14} /> <span>Tersedia Dalam Katalog</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/80 p-6 rounded-2xl border border-rose-500/20 shadow-xl relative overflow-hidden group hover:border-rose-500 transition-all">
+                <div className="absolute right-3 top-3 p-3 rounded-xl bg-rose-500/10 text-rose-400">
+                  <CornerDownLeft size={28} />
+                </div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Permohonan Pulang</span>
+                <div className="text-3xl font-black text-rose-400 mb-2">{stats.pendingReturns}</div>
+                <div className="flex items-center gap-1 text-[11px] text-rose-400 font-bold">
+                  <Clock size={14} /> <span>Menunggu Semakan Admin</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Visual Grid */}
+            <div className="bg-slate-900/60 p-6 rounded-2xl border border-white/10 space-y-4">
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Sparkles size={20} className="text-amber-500" /> Tindakan Pantas Admin
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <button onClick={() => setActiveTab('products')} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-amber-500 hover:bg-amber-500/10 transition-all flex flex-col items-center text-center gap-2 group">
+                  <Package size={24} className="text-amber-500 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-gray-200">Tambah Produk</span>
+                </button>
+                <button onClick={() => setActiveTab('orders')} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-blue-500 hover:bg-blue-500/10 transition-all flex flex-col items-center text-center gap-2 group">
+                  <ShoppingBag size={24} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-gray-200">Semak Pesanan</span>
+                </button>
+                <button onClick={() => setActiveTab('shipping')} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all flex flex-col items-center text-center gap-2 group">
+                  <Truck size={24} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-gray-200">Tetapan Pos</span>
+                </button>
+                <button onClick={() => setActiveTab('payment')} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-purple-500 hover:bg-purple-500/10 transition-all flex flex-col items-center text-center gap-2 group">
+                  <CreditCard size={24} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-gray-200">ToyyibPay Log</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Visual Orders Table */}
+            <div className="bg-slate-900/60 p-6 rounded-2xl border border-white/10 space-y-4">
+              <h2 className="text-lg font-black text-white flex items-center justify-between">
+                <span>Pesanan Pelanggan Terkini</span>
+                <button onClick={() => setActiveTab('orders')} className="text-xs text-amber-500 font-bold hover:underline flex items-center gap-1">
+                  Lihat Semua Pesanan →
+                </button>
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr>
-                      <th>Sipariş No</th>
-                      <th>Müşteri</th>
-                      <th>Tarih</th>
-                      <th>Tutar</th>
-                      <th>Durum</th>
-                      <th>İşlem</th>
+                    <tr className="border-b border-white/10 text-gray-400 uppercase font-bold">
+                      <th className="p-3">No. Pesanan</th>
+                      <th className="p-3">Pelanggan</th>
+                      <th className="p-3">Tarikh</th>
+                      <th className="p-3">Jumlah (RM)</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Tindakan</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {orders.slice(0, 10).map(order => (
-                      <tr key={order.id}>
-                        <td style={{ fontWeight: 'bold' }}>#{order.siparisNumarasi}</td>
-                        <td>{order.ad} {order.soyad}</td>
-                        <td>{new Date(order.olusturulmaTarihi).toLocaleDateString('tr-TR')}</td>
-                        <td>₺{order.toplamTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
-                        <td>
-                          <span className={`badge badge-${order.durum === 'BEKLEMEDE' ? 'pending' : order.durum === 'TESLIM_EDILDI' || order.durum === 'TAMAMLANDI' ? 'success' : order.durum === 'KARGOLANDI' ? 'shipped' : 'error'}`}>
+                  <tbody className="divide-y divide-white/5">
+                    {orders.slice(0, 5).map(order => (
+                      <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-3 font-bold text-amber-500">#{order.siparisNumarasi}</td>
+                        <td className="p-3 font-semibold text-white">{order.ad} {order.soyad}</td>
+                        <td className="p-3 text-gray-400">{new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY')}</td>
+                        <td className="p-3 font-bold text-white">RM {Number(order.toplamTutar).toFixed(2)}</td>
+                        <td className="p-3">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                             {order.durum}
                           </span>
                         </td>
-                        <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => viewOrder(order)}>
-                            <Eye size={12} /> Detay
+                        <td className="p-3 text-right">
+                          <button onClick={() => viewOrder(order)} className="p-1.5 bg-white/10 hover:bg-amber-500 hover:text-black rounded-lg text-gray-300 transition-colors">
+                            <Eye size={14} />
                           </button>
                         </td>
                       </tr>
                     ))}
                     {orders.length === 0 && (
                       <tr>
-                        <td colSpan="6" style={{ textAlignment: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
-                          Kayıtlı sipariş bulunmamaktadır.
-                        </td>
+                        <td colSpan="6" className="p-6 text-center text-gray-500 font-medium">Tiada pesanan masuk lagi.</td>
                       </tr>
                     )}
                   </tbody>
@@ -889,45 +522,15 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 2: Products */}
-        {activeTab === 'products' && (() => {
-          const filteredProducts = products.filter(prod => {
-            const matchesSearch = !productSearch ||
-              prod.ad.toLowerCase().includes(productSearch.toLowerCase()) ||
-              (prod.aciklama && prod.aciklama.toLowerCase().includes(productSearch.toLowerCase()));
-            const matchesCategory = !productFilterCategory || prod.kategoriId === productFilterCategory;
-            const matchesBrand = !productFilterBrand || prod.markaId === productFilterBrand;
-            const matchesStatus = !productFilterStatus ||
-              (productFilterStatus === 'active' ? prod.aktif : !prod.aktif);
-            return matchesSearch && matchesCategory && matchesBrand && matchesStatus;
-          });
-
-          const sortedProducts = getSortedData(filteredProducts, productSort, (prod, key) => {
-            if (key === 'marka') return prod.marka?.ad || '';
-            if (key === 'kategori') return prod.kategori?.ad || '';
-            return prod[key];
-          });
-
-          const toggleSelectAllProducts = () => {
-            if (filteredProducts.length === 0) return;
-            if (selectedProductIds.length === filteredProducts.length) {
-              setSelectedProductIds([]);
-            } else {
-              setSelectedProductIds(filteredProducts.map(p => p.id));
-            }
-          };
-
-          const toggleSelectProduct = (id) => {
-            setSelectedProductIds(prev =>
-              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-            );
-          };
-
-          return (
-            <div>
-              <div className="content-header">
-                <h1 className="content-title">Ürün Kataloğu</h1>
-                <button className="btn btn-primary" onClick={() => {
+        {/* 2. Products Tab */}
+        {activeTab === 'products' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                <Package className="text-amber-500" /> Katalog Produk
+              </h1>
+              <button
+                onClick={() => {
                   setEditingProduct(null);
                   setProductForm({
                     ad: '', fiyat: '', indirimliFiyat: '', kisaAciklama: '',
@@ -937,1830 +540,253 @@ export default function App() {
                     firsatUrunu: false, yeniUrun: false, cokSatanlar: false
                   });
                   setShowProductModal(true);
-                }}>
-                  <Plus size={16} /> Yeni Ürün Ekle
-                </button>
-              </div>
-
-              {/* Filter Bar */}
-              <div className="filter-bar">
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ürün adı veya açıklama ara..."
-                    value={productSearch}
-                    onChange={e => setProductSearch(e.target.value)}
-                  />
-                </div>
-                <div className="filter-group">
-                  <select
-                    className="form-control"
-                    value={productFilterCategory}
-                    onChange={e => setProductFilterCategory(e.target.value)}
-                    style={{ width: '160px' }}
-                  >
-                    <option value="">Tüm Kategoriler</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.ad}</option>)}
-                  </select>
-                  <select
-                    className="form-control"
-                    value={productFilterBrand}
-                    onChange={e => setProductFilterBrand(e.target.value)}
-                    style={{ width: '160px' }}
-                  >
-                    <option value="">Tüm Markalar</option>
-                    {brands.map(b => <option key={b.id} value={b.id}>{b.ad}</option>)}
-                  </select>
-                  <select
-                    className="form-control"
-                    value={productFilterStatus}
-                    onChange={e => setProductFilterStatus(e.target.value)}
-                    style={{ width: '120px' }}
-                  >
-                    <option value="">Tüm Durumlar</option>
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Gizli</option>
-                  </select>
-                  {(productSearch || productFilterCategory || productFilterBrand || productFilterStatus) && (
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setProductSearch('');
-                        setProductFilterCategory('');
-                        setProductFilterBrand('');
-                        setProductFilterStatus('');
-                      }}
-                    >
-                      Sıfırla
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Bulk Actions Panel */}
-              {selectedProductIds.length > 0 && (
-                <div className="bulk-actions-bar">
-                  <div style={{ fontSize: '13px', fontWeight: '600' }}>
-                    📦 {selectedProductIds.length} ürün seçildi
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => bulkDeleteProducts(selectedProductIds)}
-                    >
-                      Seçilenleri Sil
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setSelectedProductIds([])}
-                    >
-                      Seçimi Temizle
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="card">
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '40px', paddingRight: 0 }}>
-                          <input
-                            type="checkbox"
-                            checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
-                            onChange={toggleSelectAllProducts}
-                          />
-                        </th>
-                        <th>Görsel</th>
-                        <th className="sortable-header" onClick={() => handleSort('ad', productSort, setProductSort)}>
-                          Ürün Adı {renderSortIndicator(productSort, 'ad')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('marka', productSort, setProductSort)}>
-                          Marka {renderSortIndicator(productSort, 'marka')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('kategori', productSort, setProductSort)}>
-                          Kategori {renderSortIndicator(productSort, 'kategori')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('fiyat', productSort, setProductSort)}>
-                          Fiyat {renderSortIndicator(productSort, 'fiyat')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('stokAdedi', productSort, setProductSort)}>
-                          Stok {renderSortIndicator(productSort, 'stokAdedi')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('aktif', productSort, setProductSort)}>
-                          Durum {renderSortIndicator(productSort, 'aktif')}
-                        </th>
-                        <th style={{ width: '120px' }}>İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedProducts.map(prod => {
-                        const imageCdnUrl = prod.resimUrl && !prod.resimUrl.startsWith('http')
-                          ? `${settings.cdnUrl || config.cdnUrl}/${prod.resimUrl}`
-                          : prod.resimUrl;
-
-                        return (
-                          <tr key={prod.id}>
-                            <td style={{ paddingRight: 0 }}>
-                              <input
-                                type="checkbox"
-                                checked={selectedProductIds.includes(prod.id)}
-                                onChange={() => toggleSelectProduct(prod.id)}
-                              />
-                            </td>
-                            <td>
-                              <img
-                                src={imageCdnUrl || 'https://via.placeholder.com/50x50?text=Yok'}
-                                alt=""
-                                style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', padding: '2px' }}
-                              />
-                            </td>
-                            <td style={{ fontWeight: '600' }}>{prod.ad}</td>
-                            <td>{prod.marka?.ad || '-'}</td>
-                            <td>{prod.kategori?.ad || '-'}</td>
-                            <td>
-                              {prod.indirimliFiyat ? (
-                                <div>
-                                  <span style={{ textDecoration: 'line-through', color: 'var(--color-text-dimmed)', fontSize: '12px', marginRight: '6px' }}>₺{prod.fiyat}</span>
-                                  <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>₺{prod.indirimliFiyat}</span>
-                                </div>
-                              ) : (
-                                <span>₺{prod.fiyat}</span>
-                              )}
-                            </td>
-                            <td>{prod.stokAdedi}</td>
-                            <td>
-                              <span className={`badge ${prod.aktif ? 'badge-success' : 'badge-error'}`}>
-                                {prod.aktif ? 'Aktif' : 'Gizli'}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="flex-gap">
-                                <button className="btn btn-secondary btn-sm" onClick={() => {
-                                  setEditingProduct(prod);
-                                  setProductForm({
-                                    ad: prod.ad, fiyat: prod.fiyat, indirimliFiyat: prod.indirimliFiyat || '',
-                                    kisaAciklama: prod.kisaAciklama || '',
-                                    renkSecenekleri: prod.renkSecenekleri || [],
-                                    boyutSecenekleri: prod.boyutSecenekleri || [],
-                                    agirlik: prod.agirlik, aciklama: prod.aciklama || '', resimUrl: prod.resimUrl || '',
-                                    stokAdedi: prod.stokAdedi, varyantBasligi: prod.varyantBasligi || '',
-                                    kategoriId: prod.kategoriId || '', markaId: prod.markaId || '',
-                                    aktif: prod.aktif, oneCikan: prod.oneCikan, firsatUrunu: prod.firsatUrunu,
-                                    yeniUrun: prod.yeniUrun, cokSatanlar: prod.cokSatanlar
-                                  });
-                                  setShowProductModal(true);
-                                }}>
-                                  <Edit2 size={12} />
-                                </button>
-                                <button className="btn btn-danger btn-sm" onClick={() => deleteProduct(prod.id)}>
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {sortedProducts.length === 0 && (
-                        <tr>
-                          <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
-                            Aradığınız kriterlere uygun ürün bulunamadı.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Tab 3: Categories */}
-        {activeTab === 'categories' && (() => {
-          const filteredCategories = categories.filter(cat => {
-            const matchesSearch = !categorySearch || cat.ad.toLowerCase().includes(categorySearch.toLowerCase());
-            const matchesStatus = !categoryFilterStatus ||
-              (categoryFilterStatus === 'active' ? cat.aktif : !cat.aktif);
-            return matchesSearch && matchesStatus;
-          });
-
-          const sortedCategories = getSortedData(filteredCategories, categorySort);
-
-          const toggleSelectAllCategories = () => {
-            if (filteredCategories.length === 0) return;
-            if (selectedCategoryIds.length === filteredCategories.length) {
-              setSelectedCategoryIds([]);
-            } else {
-              setSelectedCategoryIds(filteredCategories.map(c => c.id));
-            }
-          };
-
-          const toggleSelectCategory = (id) => {
-            setSelectedCategoryIds(prev =>
-              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-            );
-          };
-
-          return (
-            <div>
-              <div className="content-header">
-                <h1 className="content-title">Kategoriler</h1>
-                <button className="btn btn-primary" onClick={() => {
-                  setEditingCategory(null);
-                  setCategoryForm({ ad: '', resim: '', sira: 0, aktif: true });
-                  setShowCategoryModal(true);
-                }}>
-                  <Plus size={16} /> Yeni Kategori Ekle
-                </button>
-              </div>
-
-              {/* Filter Bar */}
-              <div className="filter-bar">
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Kategori adı ara..."
-                    value={categorySearch}
-                    onChange={e => setCategorySearch(e.target.value)}
-                  />
-                </div>
-                <div className="filter-group">
-                  <select
-                    className="form-control"
-                    value={categoryFilterStatus}
-                    onChange={e => setCategoryFilterStatus(e.target.value)}
-                    style={{ width: '120px' }}
-                  >
-                    <option value="">Tüm Durumlar</option>
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Gizli</option>
-                  </select>
-                  {(categorySearch || categoryFilterStatus) && (
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setCategorySearch('');
-                        setCategoryFilterStatus('');
-                      }}
-                    >
-                      Sıfırla
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Bulk Actions Panel */}
-              {selectedCategoryIds.length > 0 && (
-                <div className="bulk-actions-bar">
-                  <div style={{ fontSize: '13px', fontWeight: '600' }}>
-                    📁 {selectedCategoryIds.length} kategori seçildi
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => bulkDeleteCategories(selectedCategoryIds)}
-                    >
-                      Seçilenleri Sil
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setSelectedCategoryIds([])}
-                    >
-                      Seçimi Temizle
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="card" style={{ maxWidth: '800px' }}>
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '40px', paddingRight: 0 }}>
-                          <input
-                            type="checkbox"
-                            checked={filteredCategories.length > 0 && selectedCategoryIds.length === filteredCategories.length}
-                            onChange={toggleSelectAllCategories}
-                          />
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('sira', categorySort, setCategorySort)}>
-                          Sıra {renderSortIndicator(categorySort, 'sira')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('ad', categorySort, setCategorySort)}>
-                          Kategori Adı {renderSortIndicator(categorySort, 'ad')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('aktif', categorySort, setCategorySort)}>
-                          Durum {renderSortIndicator(categorySort, 'aktif')}
-                        </th>
-                        <th style={{ width: '120px' }}>İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedCategories.map(cat => (
-                        <tr key={cat.id}>
-                          <td style={{ paddingRight: 0 }}>
-                            <input
-                              type="checkbox"
-                              checked={selectedCategoryIds.includes(cat.id)}
-                              onChange={() => toggleSelectCategory(cat.id)}
-                            />
-                          </td>
-                          <td>{cat.sira}</td>
-                          <td style={{ fontWeight: '600' }}>{cat.ad}</td>
-                          <td>
-                            <span className={`badge ${cat.aktif ? 'badge-success' : 'badge-error'}`}>
-                              {cat.aktif ? 'Aktif' : 'Gizli'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="flex-gap">
-                              <button className="btn btn-secondary btn-sm" onClick={() => {
-                                setEditingCategory(cat);
-                                setCategoryForm({ ad: cat.ad, resim: cat.resim || '', sira: cat.sira, aktif: cat.aktif });
-                                setShowCategoryModal(true);
-                              }}>
-                                <Edit2 size={12} />
-                              </button>
-                              <button className="btn btn-danger btn-sm" onClick={() => deleteCategory(cat.id)}>
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {sortedCategories.length === 0 && (
-                        <tr>
-                          <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
-                            Kategori bulunamadı.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Tab 4: Brands */}
-        {activeTab === 'brands' && (() => {
-          const filteredBrands = brands.filter(brand => {
-            const matchesSearch = !brandSearch || brand.ad.toLowerCase().includes(brandSearch.toLowerCase());
-            const matchesStatus = !brandFilterStatus ||
-              (brandFilterStatus === 'active' ? brand.aktif : !brand.aktif);
-            return matchesSearch && matchesStatus;
-          });
-
-          const sortedBrands = getSortedData(filteredBrands, brandSort);
-
-          const toggleSelectAllBrands = () => {
-            if (filteredBrands.length === 0) return;
-            if (selectedBrandIds.length === filteredBrands.length) {
-              setSelectedBrandIds([]);
-            } else {
-              setSelectedBrandIds(filteredBrands.map(b => b.id));
-            }
-          };
-
-          const toggleSelectBrand = (id) => {
-            setSelectedBrandIds(prev =>
-              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-            );
-          };
-
-          return (
-            <div>
-              <div className="content-header">
-                <h1 className="content-title">Markalar</h1>
-                <button className="btn btn-primary" onClick={() => {
-                  setEditingBrand(null);
-                  setBrandForm({ ad: '', logoUrl: '', sira: 0, aktif: true });
-                  setShowBrandModal(true);
-                }}>
-                  <Plus size={16} /> Yeni Marka Ekle
-                </button>
-              </div>
-
-              {/* Filter Bar */}
-              <div className="filter-bar">
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Marka adı ara..."
-                    value={brandSearch}
-                    onChange={e => setBrandSearch(e.target.value)}
-                  />
-                </div>
-                <div className="filter-group">
-                  <select
-                    className="form-control"
-                    value={brandFilterStatus}
-                    onChange={e => setBrandFilterStatus(e.target.value)}
-                    style={{ width: '120px' }}
-                  >
-                    <option value="">Tüm Durumlar</option>
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Gizli</option>
-                  </select>
-                  {(brandSearch || brandFilterStatus) && (
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setBrandSearch('');
-                        setBrandFilterStatus('');
-                      }}
-                    >
-                      Sıfırla
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Bulk Actions Panel */}
-              {selectedBrandIds.length > 0 && (
-                <div className="bulk-actions-bar">
-                  <div style={{ fontSize: '13px', fontWeight: '600' }}>
-                    🏷️ {selectedBrandIds.length} marka seçildi
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => bulkDeleteBrands(selectedBrandIds)}
-                    >
-                      Seçilenleri Sil
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setSelectedBrandIds([])}
-                    >
-                      Seçimi Temizle
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="card" style={{ maxWidth: '800px' }}>
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '40px', paddingRight: 0 }}>
-                          <input
-                            type="checkbox"
-                            checked={filteredBrands.length > 0 && selectedBrandIds.length === filteredBrands.length}
-                            onChange={toggleSelectAllBrands}
-                          />
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('sira', brandSort, setBrandSort)}>
-                          Sıra {renderSortIndicator(brandSort, 'sira')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('ad', brandSort, setBrandSort)}>
-                          Marka Adı {renderSortIndicator(brandSort, 'ad')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('aktif', brandSort, setBrandSort)}>
-                          Durum {renderSortIndicator(brandSort, 'aktif')}
-                        </th>
-                        <th style={{ width: '120px' }}>İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedBrands.map(brand => (
-                        <tr key={brand.id}>
-                          <td style={{ paddingRight: 0 }}>
-                            <input
-                              type="checkbox"
-                              checked={selectedBrandIds.includes(brand.id)}
-                              onChange={() => toggleSelectBrand(brand.id)}
-                            />
-                          </td>
-                          <td>{brand.sira}</td>
-                          <td style={{ fontWeight: '600' }}>{brand.ad}</td>
-                          <td>
-                            <span className={`badge ${brand.aktif ? 'badge-success' : 'badge-error'}`}>
-                              {brand.aktif ? 'Aktif' : 'Gizli'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="flex-gap">
-                              <button className="btn btn-secondary btn-sm" onClick={() => {
-                                setEditingBrand(brand);
-                                setBrandForm({ ad: brand.ad, logoUrl: brand.logoUrl || '', sira: brand.sira, aktif: brand.aktif });
-                                setShowBrandModal(true);
-                              }}>
-                                <Edit2 size={12} />
-                              </button>
-                              <button className="btn btn-danger btn-sm" onClick={() => deleteBrand(brand.id)}>
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {sortedBrands.length === 0 && (
-                        <tr>
-                          <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
-                            Marka bulunamadı.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Tab 5: Orders */}
-        {activeTab === 'orders' && (() => {
-          const filteredOrders = orders.filter(order => {
-            const matchesSearch = !orderSearch ||
-              order.siparisNumarasi.toLowerCase().includes(orderSearch.toLowerCase()) ||
-              `${order.ad} ${order.soyad}`.toLowerCase().includes(orderSearch.toLowerCase()) ||
-              (order.telefon && order.telefon.toLowerCase().includes(orderSearch.toLowerCase())) ||
-              (order.eposta && order.eposta.toLowerCase().includes(orderSearch.toLowerCase()));
-            const matchesStatus = !orderFilterStatus || order.durum === orderFilterStatus;
-            const matchesFatura = !orderFilterFatura || order.faturaDurumu === orderFilterFatura;
-            return matchesSearch && matchesStatus && matchesFatura;
-          });
-
-          const sortedOrders = getSortedData(filteredOrders, orderSort);
-
-          return (
-            <div>
-              <div className="content-header">
-                <h1 className="content-title">Sipariş Yönetimi</h1>
-              </div>
-
-              {/* Filter Bar */}
-              <div className="filter-bar">
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Sipariş no, müşteri adı, e-posta veya telefon ara..."
-                    value={orderSearch}
-                    onChange={e => setOrderSearch(e.target.value)}
-                  />
-                </div>
-                <div className="filter-group">
-                  <select
-                    className="form-control"
-                    value={orderFilterStatus}
-                    onChange={e => setOrderFilterStatus(e.target.value)}
-                    style={{ width: '160px' }}
-                  >
-                    <option value="">Tüm Durumlar</option>
-                    <option value="BEKLEMEDE">BEKLEMEDE</option>
-                    <option value="HAZIRLANIYOR">HAZIRLANIYOR</option>
-                    <option value="KARGOLANDI">KARGOLANDI</option>
-                    <option value="TESLIM_EDILDI">TESLIM_EDILDI</option>
-                    <option value="TAMAMLANDI">TAMAMLANDI</option>
-                    <option value="IPTAL_EDILDI">IPTAL_EDILDI</option>
-                  </select>
-                  <select
-                    className="form-control"
-                    value={orderFilterFatura}
-                    onChange={e => setOrderFilterFatura(e.target.value)}
-                    style={{ width: '160px' }}
-                  >
-                    <option value="">Tüm Fatura Durumları</option>
-                    <option value="DUZENLENMEDI">DUZENLENMEDI</option>
-                    <option value="DUZENLENDI">DUZENLENDI</option>
-                    <option value="ODENDI">ODENDI</option>
-                  </select>
-                  {(orderSearch || orderFilterStatus || orderFilterFatura) && (
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setOrderSearch('');
-                        setOrderFilterStatus('');
-                        setOrderFilterFatura('');
-                      }}
-                    >
-                      Sıfırla
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="card">
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th className="sortable-header" onClick={() => handleSort('siparisNumarasi', orderSort, setOrderSort)}>
-                          Sipariş No {renderSortIndicator(orderSort, 'siparisNumarasi')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('ad', orderSort, setOrderSort)}>
-                          Müşteri {renderSortIndicator(orderSort, 'ad')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('olusturulmaTarihi', orderSort, setOrderSort)}>
-                          Tarih {renderSortIndicator(orderSort, 'olusturulmaTarihi')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('toplamTutar', orderSort, setOrderSort)}>
-                          Tutar {renderSortIndicator(orderSort, 'toplamTutar')}
-                        </th>
-                        <th>Kargo</th>
-                        <th className="sortable-header" onClick={() => handleSort('faturaDurumu', orderSort, setOrderSort)}>
-                          Fatura {renderSortIndicator(orderSort, 'faturaDurumu')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('durum', orderSort, setOrderSort)}>
-                          Durum {renderSortIndicator(orderSort, 'durum')}
-                        </th>
-                        <th>İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedOrders.map(order => (
-                        <tr key={order.id}>
-                          <td style={{ fontWeight: 'bold' }}>#{order.siparisNumarasi}</td>
-                          <td>{order.ad} {order.soyad}</td>
-                          <td>{new Date(order.olusturulmaTarihi).toLocaleDateString('tr-TR')}</td>
-                          <td>₺{order.toplamTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
-                          <td>{order.kargoFirmasi || '-'}</td>
-                          <td>
-                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.faturaDurumu === 'ODENDI' ? 'var(--status-success)' : 'var(--color-text-dimmed)' }}>
-                              {order.faturaDurumu}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`badge badge-${order.durum === 'BEKLEMEDE' ? 'pending' : order.durum === 'TESLIM_EDILDI' || order.durum === 'TAMAMLANDI' ? 'success' : order.durum === 'KARGOLANDI' ? 'shipped' : 'error'}`}>
-                              {order.durum}
-                            </span>
-                          </td>
-                          <td>
-                            <button className="btn btn-secondary btn-sm" onClick={() => viewOrder(order)}>
-                              <Eye size={12} /> İncele
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {sortedOrders.length === 0 && (
-                        <tr>
-                          <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
-                            Kayıtlı sipariş bulunmamaktadır.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Tab 6: Returns */}
-        {activeTab === 'returns' && (() => {
-          const filteredReturns = returns.filter(ret => {
-            const matchesSearch = !returnSearch ||
-              (ret.siparis && ret.siparis.siparisNumarasi.toLowerCase().includes(returnSearch.toLowerCase())) ||
-              (ret.siparis && `${ret.siparis.ad} ${ret.siparis.soyad}`.toLowerCase().includes(returnSearch.toLowerCase()));
-            const matchesStatus = !returnFilterStatus || ret.durum === returnFilterStatus;
-            return matchesSearch && matchesStatus;
-          });
-
-          const sortedReturns = getSortedData(filteredReturns, returnSort, (ret, key) => {
-            if (key === 'siparisNumarasi') return ret.siparis?.siparisNumarasi || '';
-            return ret[key];
-          });
-
-          return (
-            <div>
-              <div className="content-header">
-                <h1 className="content-title">İade Talepleri</h1>
-              </div>
-
-              {/* Filter Bar */}
-              <div className="filter-bar">
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Sipariş no veya müşteri adı ara..."
-                    value={returnSearch}
-                    onChange={e => setReturnSearch(e.target.value)}
-                  />
-                </div>
-                <div className="filter-group">
-                  <select
-                    className="form-control"
-                    value={returnFilterStatus}
-                    onChange={e => setReturnFilterStatus(e.target.value)}
-                    style={{ width: '200px' }}
-                  >
-                    <option value="">Tüm Durumlar</option>
-                    <option value="ONAY_BEKLENIYOR">ONAY BEKLENİYOR</option>
-                    <option value="ONAYLANDI">ONAYLANDI</option>
-                    <option value="REDDEDILDI">REDDEDİLDİ</option>
-                    <option value="MUSTERI_GONDERIMI_BEKLENIYOR">Müşteri Gönderimi Bekleniyor</option>
-                    <option value="IADE_TAMAMLANDI">İade İşlemi Tamamlandı</option>
-                  </select>
-                  {(returnSearch || returnFilterStatus) && (
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setReturnSearch('');
-                        setReturnFilterStatus('');
-                      }}
-                    >
-                      Sıfırla
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="card">
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th className="sortable-header" onClick={() => handleSort('olusturulmaTarihi', returnSort, setReturnSort)}>
-                          Tarih {renderSortIndicator(returnSort, 'olusturulmaTarihi')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('siparisNumarasi', returnSort, setReturnSort)}>
-                          Sipariş No {renderSortIndicator(returnSort, 'siparisNumarasi')}
-                        </th>
-                        <th>Müşteri</th>
-                        <th>İade Tipi</th>
-                        <th>Açıklama</th>
-                        <th className="sortable-header" onClick={() => handleSort('durum', returnSort, setReturnSort)}>
-                          Durum {renderSortIndicator(returnSort, 'durum')}
-                        </th>
-                        <th>İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedReturns.map(ret => (
-                        <tr key={ret.id}>
-                          <td>{new Date(ret.olusturulmaTarihi).toLocaleDateString('tr-TR')}</td>
-                          <td style={{ fontWeight: 'bold' }}>#{ret.siparis?.siparisNumarasi || '-'}</td>
-                          <td>{ret.siparis?.ad} {ret.siparis?.soyad}</td>
-                          <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{ret.talepTipi}</td>
-                          <td style={{ maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {ret.aciklama}
-                          </td>
-                          <td>
-                            <span className={`badge badge-${ret.durum === 'ONAY_BEKLENIYOR' ? 'pending' : ret.durum === 'ONAYLANDI' || ret.durum === 'IADE_TAMAMLANDI' ? 'success' : 'error'}`}>
-                              {ret.durum}
-                            </span>
-                          </td>
-                          <td>
-                            <button className="btn btn-secondary btn-sm" onClick={() => viewReturn(ret)}>
-                              <Eye size={12} /> Detay
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {sortedReturns.length === 0 && (
-                        <tr>
-                          <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
-                            Kayıtlı iade talebi bulunmamaktadır.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Tab 7: Settings */}
-        {activeTab === 'settings' && (
-          <div>
-            <div className="content-header">
-              <h1 className="content-title">Sistem Ayarları</h1>
+                }}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-2 shadow-lg transition-transform active:scale-95"
+              >
+                <Plus size={16} /> Tambah Produk Baru
+              </button>
             </div>
 
-            <form onSubmit={saveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
-
-              {/* Site Genel Bilgileri */}
-              <div className="card">
-                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
-                  🏪 Site Genel Bilgileri
-                </h3>
-                <div className="form-group">
-                  <label className="form-label">Site Adı</label>
-                  <input
-                    type="text" className="form-control" placeholder="E-Market"
-                    value={settings.siteAdi || ''}
-                    onChange={e => setSettings({ ...settings, siteAdi: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Hakkımızda Metni</label>
-                  <textarea
-                    className="form-control" rows={4}
-                    placeholder="Şirketiniz hakkında kısa tanıtım metni..."
-                    value={settings.hakkindaMetni || ''}
-                    onChange={e => setSettings({ ...settings, hakkindaMetni: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Adres</label>
-                  <input
-                    type="text" className="form-control" placeholder="İstanbul, Türkiye"
-                    value={settings.adres || ''}
-                    onChange={e => setSettings({ ...settings, adres: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* İletişim Bilgileri */}
-              <div className="card">
-                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
-                  📞 İletişim Bilgileri
-                </h3>
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">İletişim E-Posta</label>
-                    <input
-                      type="email" className="form-control" placeholder="info@example.com"
-                      value={settings.iletisimEmail || ''}
-                      onChange={e => setSettings({ ...settings, iletisimEmail: e.target.value })}
-                    />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {products.map(prod => (
+                <div key={prod.id} className="bg-slate-900 p-4 rounded-2xl border border-white/10 flex flex-col justify-between gap-3 hover:border-amber-500/50 transition-all">
+                  <div className="flex gap-3">
+                    <img src={prod.resimUrl || 'https://dino-empire.pages.dev/dino-logo.jpg'} alt={prod.ad} className="w-16 h-16 rounded-xl object-cover border border-white/10 bg-black/40" />
+                    <div>
+                      <h3 className="font-bold text-sm text-white">{prod.ad}</h3>
+                      <p className="text-xs text-amber-500 font-black mt-1">RM {Number(prod.fiyat).toFixed(2)}</p>
+                      <span className="text-[10px] text-gray-400 font-bold block mt-1">Stok: {prod.stokAdedi} unit</span>
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Telefon</label>
-                    <input
-                      type="text" className="form-control" placeholder="+90 212 000 00 00"
-                      value={settings.telefon || ''}
-                      onChange={e => setSettings({ ...settings, telefon: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">WhatsApp Numarası</label>
-                  <input
-                    type="text" className="form-control" placeholder="+905001234567"
-                    value={settings.whatsappNumarasi || ''}
-                    onChange={e => setSettings({ ...settings, whatsappNumarasi: e.target.value })}
-                  />
-                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Müşteri destek WhatsApp hattı — ülke kodu ile birlikte girin (örn: +905001234567)
-                  </small>
-                </div>
-              </div>
-
-              {/* Sosyal Medya */}
-              <div className="card">
-                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
-                  📱 Sosyal Medya
-                </h3>
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Instagram URL</label>
-                    <input
-                      type="url" className="form-control" placeholder="https://instagram.com/kullaniciad"
-                      value={settings.instagramUrl || ''}
-                      onChange={e => setSettings({ ...settings, instagramUrl: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Facebook URL</label>
-                    <input
-                      type="url" className="form-control" placeholder="https://facebook.com/sayfaad"
-                      value={settings.facebookUrl || ''}
-                      onChange={e => setSettings({ ...settings, facebookUrl: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">X (Twitter) URL</label>
-                    <input
-                      type="url" className="form-control" placeholder="https://x.com/kullaniciad"
-                      value={settings.twitterUrl || ''}
-                      onChange={e => setSettings({ ...settings, twitterUrl: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">YouTube URL</label>
-                    <input
-                      type="url" className="form-control" placeholder="https://youtube.com/@kanal"
-                      value={settings.youtubeUrl || ''}
-                      onChange={e => setSettings({ ...settings, youtubeUrl: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Entegrasyonlar */}
-              <div className="card">
-                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
-                  🔌 Entegrasyonlar ve Servisler
-                </h3>
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label className="form-label">Meta (Facebook) Pixel ID</label>
-                  <input
-                    type="text" className="form-control" placeholder="Örn: 123456789012345"
-                    value={settings.metaPixelId || ''}
-                    onChange={e => setSettings({ ...settings, metaPixelId: e.target.value })}
-                  />
-                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Meta Pixel entegrasyonu için Pixel ID'nizi girin. Bu kod girildiğinde, mağazanızdaki ziyaretler, sepete eklemeler ve satın alım işlemleri otomatik olarak Meta Panel'e gönderilir.
-                  </small>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Google Merchant Feed Token</span>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '11px', padding: '2px 8px', height: 'auto' }}
-                      onClick={() => {
-                        const randomToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                        setSettings({ ...settings, googleMerchantToken: randomToken });
-                      }}
-                    >
-                      Güvenli Token Üret
-                    </button>
-                  </label>
-                  <input
-                    type="text" className="form-control" placeholder="Örn: my-secure-token-xyz"
-                    value={settings.googleMerchantToken || ''}
-                    onChange={e => setSettings({ ...settings, googleMerchantToken: e.target.value })}
-                  />
-                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Google Alışveriş XML feed URL'sini korumak için bir güvenlik anahtarı belirleyin. Feed URL'sine bu anahtar ile erişilir.
-                  </small>
-                </div>
-
-                {settings.googleMerchantToken && (
-                  <div className="form-group" style={{ background: 'var(--color-bg-secondary)', padding: '12px', borderRadius: '6px', border: '1px solid var(--color-border)', marginBottom: '20px' }}>
-                    <label className="form-label" style={{ fontSize: '12px', fontWeight: '600', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Google Shopping XML Feed URL</span>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '11px', padding: '2px 8px', height: 'auto' }}
-                        onClick={() => {
-                          const feedUrl = `${API_URL}/api/v1/feeds/google?token=${settings.googleMerchantToken}`;
-                          navigator.clipboard.writeText(feedUrl);
-                          setCopiedFeed(true);
-                          setTimeout(() => setCopiedFeed(false), 2000);
-                        }}
-                      >
-                        {copiedFeed ? 'Kopyalandı! ✓' : 'URL Kopyala'}
+                  <div className="flex justify-between items-center border-t border-white/5 pt-3">
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${prod.aktif ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400'}`}>
+                      {prod.aktif ? 'Aktif' : 'Tersembunyi'}
+                    </span>
+                    <div className="flex gap-2">
+                      <button onClick={() => deleteProduct(prod.id)} className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
+                        <Trash2 size={14} />
                       </button>
-                    </label>
-                    <div style={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '11px', padding: '6px', background: 'var(--color-bg-tertiary)', borderRadius: '4px', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
-                      {`${API_URL}/api/v1/feeds/google?token=${settings.googleMerchantToken}`}
                     </div>
                   </div>
-                )}
-
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label className="form-label">Google Tag Manager Container ID</label>
-                  <input
-                    type="text" className="form-control" placeholder="Örn: GTM-XXXXXXX"
-                    value={settings.gtmContainerId || ''}
-                    onChange={e => setSettings({ ...settings, gtmContainerId: e.target.value })}
-                  />
-                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Google Tag Manager entegrasyonu için Container ID'nizi girin (GTM-XXXXXXX). Bu kod girildiğinde GTM kapsayıcısı mağazanızda dinamik olarak başlatılır.
-                  </small>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                <div className="form-group" style={{ marginBottom: '10px' }}>
-                  <label className="form-label">Google Analytics 4 Ölçüm Kimliği (Measurement ID)</label>
-                  <input
-                    type="text" className="form-control" placeholder="Örn: G-XXXXXXXXXX"
-                    value={settings.ga4MeasurementId || ''}
-                    onChange={e => setSettings({ ...settings, ga4MeasurementId: e.target.value })}
-                  />
-                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Google Analytics 4 entegrasyonu için Ölçüm Kimliğinizi girin (G-XXXXXXXXXX). Mağazanızdaki ziyaretler ve e-ticaret etkinlikleri otomatik olarak GA4'e aktarılır.
-                  </small>
+        {/* 3. Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <Layers className="text-amber-500" /> Kategori Produk
+            </h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {categories.map(cat => (
+                <div key={cat.id} className="bg-slate-900 p-4 rounded-2xl border border-white/10 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+                      <Layers size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-white">{cat.ad}</h3>
+                      <span className="text-[10px] text-gray-400 font-bold">Susunan #{cat.sira}</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg border border-emerald-500/30">
+                    Aktif
+                  </span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 4. Brands Tab */}
+        {activeTab === 'brands' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <Tag className="text-amber-500" /> Jenama Kedai
+            </h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {brands.map(brand => (
+                <div key={brand.id} className="bg-slate-900 p-4 rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
+                      <Tag size={20} />
+                    </div>
+                    <h3 className="font-bold text-sm text-white">{brand.ad}</h3>
+                  </div>
+                  <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg border border-emerald-500/30">
+                    Aktif
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 5. Orders Tab */}
+        {activeTab === 'orders' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <ShoppingBag className="text-amber-500" /> Pengurusan Pesanan
+            </h1>
+            <div className="bg-slate-900/60 p-6 rounded-2xl border border-white/10 space-y-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-gray-400 uppercase font-bold">
+                      <th className="p-3">No. Pesanan</th>
+                      <th className="p-3">Pelanggan</th>
+                      <th className="p-3">Tarikh</th>
+                      <th className="p-3">Jumlah</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {orders.map(order => (
+                      <tr key={order.id} className="hover:bg-white/5">
+                        <td className="p-3 font-bold text-amber-500">#{order.siparisNumarasi}</td>
+                        <td className="p-3 font-semibold text-white">{order.ad} {order.soyad}</td>
+                        <td className="p-3 text-gray-400">{new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY')}</td>
+                        <td className="p-3 font-bold text-white">RM {Number(order.toplamTutar).toFixed(2)}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            {order.durum}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          <button onClick={() => viewOrder(order)} className="p-1.5 bg-white/10 hover:bg-amber-500 hover:text-black rounded-lg text-gray-300">
+                            <Eye size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Kargo Ayarları */}
-              <div className="card">
-                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
-                  🚚 Kargo Politikası ve Ayarları
-                </h3>
-
-                <div className="form-group">
-                  <label className="form-label">Kargo Politikası Türü</label>
-                  <select
-                    className="form-control"
-                    value={settings.kargoPolitikaTuru || 'SABIT_UCRET'}
-                    onChange={e => setSettings({ ...settings, kargoPolitikaTuru: e.target.value })}
-                  >
-                    <option value="UCRETSIZ">Ücretsiz Kargo</option>
-                    <option value="SABIT_UCRET">Sabit Ücret</option>
-                    <option value="SEPET_LIMITI">Sepet Limitli Ücretsiz Kargo</option>
-                    <option value="AGIRLIK_KADEMELI">Ağırlık Kademeli (Google Merchant Uyumlu)</option>
-                  </select>
-                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Google Merchant Center entegrasyonunun askıya alınmasını önlemek için, seçilen politikanın mağaza fiyatları ile feed fiyatlarını eşleştirmesi gerekir.
-                  </small>
-                </div>
-
-                {/* Ücretsiz Kargo Politikası */}
-                {(settings.kargoPolitikaTuru === 'UCRETSIZ') && (
-                  <div style={{ padding: '12px', background: 'rgba(46, 204, 113, 0.1)', border: '1px dashed #2ecc71', borderRadius: '6px', color: '#27ae60', fontSize: '13px', marginBottom: '16px' }}>
-                    <strong>✓ Aktif Politika: Ücretsiz Kargo</strong> - Sitedeki tüm alışverişlerde müşteriye 0.00 TRY kargo yansıtılır. Google Shopping feed'inde de kargo ücretsiz olarak yayınlanır.
-                  </div>
-                )}
-
-                {/* Sabit Ücret Politikası */}
-                {(settings.kargoPolitikaTuru === 'SABIT_UCRET') && (
-                  <div className="form-group">
-                    <label className="form-label">Sabit Kargo Ücreti (₺)</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={settings.kargoSabitUcret !== undefined ? settings.kargoSabitUcret : 0}
-                      onChange={e => setSettings({ ...settings, kargoSabitUcret: parseFloat(e.target.value) || 0 })}
-                      required
-                      min="0"
-                      step="0.01"
-                    />
-                    <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                      Tüm siparişlere eklenecek standart kargo bedeli.
-                    </small>
-                  </div>
-                )}
-
-                {/* Sepet Limitli Politikası */}
-                {(settings.kargoPolitikaTuru === 'SEPET_LIMITI') && (
-                  <div className="grid-2">
-                    <div className="form-group">
-                      <label className="form-label">Ücretsiz Kargo Alt Limiti (₺)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={settings.ucretsizKargoAltLimit !== undefined ? settings.ucretsizKargoAltLimit : 0}
-                        onChange={e => setSettings({ ...settings, ucretsizKargoAltLimit: parseFloat(e.target.value) || 0 })}
-                        required
-                        min="0"
-                        step="0.01"
-                      />
-                      <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                        Bu limit ve üzerindeki alışverişlerde kargo ücretsiz olur.
-                      </small>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Limit Altı Kargo Ağırlık Çarpanı (₺/kg)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={settings.kargoAgirlikCarpani !== undefined ? settings.kargoAgirlikCarpani : 0}
-                        onChange={e => setSettings({ ...settings, kargoAgirlikCarpani: parseFloat(e.target.value) || 0 })}
-                        required
-                        min="0"
-                        step="0.01"
-                      />
-                      <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                        Limit altındaki siparişlerin kargo ücreti: Toplam Ağırlık (kg) x Bu Çarpan olarak hesaplanır.
-                      </small>
-                    </div>
-                  </div>
-                )}
-
-                {/* Ağırlık Kademeli Politikası */}
-                {(settings.kargoPolitikaTuru === 'AGIRLIK_KADEMELI') && (
-                  <div>
-                    <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h4 style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>📦 Kargo Fiyat Kademeleri</h4>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-                          onClick={() => {
-                            const currentList = (() => {
-                              try {
-                                return typeof settings.kargoFiyatListesi === 'string'
-                                  ? JSON.parse(settings.kargoFiyatListesi || '[]')
-                                  : (Array.isArray(settings.kargoFiyatListesi) ? settings.kargoFiyatListesi : []);
-                              } catch {
-                                return [];
-                              }
-                            })();
-                            const newList = [...currentList, { maxWeight: currentList.length > 0 ? Math.max(...currentList.map(t => t.maxWeight || 0)) + 5 : 5, price: 50 }];
-                            setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(newList) });
-                          }}
-                        >
-                          <Plus size={14} /> Aralık Ekle
-                        </button>
-                      </div>
-
-                      {(() => {
-                        const currentList = (() => {
-                          try {
-                            return typeof settings.kargoFiyatListesi === 'string'
-                              ? JSON.parse(settings.kargoFiyatListesi || '[]')
-                              : (Array.isArray(settings.kargoFiyatListesi) ? settings.kargoFiyatListesi : []);
-                          } catch {
-                            return [];
-                          }
-                        })();
-
-                        if (currentList.length === 0) {
-                          return (
-                            <div style={{ padding: '16px', textAlign: 'center', border: '1px dashed var(--color-border)', borderRadius: '6px', color: 'var(--color-text-muted)', fontSize: '13px' }}>
-                              Henüz kademe eklenmemiş. Lütfen kargo kademesi ekleyin veya varsayılan baremleri kullanmak için boş bırakın.
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {currentList.map((tier, idx) => {
-                              const prevWeight = idx === 0 ? 0 : (currentList[idx - 1]?.maxWeight || 0);
-                              return (
-                                <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                  <div style={{ flex: 1.5, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', minWidth: '100px', whiteSpace: 'nowrap' }}>
-                                      {prevWeight} - {tier.maxWeight} kg arası:
-                                    </span>
-                                    <input
-                                      type="number"
-                                      placeholder="Maks. Ağırlık (kg)"
-                                      className="form-control"
-                                      style={{ flex: 1 }}
-                                      value={tier.maxWeight}
-                                      min="0"
-                                      step="0.1"
-                                      onChange={e => {
-                                        const updatedList = [...currentList];
-                                        updatedList[idx] = { ...updatedList[idx], maxWeight: parseFloat(e.target.value) || 0 };
-                                        setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(updatedList) });
-                                      }}
-                                    />
-                                  </div>
-                                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Fiyat (₺):</span>
-                                    <input
-                                      type="number"
-                                      placeholder="Fiyat (₺)"
-                                      className="form-control"
-                                      style={{ flex: 1 }}
-                                      value={tier.price}
-                                      min="0"
-                                      step="0.01"
-                                      onChange={e => {
-                                        const updatedList = [...currentList];
-                                        updatedList[idx] = { ...updatedList[idx], price: parseFloat(e.target.value) || 0 };
-                                        setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(updatedList) });
-                                      }}
-                                    />
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className="btn btn-danger btn-sm"
-                                    style={{ padding: '8px 10px', height: '38px', display: 'flex', alignItems: 'center' }}
-                                    onClick={() => {
-                                      const updatedList = currentList.filter((_, i) => i !== idx);
-                                      setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(updatedList) });
-                                    }}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-group" style={{ margin: '10px 0' }}>
-                  <label className="form-check">
-                    <input
-                      type="checkbox"
-                      checked={settings.maintenanceMode}
-                      onChange={e => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                    />
-                    <span><strong>Bakım Modu (Sitenin tamamını bakıma al)</strong></span>
-                  </label>
-                </div>
+        {/* 6. Shipping Tab */}
+        {activeTab === 'shipping' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <Truck className="text-amber-500" /> Tetapan Kurier & Penghantaran
+            </h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-900 p-6 rounded-2xl border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-amber-500 uppercase">Pos Kedah</span>
+                <div className="text-2xl font-black text-white">RM 6.00</div>
+                <p className="text-[11px] text-gray-400">Pantas ke seluruh kawasan Kedah</p>
               </div>
+              <div className="bg-slate-900 p-6 rounded-2xl border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-amber-500 uppercase">Semenanjung</span>
+                <div className="text-2xl font-black text-white">RM 8.00</div>
+                <p className="text-[11px] text-gray-400">Kadar rata seluruh Semenanjung Malaysia</p>
+              </div>
+              <div className="bg-slate-900 p-6 rounded-2xl border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-amber-500 uppercase">Sabah / Sarawak</span>
+                <div className="text-2xl font-black text-white">RM 15.00</div>
+                <p className="text-[11px] text-gray-400">Penghantaran ke Sabah & Sarawak</p>
+              </div>
+            </div>
+          </div>
+        )}
 
-              <button type="submit" className="btn btn-primary" style={{ padding: '14px', fontSize: '15px' }}>
-                Tüm Ayarları Kaydet
+        {/* 7. ToyyibPay Payment Tab */}
+        {activeTab === 'payment' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <CreditCard className="text-amber-500" /> Transaksi ToyyibPay & FPX
+            </h1>
+            <div className="bg-slate-900 p-6 rounded-2xl border border-white/10 space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-xs">
+                <ShieldCheck size={20} />
+                <span>Status ToyyibPay: Dihubungkan & Aktif secara langsung di Malaysia.</span>
+              </div>
+              <p className="text-xs text-gray-400">Semua bayaran masuk melalui akaun ToyyibPay akan dikemas kini secara automatik di dashboard ini.</p>
+            </div>
+          </div>
+        )}
+
+        {/* 8. Returns Tab */}
+        {activeTab === 'returns' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <CornerDownLeft className="text-amber-500" /> Permohonan Pulang Pelanggan
+            </h1>
+            <div className="bg-slate-900 p-6 rounded-2xl border border-white/10">
+              <p className="text-xs text-gray-400 text-center py-8">Tiada permohonan pemulangan barang yang menunggu buat masa ini.</p>
+            </div>
+          </div>
+        )}
+
+        {/* 9. Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <BarChart3 className="text-amber-500" /> Analitik Jualan Kedai
+            </h1>
+            <div className="bg-slate-900 p-6 rounded-2xl border border-white/10 space-y-4">
+              <div className="h-48 bg-black/40 rounded-xl border border-white/5 flex items-end justify-around p-4">
+                <div className="w-12 bg-amber-500 rounded-t-lg h-[40%]" />
+                <div className="w-12 bg-amber-500 rounded-t-lg h-[65%]" />
+                <div className="w-12 bg-amber-500 rounded-t-lg h-[85%]" />
+                <div className="w-12 bg-amber-500 rounded-t-lg h-[100%]" />
+              </div>
+              <p className="text-xs text-gray-400 text-center">Carta statistik trend jualan bulanan DIN'O EMPIRE.</p>
+            </div>
+          </div>
+        )}
+
+        {/* 10. Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6 max-w-2xl">
+            <h1 className="text-2xl font-black text-white flex items-center gap-2">
+              <SettingsIcon className="text-amber-500" /> Tetapan Sistem Kedai
+            </h1>
+            <form onSubmit={saveSettings} className="bg-slate-900 p-6 rounded-2xl border border-white/10 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Nama Kedai</label>
+                <input type="text" className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white text-xs font-semibold" value={settings.siteAdi || ''} onChange={e => setSettings({ ...settings, siteAdi: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">E-mel Hubungan</label>
+                <input type="email" className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white text-xs font-semibold" value={settings.iletisimEmail || ''} onChange={e => setSettings({ ...settings, iletisimEmail: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Nombor WhatsApp</label>
+                <input type="text" className="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white text-xs font-semibold" value={settings.whatsappNumarasi || ''} onChange={e => setSettings({ ...settings, whatsappNumarasi: e.target.value })} />
+              </div>
+              <button type="submit" className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform active:scale-95">
+                Simpan Tetapan
               </button>
             </form>
           </div>
         )}
       </main>
 
-      {/* Product Create/Edit Modal */}
-      {showProductModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '750px' }}>
-            <div className="modal-header">
-              <h3>{editingProduct ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowProductModal(false)}>
-                <X size={16} />
-              </button>
-            </div>
-            <form onSubmit={saveProduct} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-              <div className="modal-body">
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Ürün Adı *</label>
-                    <input
-                      type="text" className="form-control" value={productForm.ad}
-                      onChange={e => setProductForm({ ...productForm, ad: e.target.value })} required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Stok Adedi *</label>
-                    <input
-                      type="number" className="form-control" value={productForm.stokAdedi}
-                      onChange={e => setProductForm({ ...productForm, stokAdedi: parseInt(e.target.value, 10) })} required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Fiyat (₺) *</label>
-                    <input
-                      type="number" step="0.01" className="form-control" value={productForm.fiyat}
-                      onChange={e => setProductForm({ ...productForm, fiyat: e.target.value })} required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">İndirimli Fiyat (₺)</label>
-                    <input
-                      type="number" step="0.01" className="form-control" value={productForm.indirimliFiyat}
-                      onChange={e => setProductForm({ ...productForm, indirimliFiyat: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Kategori *</label>
-                    <select
-                      className="form-control" value={productForm.kategoriId}
-                      onChange={e => setProductForm({ ...productForm, kategoriId: e.target.value })} required
-                    >
-                      <option value="">Seçiniz</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.ad}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Marka *</label>
-                    <select
-                      className="form-control" value={productForm.markaId}
-                      onChange={e => setProductForm({ ...productForm, markaId: e.target.value })} required
-                    >
-                      <option value="">Seçiniz</option>
-                      {brands.map(b => <option key={b.id} value={b.id}>{b.ad}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Ağırlık (Kg) *</label>
-                    <input
-                      type="number" step="0.1" className="form-control" value={productForm.agirlik}
-                      onChange={e => setProductForm({ ...productForm, agirlik: parseFloat(e.target.value) })} required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Varyant Başlığı</label>
-                    <input
-                      type="text" className="form-control" placeholder="Örn: Renk Seçimi" value={productForm.varyantBasligi}
-                      onChange={e => setProductForm({ ...productForm, varyantBasligi: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Ürün Görseli (R2 Yükleyici - WebP Sıkıştırma)</label>
-                  <div className="image-upload-box">
-                    <input
-                      type="file" accept="image/*" style={{ display: 'none' }} id="prod-img"
-                      onChange={e => handleImageResizeAndUpload(e, 'product')}
-                    />
-                    <label htmlFor="prod-img" style={{ cursor: 'pointer', display: 'block' }}>
-                      <Upload size={32} style={{ color: 'var(--color-primary)', marginBottom: '8px' }} />
-                      <p style={{ fontWeight: 'bold', fontSize: '13px' }}>Görsel Seçmek İçin Tıklayın</p>
-                      <p style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px' }}>
-                        Seçilen görsel otomatik olarak 800x800 WebP formatına dönüştürülecektir.
-                      </p>
-                    </label>
-                  </div>
-                  {productForm.resimUrl && (
-                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img
-                        src={productForm.resimUrl.startsWith('http') ? productForm.resimUrl : `${settings.cdnUrl || config.cdnUrl}/${productForm.resimUrl}`}
-                        alt="Önizleme" className="image-preview"
-                      />
-                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', wordBreak: 'break-all' }}>{productForm.resimUrl}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Kısa Açıklama (Ürün kartında görünür)</label>
-                  <input
-                    type="text" className="form-control"
-                    placeholder="Örn: Yüksek performanslı koşu ayakkabısı"
-                    value={productForm.kisaAciklama}
-                    onChange={e => setProductForm({ ...productForm, kisaAciklama: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Renk Seçenekleri (Virgül ile ayırın)</label>
-                  <textarea
-                    className="form-control"
-                    placeholder="Siyah, Beyaz, Kırmızı"
-                    value={Array.isArray(productForm.renkSecenekleri) ? productForm.renkSecenekleri.join(', ') : ''}
-                    onChange={e => setProductForm({ ...productForm, renkSecenekleri: e.target.value.split(/[,\n]/).map(s => s.trim()).filter(Boolean) })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Boyut / Beden Seçenekleri (Virgül ile ayırın)</label>
-                  <textarea
-                    className="form-control"
-                    placeholder="S, M, L, XL  veya  36, 37, 38, 39"
-                    value={Array.isArray(productForm.boyutSecenekleri) ? productForm.boyutSecenekleri.join(', ') : ''}
-                    onChange={e => setProductForm({ ...productForm, boyutSecenekleri: e.target.value.split(/[,\n]/).map(s => s.trim()).filter(Boolean) })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Ürün Açıklaması (Detay Sayfası)</label>
-                  <textarea
-                    className="form-control" value={productForm.aciklama}
-                    onChange={e => setProductForm({ ...productForm, aciklama: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '10px' }}>
-                  <label className="form-check">
-                    <input type="checkbox" checked={productForm.aktif} onChange={e => setProductForm({ ...productForm, aktif: e.target.checked })} />
-                    <span>Ürün Satışta (Aktif)</span>
-                  </label>
-                  <label className="form-check">
-                    <input type="checkbox" checked={productForm.oneCikan} onChange={e => setProductForm({ ...productForm, oneCikan: e.target.checked })} />
-                    <span>Öne Çıkan Ürün</span>
-                  </label>
-                  <label className="form-check">
-                    <input type="checkbox" checked={productForm.firsatUrunu} onChange={e => setProductForm({ ...productForm, firsatUrunu: e.target.checked })} />
-                    <span>Fırsat Ürünü</span>
-                  </label>
-                  <label className="form-check">
-                    <input type="checkbox" checked={productForm.yeniUrun} onChange={e => setProductForm({ ...productForm, yeniUrun: e.target.checked })} />
-                    <span>Yeni Ürün</span>
-                  </label>
-                  <label className="form-check">
-                    <input type="checkbox" checked={productForm.cokSatanlar} onChange={e => setProductForm({ ...productForm, cokSatanlar: e.target.checked })} />
-                    <span>Çok Satanlar</span>
-                  </label>
-                  <label className="form-check">
-                    <input type="checkbox" checked={productForm.iadeImkaniVar !== false} onChange={e => setProductForm({ ...productForm, iadeImkaniVar: e.target.checked })} />
-                    <span>İade İmkânı Var</span>
-                  </label>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowProductModal(false)}>İptal</button>
-                <button type="submit" className="btn btn-primary">Kaydet</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Category Create/Edit Modal */}
-      {showCategoryModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '500px' }}>
-            <div className="modal-header">
-              <h3>{editingCategory ? 'Kategoriyi Düzenle' : 'Yeni Kategori Ekle'}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowCategoryModal(false)}>
-                <X size={16} />
-              </button>
-            </div>
-            <form onSubmit={saveCategory}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">Kategori Adı *</label>
-                  <input
-                    type="text" className="form-control" value={categoryForm.ad}
-                    onChange={e => setCategoryForm({ ...categoryForm, ad: e.target.value })} required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Görüntüleme Sırası</label>
-                  <input
-                    type="number" className="form-control" value={categoryForm.sira}
-                    onChange={e => setCategoryForm({ ...categoryForm, sira: parseInt(e.target.value, 10) })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Kategori Resmi</label>
-                  <input
-                    type="file" accept="image/*" onChange={e => handleImageResizeAndUpload(e, 'category')}
-                  />
-                  {categoryForm.resim && (
-                    <div style={{ marginTop: '10px' }}>
-                      <img
-                        src={categoryForm.resim.startsWith('http') ? categoryForm.resim : `${settings.cdnUrl || config.cdnUrl}/${categoryForm.resim}`}
-                        alt="" className="image-preview"
-                      />
-                    </div>
-                  )}
-                </div>
-                <label className="form-check" style={{ marginTop: '15px' }}>
-                  <input type="checkbox" checked={categoryForm.aktif} onChange={e => setCategoryForm({ ...categoryForm, aktif: e.target.checked })} />
-                  <span>Kategori Aktif</span>
-                </label>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(false)}>İptal</button>
-                <button type="submit" className="btn btn-primary">Kaydet</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Brand Create/Edit Modal */}
-      {showBrandModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '500px' }}>
-            <div className="modal-header">
-              <h3>{editingBrand ? 'Markayı Düzenle' : 'Yeni Marka Ekle'}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowBrandModal(false)}>
-                <X size={16} />
-              </button>
-            </div>
-            <form onSubmit={saveBrand}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">Marka Adı *</label>
-                  <input
-                    type="text" className="form-control" value={brandForm.ad}
-                    onChange={e => setBrandForm({ ...brandForm, ad: e.target.value })} required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Görüntüleme Sırası</label>
-                  <input
-                    type="number" className="form-control" value={brandForm.sira}
-                    onChange={e => setBrandForm({ ...brandForm, sira: parseInt(e.target.value, 10) })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Marka Logosu</label>
-                  <input
-                    type="file" accept="image/*" onChange={e => handleImageResizeAndUpload(e, 'brand')}
-                  />
-                  {brandForm.logoUrl && (
-                    <div style={{ marginTop: '10px' }}>
-                      <img
-                        src={brandForm.logoUrl.startsWith('http') ? brandForm.logoUrl : `${settings.cdnUrl || config.cdnUrl}/${brandForm.logoUrl}`}
-                        alt="" className="image-preview"
-                      />
-                    </div>
-                  )}
-                </div>
-                <label className="form-check" style={{ marginTop: '15px' }}>
-                  <input type="checkbox" checked={brandForm.aktif} onChange={e => setBrandForm({ ...brandForm, aktif: e.target.checked })} />
-                  <span>Marka Aktif</span>
-                </label>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowBrandModal(false)}>İptal</button>
-                <button type="submit" className="btn btn-primary">Kaydet</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Order Detail Modal */}
       {showOrderModal && selectedOrder && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '650px' }}>
-            <div className="modal-header">
-              <h3>Sipariş Detayı - #{selectedOrder.siparisNumarasi}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowOrderModal(false)}>
-                <X size={16} />
-              </button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 p-6 rounded-2xl max-w-lg w-full space-y-4">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+              <h3 className="font-black text-white text-base">Butiran Pesanan #{selectedOrder.siparisNumarasi}</h3>
+              <button onClick={() => setShowOrderModal(false)} className="text-gray-400 hover:text-white"><X size={18} /></button>
             </div>
-            <form onSubmit={saveOrderStatus}>
-              <div className="modal-body" style={{ fontSize: '13px' }}>
-                <div className="grid-2 mb-4" style={{ background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
-                  <div>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Müşteri Bilgileri</p>
-                    <p style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '4px' }}>{selectedOrder.ad} {selectedOrder.soyad}</p>
-                    <p>{selectedOrder.eposta}</p>
-                    <p>{selectedOrder.telefon}</p>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Teslimat Adresi</p>
-                    <p style={{ marginTop: '4px' }}>{selectedOrder.adres}</p>
-                    <p>{selectedOrder.ilce} / {selectedOrder.sehir} - {selectedOrder.postaKodu}</p>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p style={{ color: 'var(--color-text-muted)', marginBottom: '8px' }}>Sipariş Kalemleri</p>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '10px' }}>
-                    {selectedOrder.kalemler?.map(item => (
-                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
-                        <div>
-                          <span>{item.urunAdSnapshot || item.urun?.ad || '-'}</span>
-                          {item.secilenRenk && <span style={{ color: 'var(--color-primary)', marginLeft: '8px', fontSize: '11px' }}>({item.secilenRenk})</span>}
-                        </div>
-                        <div style={{ fontWeight: 'bold' }}>
-                          {item.adet} adet x ₺{item.urunFiyatSnapshot.toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontWeight: 'bold', fontSize: '14px' }}>
-                      <span>Toplam Tutar:</span>
-                      <span style={{ color: 'var(--color-primary)' }}>₺{selectedOrder.toplamTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="mb-4">Sipariş Yönetimi</h4>
-                  <div className="grid-2">
-                    <div className="form-group">
-                      <label className="form-label">Sipariş Durumu</label>
-                      <select
-                        className="form-control" value={orderStatusForm.durum}
-                        onChange={e => setOrderStatusForm({ ...orderStatusForm, durum: e.target.value })}
-                      >
-                        <option value="BEKLEMEDE">BEKLEMEDE</option>
-                        <option value="HAZIRLANIYOR">HAZIRLANIYOR</option>
-                        <option value="KARGOLANDI">KARGOLANDI</option>
-                        <option value="TESLIM_EDILDI">TESLIM_EDILDI</option>
-                        <option value="TAMAMLANDI">TAMAMLANDI</option>
-                        <option value="IPTAL_EDILDI">IPTAL_EDILDI</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Kargo Firması</label>
-                      <input
-                        type="text" className="form-control" placeholder="Örn: Yurtici" value={orderStatusForm.kargoFirmasi}
-                        onChange={e => setOrderStatusForm({ ...orderStatusForm, kargoFirmasi: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid-2">
-                    <div className="form-group">
-                      <label className="form-label">Kargo Takip No</label>
-                      <input
-                        type="text" className="form-control" value={orderStatusForm.kargoTakipNo}
-                        onChange={e => setOrderStatusForm({ ...orderStatusForm, kargoTakipNo: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Fatura No</label>
-                      <input
-                        type="text" className="form-control" value={orderStatusForm.faturaNo}
-                        onChange={e => setOrderStatusForm({ ...orderStatusForm, faturaNo: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Güncelleme Notu (Müşteri ve geçmişe eklenecek)</label>
-                    <input
-                      type="text" className="form-control" placeholder="Sipariş hazırlanmaya başlandı." value={orderStatusForm.adminNotu}
-                      onChange={e => setOrderStatusForm({ ...orderStatusForm, adminNotu: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {selectedOrder.gecmis && selectedOrder.gecmis.length > 0 && (
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="mb-3">İşlem Geçmişi</h4>
-                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {selectedOrder.gecmis.map(log => (
-                        <div key={log.id} style={{ display: 'flex', flexDirection: 'column', paddingBottom: '8px', borderBottom: '1px solid var(--border-glass)', gap: '4px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
-                              {log.eskiDurum || 'YENİ'} ➔ {log.yeniDurum}
-                            </span>
-                            <span style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}>
-                              {new Date(log.tarih).toLocaleString('tr-TR')}
-                            </span>
-                          </div>
-                          {log.not && <div style={{ color: 'var(--color-text-dimmed)', fontStyle: 'italic', paddingLeft: '6px', borderLeft: '2px solid var(--color-primary)' }}>Not: {log.not}</div>}
-                          <div style={{ color: 'var(--color-text-muted)', fontSize: '11px', display: 'flex', justifyContent: 'flex-end' }}>
-                            İşlem Yapan: {log.islemYapan}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowOrderModal(false)}>Kapat</button>
-                <button type="submit" className="btn btn-primary">Kaydet</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Return Detail Modal */}
-      {showReturnModal && selectedReturn && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>İade Talebi İnceleme - #{selectedReturn.siparis?.siparisNumarasi}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowReturnModal(false)}>
-                <X size={16} />
-              </button>
+            <div className="space-y-2 text-xs text-gray-300">
+              <p><strong className="text-white">Pelanggan:</strong> {selectedOrder.ad} {selectedOrder.soyad}</p>
+              <p><strong className="text-white">E-mel:</strong> {selectedOrder.eposta}</p>
+              <p><strong className="text-white">Telefon:</strong> {selectedOrder.telefon}</p>
+              <p><strong className="text-white">Alamat:</strong> {selectedOrder.adres}</p>
+              <p><strong className="text-white">Jumlah Besar:</strong> RM {Number(selectedOrder.toplamTutar).toFixed(2)}</p>
             </div>
-            <form onSubmit={saveReturnStatus}>
-              <div className="modal-body" style={{ fontSize: '13px' }}>
-                <div className="mb-4">
-                  <p style={{ color: 'var(--color-text-muted)' }}>Müşteri Açıklaması:</p>
-                  <p style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)', marginTop: '6px', fontSize: '14px', fontStyle: 'italic' }}>
-                    "{selectedReturn.aciklama}"
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <p style={{ color: 'var(--color-text-muted)', marginBottom: '8px' }}>Yüklenen Fotoğraflar:</p>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {Array.isArray(selectedReturn.fotografUrls) && selectedReturn.fotografUrls.map((url, i) => {
-                      const finalUrl = url.startsWith('http') ? url : `${settings.cdnUrl || config.cdnUrl}/${url}`;
-                      return (
-                        <a key={i} href={finalUrl} target="_blank" rel="noreferrer">
-                          <img src={finalUrl} alt="Kanıt" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-glass)' }} />
-                        </a>
-                      );
-                    })}
-                    {(!Array.isArray(selectedReturn.fotografUrls) || selectedReturn.fotografUrls.length === 0) && (
-                      <span style={{ color: 'var(--color-text-dimmed)' }}>Görsel yüklenmemiş.</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="mb-4">Talebi Karara Bağla</h4>
-                  <div className="form-group">
-                    <label className="form-label">Karar Durumu</label>
-                    <select
-                      className="form-control" value={returnStatusForm.durum}
-                      onChange={e => setReturnStatusForm({ ...returnStatusForm, durum: e.target.value })}
-                    >
-                      <option value="ONAYLANDI">ONAYLA (Ödeme iade edilecek)</option>
-                      <option value="REDDEDILDI">REDDET (Talebi geri çevir)</option>
-                      <option value="MUSTERI_GONDERIMI_BEKLENIYOR">Müşteri Gönderimi Bekleniyor</option>
-                      <option value="IADE_TAMAMLANDI">İade İşlemi Tamamlandı</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">İade Kargo Kodu (Varsa)</label>
-                    <input
-                      type="text" className="form-control" placeholder="Örn: 928374827" value={returnStatusForm.manuelIadeKodu}
-                      onChange={e => setReturnStatusForm({ ...returnStatusForm, manuelIadeKodu: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Yönetici İnceleme Notu</label>
-                    <textarea
-                      className="form-control" value={returnStatusForm.adminNotu}
-                      onChange={e => setReturnStatusForm({ ...returnStatusForm, adminNotu: e.target.value })}
-                      placeholder="İade talebiniz incelenerek onaylanmıştır..."
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowReturnModal(false)}>Kapat</button>
-                <button type="submit" className="btn btn-primary">Değerlendir</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Image Cropper Modal */}
-      {cropState.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 200 }}>
-          <div className="modal-content" style={{ maxWidth: '420px' }}>
-            <div className="modal-header">
-              <h3>Görseli Kırp</h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', textAlign: 'center' }}>
-                Görseli sürükleyerek hizalayabilir, aşağıdaki sürgü ile yakınlaştırabilirsiniz.
-              </p>
-
-              {/* Crop Container Box */}
-              <div
-                style={{
-                  width: '300px',
-                  height: '300px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  borderRadius: '14px',
-                  border: '2px solid var(--color-primary)',
-                  backgroundColor: '#000',
-                  cursor: 'move',
-                  userSelect: 'none'
-                }}
-                onMouseDown={handleCropMouseDown}
-                onMouseMove={handleCropMouseMove}
-                onMouseUp={handleCropMouseUp}
-                onMouseLeave={handleCropMouseUp}
-                onTouchStart={handleCropTouchStart}
-                onTouchMove={handleCropTouchMove}
-                onTouchEnd={handleCropMouseUp}
-              >
-                <img
-                  src={cropState.imageSrc}
-                  alt="Kırpılacak görsel"
-                  style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    pointerEvents: 'none',
-                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-                    transformOrigin: 'center center',
-                    transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-                  }}
-                />
-                {/* Overlay mask to show square boundary */}
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  border: '2px dashed rgba(255,255,255,0.4)',
-                  pointerEvents: 'none',
-                  borderRadius: '12px'
-                }} />
-              </div>
-
-              {/* Zoom Slider */}
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                  <span>Yakınlaştır</span>
-                  <span>{Math.round(zoom * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.05"
-                  value={zoom}
-                  onChange={(e) => setZoom(parseFloat(e.target.value))}
-                  style={{
-                    width: '100%',
-                    accentColor: 'var(--color-primary)',
-                    cursor: 'pointer'
-                  }}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}
-              >
-                İptal
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={executeCropAndUpload}
-              >
-                Kırp ve Yükle
-              </button>
-            </div>
+            <button onClick={() => setShowOrderModal(false)} className="w-full py-2.5 bg-amber-500 text-slate-950 font-black text-xs rounded-xl">
+              Tutup
+            </button>
           </div>
         </div>
       )}

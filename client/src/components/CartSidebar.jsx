@@ -3,10 +3,6 @@ import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-/**
- * Enhanced CartSidebar Component.
- * Features: Improved styling, animated sidebar, discount price display, better UX.
- */
 export function CartSidebar() {
     const {
         isSidebarOpen,
@@ -38,14 +34,14 @@ export function CartSidebar() {
             <div className={`fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b bg-linear-to-r from-brand-primary/10 to-transparent">
+                <div className="flex items-center justify-between px-6 py-4 border-b bg-amber-500/10">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center">
-                            <ShoppingBag size={20} className="text-corporate-black" />
+                        <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                            <ShoppingBag size={20} className="text-slate-950 font-bold" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-corporate-black">{t('cart.title')}</h2>
-                            <p className="text-sm text-gray-500">{cartCount} ürün</p>
+                            <h2 className="text-lg font-bold text-slate-900">Beg Beli-Belah Saya</h2>
+                            <p className="text-sm text-gray-500">{cartCount} item</p>
                         </div>
                     </div>
                     <button
@@ -63,13 +59,13 @@ export function CartSidebar() {
                             <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                                 <ShoppingBag size={48} className="text-gray-300" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-700 mb-2">Sepetiniz Boş</h3>
-                            <p className="text-gray-500 mb-6">Henüz sepetinize ürün eklemediniz.</p>
+                            <h3 className="text-lg font-bold text-gray-700 mb-2">Beg Anda Kosong</h3>
+                            <p className="text-gray-500 mb-6">Sila masukkan barangan pilihan anda ke dalam beg.</p>
                             <button
                                 onClick={closeSidebar}
-                                className="bg-brand-primary text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                                className="bg-amber-500 text-slate-950 px-6 py-3 rounded-full font-bold hover:bg-amber-400 transition-colors flex items-center gap-2"
                             >
-                                Alışverişe Başla
+                                Mulakan Belian
                                 <ArrowRight size={18} />
                             </button>
                         </div>
@@ -81,7 +77,6 @@ export function CartSidebar() {
 
                                 return (
                                     <li key={item.cartKey || item.id} className="flex gap-4 p-3 bg-gray-50 rounded-xl group hover:bg-gray-100 transition-colors">
-                                        {/* Image */}
                                         <div className="w-20 h-20 shrink-0 overflow-hidden rounded-lg bg-white border border-gray-200">
                                             {item.resimUrl ? (
                                                 <img
@@ -96,28 +91,22 @@ export function CartSidebar() {
                                             )}
                                         </div>
 
-                                        {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium text-sm text-corporate-black line-clamp-2 mb-1">
+                                            <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mb-1">
                                                 {item.ad}
                                             </h3>
-                                            {item.selectedColor && (
-                                                <p className="text-xs text-gray-500 mb-1">{item.varyantBasligi || 'Renk'}: {item.selectedColor}</p>
-                                            )}
 
-                                            {/* Price */}
                                             <div className="flex items-baseline gap-2 mb-2">
-                                                <span className={`font-bold ${hasDiscount ? 'text-action-red' : 'text-corporate-black'}`}>
-                                                    ₺{itemPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                                <span className={`font-bold ${hasDiscount ? 'text-amber-600' : 'text-slate-900'}`}>
+                                                    RM {itemPrice.toFixed(2)}
                                                 </span>
                                                 {hasDiscount && (
                                                     <span className="text-xs text-gray-400 line-through">
-                                                        ₺{Number(item.fiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                                        RM {Number(item.fiyat).toFixed(2)}
                                                     </span>
                                                 )}
                                             </div>
 
-                                            {/* Quantity Controls */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center border border-gray-200 rounded-lg bg-white">
                                                     <button
@@ -137,7 +126,7 @@ export function CartSidebar() {
 
                                                 <button
                                                     onClick={() => removeFromCart(item.cartKey || item.id)}
-                                                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-action-red hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
@@ -153,36 +142,20 @@ export function CartSidebar() {
                 {/* Footer */}
                 {cartItems.length > 0 && (
                     <div className="border-t bg-white px-6 py-6 space-y-4">
-                        {/* Subtotal */}
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Ara Toplam</span>
-                            <span className="text-xl font-black text-corporate-black">
-                                ₺{cartTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            <span className="text-gray-600 font-bold">Jumlah Kecil</span>
+                            <span className="text-xl font-black text-slate-900">
+                                RM {cartTotal.toFixed(2)}
                             </span>
                         </div>
 
-                        <p className="text-xs text-gray-500">
-                            Kargo ve vergiler ödeme adımında hesaplanır.
-                        </p>
-
-                        {/* Checkout Button */}
                         <button
                             onClick={handleCheckout}
-                            className="w-full bg-brand-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-corporate-black hover:text-indigo-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transform active:scale-95"
+                            className="w-full bg-amber-500 text-slate-950 py-4 rounded-xl font-black text-lg hover:bg-amber-400 transition-all shadow-lg flex items-center justify-center gap-2 transform active:scale-95"
                         >
-                            Ödemeye Geç
+                            Teruskan ke Pembayaran
                             <ArrowRight size={20} />
                         </button>
-
-                        {/* Bulk Order Info */}
-                        <div className="bg-blue-50 p-3 rounded-xl">
-                            <p className="text-xs text-blue-700 text-center">
-                                Toplu siparişler için{' '}
-                                <a href="mailto:satis@ecommerceflaredev.web.tr" className="font-bold underline">
-                                    satis@ecommerceflaredev.web.tr
-                                </a>
-                            </p>
-                        </div>
                     </div>
                 )}
             </div>
