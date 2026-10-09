@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="200" height="50">
+  <g transform="translate(10, 15)">
+    <rect x="10" y="25" width="50" height="50" rx="8" fill="#ffffff" />
+    <path d="M 25,25 C 25,12 45,12 45,25" stroke="#ffffff" stroke-width="6" fill="none" />
+    <circle cx="35" cy="45" r="10" fill="#4f46e5" />
+    <path d="M 31,45 L 39,45 M 35,41 L 35,49" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <text x="85" y="65" font-family="'Outfit', sans-serif" font-weight="900" font-size="42" fill="#ffffff" letter-spacing="-1.5">
+    E-MARKET
+  </text>
+</svg>

@@ -1,0 +1,2769 @@
+import { useState, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  Package,
+  Layers,
+  Tag,
+  ShoppingBag,
+  CornerDownLeft,
+  Settings as SettingsIcon,
+  LogOut,
+  Plus,
+  Edit2,
+  Trash2,
+  Upload,
+  TrendingUp,
+  ShoppingBag as OrdersIcon,
+  Eye,
+  X,
+  Sun,
+  Moon
+} from 'lucide-react';
+
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8787';
+  }
+  return 'https://api.ecommerceflaredev.web.tr';
+};
+
+const API_URL = getApiUrl();
+
+// Admin endpoints are called on the panel's own origin: the admin Worker forwards
+// /api/* to the API through a service binding, so the Cloudflare Access session
+// (and its signed Cf-Access-Jwt-Assertion header) covers every admin request.
+const isLocalhost = typeof window !== 'undefined' &&
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const ADMIN_API_URL = isLocalhost ? 'http://localhost:8787' : '';
+const config = { cdnUrl: '' };
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [theme, setTheme] = useState(localStorage.getItem('admin_theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('admin_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  // Data States
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [returns, setReturns] = useState([]);
+  const [settings, setSettings] = useState({
+    kargoAgirlikCarpani: 15.00,
+    ucretsizKargoAltLimit: 5000.00,
+    kargoPolitikaTuru: 'SABIT_UCRET',
+    kargoSabitUcret: 0,
+    kargoFiyatListesi: '[]',
+    maintenanceMode: false,
+    siteAdi: '',
+    iletisimEmail: '',
+    whatsappNumarasi: '',
+    telefon: '',
+    adres: '',
+    instagramUrl: '',
+    facebookUrl: '',
+    twitterUrl: '',
+    youtubeUrl: '',
+    metaPixelId: '',
+    gtmContainerId: '',
+    ga4MeasurementId: '',
+    googleMerchantToken: '',
+    hakkindaMetni: ''
+  });
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    totalOrders: 0,
+    activeProducts: 0,
+    pendingReturns: 0
+  });
+  const [copiedFeed, setCopiedFeed] = useState(false);
+
+  // Loading States
+  const [loading, setLoading] = useState(false);
+
+  // Modals & Form States
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [productForm, setProductForm] = useState({
+    ad: '', fiyat: '', indirimliFiyat: '', kisaAciklama: '',
+    renkSecenekleri: [], boyutSecenekleri: [], agirlik: 1,
+    aciklama: '', resimUrl: '', stokAdedi: 0, varyantBasligi: '',
+    kategoriId: '', markaId: '', aktif: true, oneCikan: false,
+    firsatUrunu: false, yeniUrun: false, cokSatanlar: false
+  });
+
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({ ad: '', resim: '', sira: 0, aktif: true });
+
+  const [showBrandModal, setShowBrandModal] = useState(false);
+  const [editingBrand, setEditingBrand] = useState(null);
+  const [brandForm, setBrandForm] = useState({ ad: '', logoUrl: '', sira: 0, aktif: true });
+
+  // --- New UX/UI Table States (Sorting, Filtering, Selection) ---
+  // Sort configs
+  const [productSort, setProductSort] = useState({ key: 'ad', direction: 'asc' });
+  const [categorySort, setCategorySort] = useState({ key: 'sira', direction: 'asc' });
+  const [brandSort, setBrandSort] = useState({ key: 'sira', direction: 'asc' });
+  const [orderSort, setOrderSort] = useState({ key: 'olusturulmaTarihi', direction: 'desc' });
+  const [returnSort, setReturnSort] = useState({ key: 'olusturulmaTarihi', direction: 'desc' });
+
+  // Filtering / Search configs
+  const [productSearch, setProductSearch] = useState('');
+  const [productFilterCategory, setProductFilterCategory] = useState('');
+  const [productFilterBrand, setProductFilterBrand] = useState('');
+  const [productFilterStatus, setProductFilterStatus] = useState('');
+
+  const [categorySearch, setCategorySearch] = useState('');
+  const [categoryFilterStatus, setCategoryFilterStatus] = useState('');
+
+  const [brandSearch, setBrandSearch] = useState('');
+  const [brandFilterStatus, setBrandFilterStatus] = useState('');
+
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderFilterStatus, setOrderFilterStatus] = useState('');
+  const [orderFilterFatura, setOrderFilterFatura] = useState('');
+
+  const [returnSearch, setReturnSearch] = useState('');
+  const [returnFilterStatus, setReturnFilterStatus] = useState('');
+
+  // Multi-Selection states
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [selectedBrandIds, setSelectedBrandIds] = useState([]);
+
+  // Clear selections on tab change
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setSelectedProductIds([]);
+    setSelectedCategoryIds([]);
+    setSelectedBrandIds([]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [activeTab]);
+
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderStatusForm, setOrderStatusForm] = useState({
+    durum: '', kargoTakipNo: '', kargoFirmasi: '', faturaNo: '', faturaDurumu: 'DUZENLENMEDI', adminNotu: ''
+  });
+
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedReturn, setSelectedReturn] = useState(null);
+  const [returnStatusForm, setReturnStatusForm] = useState({ durum: 'ONAYLANDI', adminNotu: '', manuelIadeKodu: '' });
+
+  const calculateStats = (ords, prods, rets) => {
+    const totalSales = ords
+      .filter(o => o.durum === 'TESLIM_EDILDI' || o.durum === 'TAMAMLANDI')
+      .reduce((sum, o) => sum + parseFloat(o.toplamTutar || 0), 0);
+    const activeProducts = prods.filter(p => p.aktif).length;
+    const pendingReturns = rets.filter(r => r.durum === 'ONAY_BEKLENIYOR').length;
+
+    setStats({
+      totalSales,
+      totalOrders: ords.length,
+      activeProducts,
+      pendingReturns
+    });
+  };
+
+  // Sign-in and sign-out are handled by Cloudflare Access.
+  const handleLogout = () => {
+    window.location.assign('/cdn-cgi/access/logout');
+  };
+
+  const adminRequest = async (url, options = {}) => {
+    try {
+      const res = await fetch(url, { ...options, credentials: 'same-origin' });
+      if (res.status === 401 || res.status === 403) {
+        // Access session expired: reloading sends the browser back through Access.
+        window.location.reload();
+        throw new Error('UNAUTHORIZED');
+      }
+      return res;
+    } catch (err) {
+      if (err.message === 'UNAUTHORIZED') {
+        throw err;
+      }
+      console.error('API request error:', err);
+      throw err;
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [prodRes, catRes, brandRes, orderRes, returnRes, settingsRes] = await Promise.all([
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/products`),
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories`),
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands`),
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/orders`),
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/returns`),
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`)
+      ]);
+
+      const prods = await prodRes.json();
+      const cats = await catRes.json();
+      const brandsData = await brandRes.json();
+      const ords = await orderRes.json();
+      const rets = await returnRes.json();
+      const setts = await settingsRes.json();
+
+      if (prods.status === 'success') setProducts(prods.data);
+      if (cats.status === 'success') setCategories(cats.data);
+      if (brandsData.status === 'success') setBrands(brandsData.data);
+      if (ords.status === 'success') {
+        setOrders(ords.data);
+        calculateStats(ords.data, prods.data || [], rets.data || []);
+      }
+      if (rets.status === 'success') setReturns(rets.data);
+      if (setts.status === 'success') setSettings(setts.data);
+
+    } catch (e) {
+      if (e.message === 'UNAUTHORIZED') {
+        console.warn('Cloudflare Access oturumu yenileniyor...');
+      } else {
+        console.error('Veri yükleme hatası:', e);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cloudflare Access has already authenticated the user before the page loads.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+  // Image Cropper States & Event Handlers
+  const [cropState, setCropState] = useState({
+    isOpen: false,
+    imageSrc: '',
+    type: '',
+    file: null
+  });
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleCropMouseDown = (e) => {
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - offset.x,
+      y: e.clientY - offset.y
+    });
+  };
+
+  const handleCropMouseMove = (e) => {
+    if (!isDragging) return;
+    setOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleCropMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleCropTouchStart = (e) => {
+    if (e.touches.length !== 1) return;
+    setIsDragging(true);
+    setDragStart({
+      x: e.touches[0].clientX - offset.x,
+      y: e.touches[0].clientY - offset.y
+    });
+  };
+
+  const handleCropTouchMove = (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    setOffset({
+      x: e.touches[0].clientX - dragStart.x,
+      y: e.touches[0].clientY - dragStart.y
+    });
+  };
+
+  // Triggers the interactive Image Cropper Modal
+  const handleImageResizeAndUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropState({
+        isOpen: true,
+        imageSrc: reader.result,
+        type: type,
+        file: file
+      });
+      setZoom(1);
+      setOffset({ x: 0, y: 0 });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  // Performs actual canvas cropping & direct R2 upload
+  const executeCropAndUpload = () => {
+    if (!cropState.file) return;
+    setLoading(true);
+
+    const img = new Image();
+    img.src = cropState.imageSrc;
+    img.onload = () => {
+      const boxSize = 300;
+      const canvasSize = 800;
+
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+
+      let W, H;
+      if (naturalWidth > naturalHeight) {
+        W = boxSize;
+        H = boxSize * (naturalHeight / naturalWidth);
+      } else {
+        H = boxSize;
+        W = boxSize * (naturalWidth / naturalHeight);
+      }
+
+      const X_start = (boxSize - W) / 2;
+      const Y_start = (boxSize - H) / 2;
+
+      const W_s = W * zoom;
+      const H_s = H * zoom;
+
+      const X_s = X_start + offset.x - (W_s - W) / 2;
+      const Y_s = Y_start + offset.y - (H_s - H) / 2;
+
+      const scaleFactor = canvasSize / boxSize;
+
+      const W_c = W_s * scaleFactor;
+      const H_c = H_s * scaleFactor;
+      const X_c = X_s * scaleFactor;
+      const Y_c = Y_s * scaleFactor;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+      ctx.drawImage(img, X_c, Y_c, W_c, H_c);
+
+      canvas.toBlob(async (blob) => {
+        const webpFile = new File([blob], cropState.file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
+        const formData = new FormData();
+        formData.append('file', webpFile);
+
+        try {
+          const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/upload`, {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.status === 'success') {
+            if (cropState.type === 'product') setProductForm(prev => ({ ...prev, resimUrl: data.key }));
+            if (cropState.type === 'category') setCategoryForm(prev => ({ ...prev, resim: data.key }));
+            if (cropState.type === 'brand') setBrandForm(prev => ({ ...prev, logoUrl: data.key }));
+            setCropState(prev => ({ ...prev, isOpen: false }));
+          } else {
+            alert('Görsel yüklenemedi: ' + data.errorMessage);
+          }
+        } catch (err) {
+          if (err.message !== 'UNAUTHORIZED') {
+            console.error(err);
+            alert('Görsel sunucuya yüklenirken bağlantı hatası oluştu!');
+          }
+        } finally {
+          setLoading(false);
+        }
+      }, 'image/webp', 0.85);
+    };
+  };
+
+  // Product CRUD
+  const saveProduct = async (e) => {
+    e.preventDefault();
+    const url = editingProduct
+      ? `${ADMIN_API_URL}/api/v1/admin/products/${editingProduct.id}`
+      : `${ADMIN_API_URL}/api/v1/admin/products`;
+    const method = editingProduct ? 'PUT' : 'POST';
+
+    try {
+      const res = await adminRequest(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productForm)
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setShowProductModal(false);
+        setEditingProduct(null);
+        fetchData();
+      } else {
+        alert('Kaydetme hatası: ' + data.errorMessage);
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('İstek gönderilirken hata oluştu.');
+      }
+    }
+  };
+
+  // --- UX/UI Sorting & Filtering Helpers ---
+  const handleSort = (key, currentSort, setSort) => {
+    let direction = 'asc';
+    if (currentSort.key === key && currentSort.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSort({ key, direction });
+  };
+
+  const getSortedData = (data, sortConfig, resolveNestedVal = null) => {
+    if (!sortConfig.key) return data;
+
+    return [...data].sort((a, b) => {
+      let valA = a[sortConfig.key];
+      let valB = b[sortConfig.key];
+
+      if (resolveNestedVal) {
+        valA = resolveNestedVal(a, sortConfig.key);
+        valB = resolveNestedVal(b, sortConfig.key);
+      }
+
+      if (valA === undefined || valA === null) valA = '';
+      if (valB === undefined || valB === null) valB = '';
+
+      if (typeof valA === 'string') {
+        return sortConfig.direction === 'asc'
+          ? valA.localeCompare(valB, 'tr-TR')
+          : valB.localeCompare(valA, 'tr-TR');
+      } else {
+        return sortConfig.direction === 'asc'
+          ? (valA > valB ? 1 : -1)
+          : (valA < valB ? 1 : -1);
+      }
+    });
+  };
+
+  const renderSortIndicator = (currentSort, key) => {
+    if (currentSort.key !== key) return <span className="sort-indicator">↕</span>;
+    return currentSort.direction === 'asc'
+      ? <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▲</span>
+      : <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▼</span>;
+  };
+
+  // --- Bulk Deletion Actions ---
+  const bulkDeleteProducts = async (ids) => {
+    if (!confirm(`Seçilen ${ids.length} ürünü silmek istediğinize emin misiniz?`)) return;
+    setLoading(true);
+    try {
+      const deletePromises = ids.map(id =>
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' })
+      );
+      await Promise.all(deletePromises);
+      setSelectedProductIds([]);
+      fetchData();
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Toplu silme sırasında bir hata oluştu.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const bulkDeleteCategories = async (ids) => {
+    if (!confirm(`Seçilen ${ids.length} kategoriyi silmek istediğinize emin misiniz?`)) return;
+    setLoading(true);
+    try {
+      const deletePromises = ids.map(id =>
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' })
+      );
+      await Promise.all(deletePromises);
+      setSelectedCategoryIds([]);
+      fetchData();
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Toplu silme sırasında bir hata oluştu.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const bulkDeleteBrands = async (ids) => {
+    if (!confirm(`Seçilen ${ids.length} markayı silmek istediğinize emin misiniz?`)) return;
+    setLoading(true);
+    try {
+      const deletePromises = ids.map(id =>
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' })
+      );
+      await Promise.all(deletePromises);
+      setSelectedBrandIds([]);
+      fetchData();
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Toplu silme sırasında bir hata oluştu.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
+    try {
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        fetchData();
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Silme hatası.');
+      }
+    }
+  };
+
+  // Category CRUD
+  const saveCategory = async (e) => {
+    e.preventDefault();
+    const url = editingCategory
+      ? `${ADMIN_API_URL}/api/v1/admin/categories/${editingCategory.id}`
+      : `${ADMIN_API_URL}/api/v1/admin/categories`;
+    const method = editingCategory ? 'PUT' : 'POST';
+
+    try {
+      const res = await adminRequest(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(categoryForm)
+      });
+      if ((await res.json()).status === 'success') {
+        setShowCategoryModal(false);
+        setEditingCategory(null);
+        fetchData();
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Kategori kaydedilemedi.');
+      }
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    if (!confirm('Kategoriyi silmek istediğinizden emin misiniz?')) return;
+    try {
+      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, {
+        method: 'DELETE'
+      });
+      fetchData();
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Kategori silinemedi.');
+      }
+    }
+  };
+
+  // Brand CRUD
+  const saveBrand = async (e) => {
+    e.preventDefault();
+    const url = editingBrand
+      ? `${ADMIN_API_URL}/api/v1/admin/brands/${editingBrand.id}`
+      : `${ADMIN_API_URL}/api/v1/admin/brands`;
+    const method = editingBrand ? 'PUT' : 'POST';
+
+    try {
+      const res = await adminRequest(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(brandForm)
+      });
+      if ((await res.json()).status === 'success') {
+        setShowBrandModal(false);
+        setEditingBrand(null);
+        fetchData();
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Marka kaydedilemedi.');
+      }
+    }
+  };
+
+  const deleteBrand = async (id) => {
+    if (!confirm('Markayı silmek istediğinizden emin misiniz?')) return;
+    try {
+      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, {
+        method: 'DELETE'
+      });
+      fetchData();
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Marka silinemedi.');
+      }
+    }
+  };
+
+  // Order Detail & Update
+  const viewOrder = async (order) => {
+    try {
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/orders/${order.id}`);
+      const data = await res.json();
+      if (data.status === 'success') {
+        const fullOrder = data.data;
+        setSelectedOrder(fullOrder);
+        setOrderStatusForm({
+          durum: fullOrder.durum,
+          kargoTakipNo: fullOrder.kargoTakipNo || '',
+          kargoFirmasi: fullOrder.kargoFirmasi || '',
+          faturaNo: fullOrder.faturaNo || '',
+          faturaDurumu: fullOrder.faturaDurumu || 'DUZENLENMEDI',
+          adminNotu: ''
+        });
+        setShowOrderModal(true);
+      } else {
+        alert('Sipariş detayları yüklenemedi: ' + data.errorMessage);
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Sipariş detayları yüklenirken hata oluştu.');
+      }
+    }
+  };
+
+  const saveOrderStatus = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/orders/${selectedOrder.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderStatusForm)
+      });
+      if ((await res.json()).status === 'success') {
+        setShowOrderModal(false);
+        fetchData();
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Sipariş güncellenemedi.');
+      }
+    }
+  };
+
+  // Return Detail & Update
+  const viewReturn = (ret) => {
+    setSelectedReturn(ret);
+    setReturnStatusForm({
+      durum: 'ONAYLANDI',
+      adminNotu: ret.adminNotu || '',
+      manuelIadeKodu: ret.manuelIadeKodu || ''
+    });
+    setShowReturnModal(true);
+  };
+
+  const saveReturnStatus = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/returns/${selectedReturn.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(returnStatusForm)
+      });
+      if ((await res.json()).status === 'success') {
+        setShowReturnModal(false);
+        fetchData();
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('İade talebi güncellenemedi.');
+      }
+    }
+  };
+
+  // Settings Save
+  const saveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+      });
+      if ((await res.json()).status === 'success') {
+        alert('Sistem ayarları başarıyla güncellendi.');
+        fetchData();
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') {
+        console.error(err);
+        alert('Ayarlar kaydedilemedi.');
+      }
+    }
+  };
+
+  // Dashboard Main View
+  return (
+    <div className="admin-layout">
+      {/* Sidebar Navigation */}
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-logo">E</div>
+          <span className="sidebar-title">E-Market Admin</span>
+        </div>
+        <nav className="nav-menu">
+          <li className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('dashboard')}>
+              <LayoutDashboard size={18} /> Kontrol Paneli
+            </button>
+          </li>
+          <li className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('products')}>
+              <Package size={18} /> Ürün Yönetimi
+            </button>
+          </li>
+          <li className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('categories')}>
+              <Layers size={18} /> Kategoriler
+            </button>
+          </li>
+          <li className={`nav-item ${activeTab === 'brands' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('brands')}>
+              <Tag size={18} /> Markalar
+            </button>
+          </li>
+          <li className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('orders')}>
+              <ShoppingBag size={18} /> Siparişler
+            </button>
+          </li>
+          <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('returns')}>
+              <CornerDownLeft size={18} /> İade Talepleri
+            </button>
+          </li>
+          <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('settings')}>
+              <SettingsIcon size={18} /> Sistem Ayarları
+            </button>
+          </li>
+        </nav>
+        <div className="sidebar-footer">
+          <button className="btn btn-secondary" onClick={toggleTheme} style={{ width: '100%', gap: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            <span>{theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}</span>
+          </button>
+          <button className="btn btn-secondary" onClick={handleLogout} style={{ width: '100%', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LogOut size={16} /> Oturumu Kapat
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Pane */}
+      <main className="main-content">
+        {loading && (
+          <div style={{ position: 'fixed', top: 20, right: 20, background: 'var(--color-primary)', color: '#000', padding: '10px 20px', borderRadius: '30px', fontWeight: 'bold', fontSize: '13px', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
+            <div style={{ width: '12px', height: '12px', border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%' }} className="animate-spin" />
+            İşlem Yapılıyor...
+          </div>
+        )}
+
+        {/* Tab 1: Dashboard */}
+        {activeTab === 'dashboard' && (
+          <div>
+            <div className="content-header">
+              <h1 className="content-title">Genel Durum</h1>
+            </div>
+
+            <div className="dashboard-grid">
+              <div className="card">
+                <div className="kpi-title">Toplam Ciro</div>
+                <div className="kpi-value">₺{stats.totalSales.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div>
+                <div className="kpi-trend up"><TrendingUp size={14} /> Teslim Edilen Siparişler</div>
+              </div>
+              <div className="card">
+                <div className="kpi-title">Toplam Sipariş</div>
+                <div className="kpi-value">{stats.totalOrders}</div>
+                <div className="kpi-trend"><OrdersIcon size={14} /> Toplam Alışveriş</div>
+              </div>
+              <div className="card">
+                <div className="kpi-title">Aktif Ürün Sayısı</div>
+                <div className="kpi-value">{stats.activeProducts}</div>
+                <div className="kpi-trend"><Package size={14} /> Satıştaki Benzersiz Ürün</div>
+              </div>
+              <div className="card">
+                <div className="kpi-title">Bekleyen İade Talebi</div>
+                <div className="kpi-value">{stats.pendingReturns}</div>
+                <div className="kpi-trend down"><CornerDownLeft size={14} /> Onay Bekleyen İadeler</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <h2 className="mb-4">Son Siparişler</h2>
+              <div className="table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Sipariş No</th>
+                      <th>Müşteri</th>
+                      <th>Tarih</th>
+                      <th>Tutar</th>
+                      <th>Durum</th>
+                      <th>İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.slice(0, 10).map(order => (
+                      <tr key={order.id}>
+                        <td style={{ fontWeight: 'bold' }}>#{order.siparisNumarasi}</td>
+                        <td>{order.ad} {order.soyad}</td>
+                        <td>{new Date(order.olusturulmaTarihi).toLocaleDateString('tr-TR')}</td>
+                        <td>₺{order.toplamTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+                        <td>
+                          <span className={`badge badge-${order.durum === 'BEKLEMEDE' ? 'pending' : order.durum === 'TESLIM_EDILDI' || order.durum === 'TAMAMLANDI' ? 'success' : order.durum === 'KARGOLANDI' ? 'shipped' : 'error'}`}>
+                            {order.durum}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="btn btn-secondary btn-sm" onClick={() => viewOrder(order)}>
+                            <Eye size={12} /> Detay
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {orders.length === 0 && (
+                      <tr>
+                        <td colSpan="6" style={{ textAlignment: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
+                          Kayıtlı sipariş bulunmamaktadır.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Products */}
+        {activeTab === 'products' && (() => {
+          const filteredProducts = products.filter(prod => {
+            const matchesSearch = !productSearch ||
+              prod.ad.toLowerCase().includes(productSearch.toLowerCase()) ||
+              (prod.aciklama && prod.aciklama.toLowerCase().includes(productSearch.toLowerCase()));
+            const matchesCategory = !productFilterCategory || prod.kategoriId === productFilterCategory;
+            const matchesBrand = !productFilterBrand || prod.markaId === productFilterBrand;
+            const matchesStatus = !productFilterStatus ||
+              (productFilterStatus === 'active' ? prod.aktif : !prod.aktif);
+            return matchesSearch && matchesCategory && matchesBrand && matchesStatus;
+          });
+
+          const sortedProducts = getSortedData(filteredProducts, productSort, (prod, key) => {
+            if (key === 'marka') return prod.marka?.ad || '';
+            if (key === 'kategori') return prod.kategori?.ad || '';
+            return prod[key];
+          });
+
+          const toggleSelectAllProducts = () => {
+            if (filteredProducts.length === 0) return;
+            if (selectedProductIds.length === filteredProducts.length) {
+              setSelectedProductIds([]);
+            } else {
+              setSelectedProductIds(filteredProducts.map(p => p.id));
+            }
+          };
+
+          const toggleSelectProduct = (id) => {
+            setSelectedProductIds(prev =>
+              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+            );
+          };
+
+          return (
+            <div>
+              <div className="content-header">
+                <h1 className="content-title">Ürün Kataloğu</h1>
+                <button className="btn btn-primary" onClick={() => {
+                  setEditingProduct(null);
+                  setProductForm({
+                    ad: '', fiyat: '', indirimliFiyat: '', kisaAciklama: '',
+                    renkSecenekleri: [], boyutSecenekleri: [], agirlik: 1,
+                    aciklama: '', resimUrl: '', stokAdedi: 0, varyantBasligi: '',
+                    kategoriId: categories[0]?.id || '', markaId: brands[0]?.id || '', aktif: true, oneCikan: false,
+                    firsatUrunu: false, yeniUrun: false, cokSatanlar: false
+                  });
+                  setShowProductModal(true);
+                }}>
+                  <Plus size={16} /> Yeni Ürün Ekle
+                </button>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="filter-bar">
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ürün adı veya açıklama ara..."
+                    value={productSearch}
+                    onChange={e => setProductSearch(e.target.value)}
+                  />
+                </div>
+                <div className="filter-group">
+                  <select
+                    className="form-control"
+                    value={productFilterCategory}
+                    onChange={e => setProductFilterCategory(e.target.value)}
+                    style={{ width: '160px' }}
+                  >
+                    <option value="">Tüm Kategoriler</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.ad}</option>)}
+                  </select>
+                  <select
+                    className="form-control"
+                    value={productFilterBrand}
+                    onChange={e => setProductFilterBrand(e.target.value)}
+                    style={{ width: '160px' }}
+                  >
+                    <option value="">Tüm Markalar</option>
+                    {brands.map(b => <option key={b.id} value={b.id}>{b.ad}</option>)}
+                  </select>
+                  <select
+                    className="form-control"
+                    value={productFilterStatus}
+                    onChange={e => setProductFilterStatus(e.target.value)}
+                    style={{ width: '120px' }}
+                  >
+                    <option value="">Tüm Durumlar</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Gizli</option>
+                  </select>
+                  {(productSearch || productFilterCategory || productFilterBrand || productFilterStatus) && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setProductSearch('');
+                        setProductFilterCategory('');
+                        setProductFilterBrand('');
+                        setProductFilterStatus('');
+                      }}
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bulk Actions Panel */}
+              {selectedProductIds.length > 0 && (
+                <div className="bulk-actions-bar">
+                  <div style={{ fontSize: '13px', fontWeight: '600' }}>
+                    📦 {selectedProductIds.length} ürün seçildi
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => bulkDeleteProducts(selectedProductIds)}
+                    >
+                      Seçilenleri Sil
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setSelectedProductIds([])}
+                    >
+                      Seçimi Temizle
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="card">
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '40px', paddingRight: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
+                            onChange={toggleSelectAllProducts}
+                          />
+                        </th>
+                        <th>Görsel</th>
+                        <th className="sortable-header" onClick={() => handleSort('ad', productSort, setProductSort)}>
+                          Ürün Adı {renderSortIndicator(productSort, 'ad')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('marka', productSort, setProductSort)}>
+                          Marka {renderSortIndicator(productSort, 'marka')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('kategori', productSort, setProductSort)}>
+                          Kategori {renderSortIndicator(productSort, 'kategori')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('fiyat', productSort, setProductSort)}>
+                          Fiyat {renderSortIndicator(productSort, 'fiyat')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('stokAdedi', productSort, setProductSort)}>
+                          Stok {renderSortIndicator(productSort, 'stokAdedi')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('aktif', productSort, setProductSort)}>
+                          Durum {renderSortIndicator(productSort, 'aktif')}
+                        </th>
+                        <th style={{ width: '120px' }}>İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedProducts.map(prod => {
+                        const imageCdnUrl = prod.resimUrl && !prod.resimUrl.startsWith('http')
+                          ? `${settings.cdnUrl || config.cdnUrl}/${prod.resimUrl}`
+                          : prod.resimUrl;
+
+                        return (
+                          <tr key={prod.id}>
+                            <td style={{ paddingRight: 0 }}>
+                              <input
+                                type="checkbox"
+                                checked={selectedProductIds.includes(prod.id)}
+                                onChange={() => toggleSelectProduct(prod.id)}
+                              />
+                            </td>
+                            <td>
+                              <img
+                                src={imageCdnUrl || 'https://via.placeholder.com/50x50?text=Yok'}
+                                alt=""
+                                style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', padding: '2px' }}
+                              />
+                            </td>
+                            <td style={{ fontWeight: '600' }}>{prod.ad}</td>
+                            <td>{prod.marka?.ad || '-'}</td>
+                            <td>{prod.kategori?.ad || '-'}</td>
+                            <td>
+                              {prod.indirimliFiyat ? (
+                                <div>
+                                  <span style={{ textDecoration: 'line-through', color: 'var(--color-text-dimmed)', fontSize: '12px', marginRight: '6px' }}>₺{prod.fiyat}</span>
+                                  <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>₺{prod.indirimliFiyat}</span>
+                                </div>
+                              ) : (
+                                <span>₺{prod.fiyat}</span>
+                              )}
+                            </td>
+                            <td>{prod.stokAdedi}</td>
+                            <td>
+                              <span className={`badge ${prod.aktif ? 'badge-success' : 'badge-error'}`}>
+                                {prod.aktif ? 'Aktif' : 'Gizli'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="flex-gap">
+                                <button className="btn btn-secondary btn-sm" onClick={() => {
+                                  setEditingProduct(prod);
+                                  setProductForm({
+                                    ad: prod.ad, fiyat: prod.fiyat, indirimliFiyat: prod.indirimliFiyat || '',
+                                    kisaAciklama: prod.kisaAciklama || '',
+                                    renkSecenekleri: prod.renkSecenekleri || [],
+                                    boyutSecenekleri: prod.boyutSecenekleri || [],
+                                    agirlik: prod.agirlik, aciklama: prod.aciklama || '', resimUrl: prod.resimUrl || '',
+                                    stokAdedi: prod.stokAdedi, varyantBasligi: prod.varyantBasligi || '',
+                                    kategoriId: prod.kategoriId || '', markaId: prod.markaId || '',
+                                    aktif: prod.aktif, oneCikan: prod.oneCikan, firsatUrunu: prod.firsatUrunu,
+                                    yeniUrun: prod.yeniUrun, cokSatanlar: prod.cokSatanlar
+                                  });
+                                  setShowProductModal(true);
+                                }}>
+                                  <Edit2 size={12} />
+                                </button>
+                                <button className="btn btn-danger btn-sm" onClick={() => deleteProduct(prod.id)}>
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {sortedProducts.length === 0 && (
+                        <tr>
+                          <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
+                            Aradığınız kriterlere uygun ürün bulunamadı.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tab 3: Categories */}
+        {activeTab === 'categories' && (() => {
+          const filteredCategories = categories.filter(cat => {
+            const matchesSearch = !categorySearch || cat.ad.toLowerCase().includes(categorySearch.toLowerCase());
+            const matchesStatus = !categoryFilterStatus ||
+              (categoryFilterStatus === 'active' ? cat.aktif : !cat.aktif);
+            return matchesSearch && matchesStatus;
+          });
+
+          const sortedCategories = getSortedData(filteredCategories, categorySort);
+
+          const toggleSelectAllCategories = () => {
+            if (filteredCategories.length === 0) return;
+            if (selectedCategoryIds.length === filteredCategories.length) {
+              setSelectedCategoryIds([]);
+            } else {
+              setSelectedCategoryIds(filteredCategories.map(c => c.id));
+            }
+          };
+
+          const toggleSelectCategory = (id) => {
+            setSelectedCategoryIds(prev =>
+              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+            );
+          };
+
+          return (
+            <div>
+              <div className="content-header">
+                <h1 className="content-title">Kategoriler</h1>
+                <button className="btn btn-primary" onClick={() => {
+                  setEditingCategory(null);
+                  setCategoryForm({ ad: '', resim: '', sira: 0, aktif: true });
+                  setShowCategoryModal(true);
+                }}>
+                  <Plus size={16} /> Yeni Kategori Ekle
+                </button>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="filter-bar">
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Kategori adı ara..."
+                    value={categorySearch}
+                    onChange={e => setCategorySearch(e.target.value)}
+                  />
+                </div>
+                <div className="filter-group">
+                  <select
+                    className="form-control"
+                    value={categoryFilterStatus}
+                    onChange={e => setCategoryFilterStatus(e.target.value)}
+                    style={{ width: '120px' }}
+                  >
+                    <option value="">Tüm Durumlar</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Gizli</option>
+                  </select>
+                  {(categorySearch || categoryFilterStatus) && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setCategorySearch('');
+                        setCategoryFilterStatus('');
+                      }}
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bulk Actions Panel */}
+              {selectedCategoryIds.length > 0 && (
+                <div className="bulk-actions-bar">
+                  <div style={{ fontSize: '13px', fontWeight: '600' }}>
+                    📁 {selectedCategoryIds.length} kategori seçildi
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => bulkDeleteCategories(selectedCategoryIds)}
+                    >
+                      Seçilenleri Sil
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setSelectedCategoryIds([])}
+                    >
+                      Seçimi Temizle
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="card" style={{ maxWidth: '800px' }}>
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '40px', paddingRight: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={filteredCategories.length > 0 && selectedCategoryIds.length === filteredCategories.length}
+                            onChange={toggleSelectAllCategories}
+                          />
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('sira', categorySort, setCategorySort)}>
+                          Sıra {renderSortIndicator(categorySort, 'sira')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('ad', categorySort, setCategorySort)}>
+                          Kategori Adı {renderSortIndicator(categorySort, 'ad')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('aktif', categorySort, setCategorySort)}>
+                          Durum {renderSortIndicator(categorySort, 'aktif')}
+                        </th>
+                        <th style={{ width: '120px' }}>İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedCategories.map(cat => (
+                        <tr key={cat.id}>
+                          <td style={{ paddingRight: 0 }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedCategoryIds.includes(cat.id)}
+                              onChange={() => toggleSelectCategory(cat.id)}
+                            />
+                          </td>
+                          <td>{cat.sira}</td>
+                          <td style={{ fontWeight: '600' }}>{cat.ad}</td>
+                          <td>
+                            <span className={`badge ${cat.aktif ? 'badge-success' : 'badge-error'}`}>
+                              {cat.aktif ? 'Aktif' : 'Gizli'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="flex-gap">
+                              <button className="btn btn-secondary btn-sm" onClick={() => {
+                                setEditingCategory(cat);
+                                setCategoryForm({ ad: cat.ad, resim: cat.resim || '', sira: cat.sira, aktif: cat.aktif });
+                                setShowCategoryModal(true);
+                              }}>
+                                <Edit2 size={12} />
+                              </button>
+                              <button className="btn btn-danger btn-sm" onClick={() => deleteCategory(cat.id)}>
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {sortedCategories.length === 0 && (
+                        <tr>
+                          <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
+                            Kategori bulunamadı.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tab 4: Brands */}
+        {activeTab === 'brands' && (() => {
+          const filteredBrands = brands.filter(brand => {
+            const matchesSearch = !brandSearch || brand.ad.toLowerCase().includes(brandSearch.toLowerCase());
+            const matchesStatus = !brandFilterStatus ||
+              (brandFilterStatus === 'active' ? brand.aktif : !brand.aktif);
+            return matchesSearch && matchesStatus;
+          });
+
+          const sortedBrands = getSortedData(filteredBrands, brandSort);
+
+          const toggleSelectAllBrands = () => {
+            if (filteredBrands.length === 0) return;
+            if (selectedBrandIds.length === filteredBrands.length) {
+              setSelectedBrandIds([]);
+            } else {
+              setSelectedBrandIds(filteredBrands.map(b => b.id));
+            }
+          };
+
+          const toggleSelectBrand = (id) => {
+            setSelectedBrandIds(prev =>
+              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+            );
+          };
+
+          return (
+            <div>
+              <div className="content-header">
+                <h1 className="content-title">Markalar</h1>
+                <button className="btn btn-primary" onClick={() => {
+                  setEditingBrand(null);
+                  setBrandForm({ ad: '', logoUrl: '', sira: 0, aktif: true });
+                  setShowBrandModal(true);
+                }}>
+                  <Plus size={16} /> Yeni Marka Ekle
+                </button>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="filter-bar">
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Marka adı ara..."
+                    value={brandSearch}
+                    onChange={e => setBrandSearch(e.target.value)}
+                  />
+                </div>
+                <div className="filter-group">
+                  <select
+                    className="form-control"
+                    value={brandFilterStatus}
+                    onChange={e => setBrandFilterStatus(e.target.value)}
+                    style={{ width: '120px' }}
+                  >
+                    <option value="">Tüm Durumlar</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Gizli</option>
+                  </select>
+                  {(brandSearch || brandFilterStatus) && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setBrandSearch('');
+                        setBrandFilterStatus('');
+                      }}
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bulk Actions Panel */}
+              {selectedBrandIds.length > 0 && (
+                <div className="bulk-actions-bar">
+                  <div style={{ fontSize: '13px', fontWeight: '600' }}>
+                    🏷️ {selectedBrandIds.length} marka seçildi
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => bulkDeleteBrands(selectedBrandIds)}
+                    >
+                      Seçilenleri Sil
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setSelectedBrandIds([])}
+                    >
+                      Seçimi Temizle
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="card" style={{ maxWidth: '800px' }}>
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '40px', paddingRight: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={filteredBrands.length > 0 && selectedBrandIds.length === filteredBrands.length}
+                            onChange={toggleSelectAllBrands}
+                          />
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('sira', brandSort, setBrandSort)}>
+                          Sıra {renderSortIndicator(brandSort, 'sira')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('ad', brandSort, setBrandSort)}>
+                          Marka Adı {renderSortIndicator(brandSort, 'ad')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('aktif', brandSort, setBrandSort)}>
+                          Durum {renderSortIndicator(brandSort, 'aktif')}
+                        </th>
+                        <th style={{ width: '120px' }}>İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedBrands.map(brand => (
+                        <tr key={brand.id}>
+                          <td style={{ paddingRight: 0 }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedBrandIds.includes(brand.id)}
+                              onChange={() => toggleSelectBrand(brand.id)}
+                            />
+                          </td>
+                          <td>{brand.sira}</td>
+                          <td style={{ fontWeight: '600' }}>{brand.ad}</td>
+                          <td>
+                            <span className={`badge ${brand.aktif ? 'badge-success' : 'badge-error'}`}>
+                              {brand.aktif ? 'Aktif' : 'Gizli'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="flex-gap">
+                              <button className="btn btn-secondary btn-sm" onClick={() => {
+                                setEditingBrand(brand);
+                                setBrandForm({ ad: brand.ad, logoUrl: brand.logoUrl || '', sira: brand.sira, aktif: brand.aktif });
+                                setShowBrandModal(true);
+                              }}>
+                                <Edit2 size={12} />
+                              </button>
+                              <button className="btn btn-danger btn-sm" onClick={() => deleteBrand(brand.id)}>
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {sortedBrands.length === 0 && (
+                        <tr>
+                          <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
+                            Marka bulunamadı.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tab 5: Orders */}
+        {activeTab === 'orders' && (() => {
+          const filteredOrders = orders.filter(order => {
+            const matchesSearch = !orderSearch ||
+              order.siparisNumarasi.toLowerCase().includes(orderSearch.toLowerCase()) ||
+              `${order.ad} ${order.soyad}`.toLowerCase().includes(orderSearch.toLowerCase()) ||
+              (order.telefon && order.telefon.toLowerCase().includes(orderSearch.toLowerCase())) ||
+              (order.eposta && order.eposta.toLowerCase().includes(orderSearch.toLowerCase()));
+            const matchesStatus = !orderFilterStatus || order.durum === orderFilterStatus;
+            const matchesFatura = !orderFilterFatura || order.faturaDurumu === orderFilterFatura;
+            return matchesSearch && matchesStatus && matchesFatura;
+          });
+
+          const sortedOrders = getSortedData(filteredOrders, orderSort);
+
+          return (
+            <div>
+              <div className="content-header">
+                <h1 className="content-title">Sipariş Yönetimi</h1>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="filter-bar">
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Sipariş no, müşteri adı, e-posta veya telefon ara..."
+                    value={orderSearch}
+                    onChange={e => setOrderSearch(e.target.value)}
+                  />
+                </div>
+                <div className="filter-group">
+                  <select
+                    className="form-control"
+                    value={orderFilterStatus}
+                    onChange={e => setOrderFilterStatus(e.target.value)}
+                    style={{ width: '160px' }}
+                  >
+                    <option value="">Tüm Durumlar</option>
+                    <option value="BEKLEMEDE">BEKLEMEDE</option>
+                    <option value="HAZIRLANIYOR">HAZIRLANIYOR</option>
+                    <option value="KARGOLANDI">KARGOLANDI</option>
+                    <option value="TESLIM_EDILDI">TESLIM_EDILDI</option>
+                    <option value="TAMAMLANDI">TAMAMLANDI</option>
+                    <option value="IPTAL_EDILDI">IPTAL_EDILDI</option>
+                  </select>
+                  <select
+                    className="form-control"
+                    value={orderFilterFatura}
+                    onChange={e => setOrderFilterFatura(e.target.value)}
+                    style={{ width: '160px' }}
+                  >
+                    <option value="">Tüm Fatura Durumları</option>
+                    <option value="DUZENLENMEDI">DUZENLENMEDI</option>
+                    <option value="DUZENLENDI">DUZENLENDI</option>
+                    <option value="ODENDI">ODENDI</option>
+                  </select>
+                  {(orderSearch || orderFilterStatus || orderFilterFatura) && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setOrderSearch('');
+                        setOrderFilterStatus('');
+                        setOrderFilterFatura('');
+                      }}
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th className="sortable-header" onClick={() => handleSort('siparisNumarasi', orderSort, setOrderSort)}>
+                          Sipariş No {renderSortIndicator(orderSort, 'siparisNumarasi')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('ad', orderSort, setOrderSort)}>
+                          Müşteri {renderSortIndicator(orderSort, 'ad')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('olusturulmaTarihi', orderSort, setOrderSort)}>
+                          Tarih {renderSortIndicator(orderSort, 'olusturulmaTarihi')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('toplamTutar', orderSort, setOrderSort)}>
+                          Tutar {renderSortIndicator(orderSort, 'toplamTutar')}
+                        </th>
+                        <th>Kargo</th>
+                        <th className="sortable-header" onClick={() => handleSort('faturaDurumu', orderSort, setOrderSort)}>
+                          Fatura {renderSortIndicator(orderSort, 'faturaDurumu')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('durum', orderSort, setOrderSort)}>
+                          Durum {renderSortIndicator(orderSort, 'durum')}
+                        </th>
+                        <th>İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedOrders.map(order => (
+                        <tr key={order.id}>
+                          <td style={{ fontWeight: 'bold' }}>#{order.siparisNumarasi}</td>
+                          <td>{order.ad} {order.soyad}</td>
+                          <td>{new Date(order.olusturulmaTarihi).toLocaleDateString('tr-TR')}</td>
+                          <td>₺{order.toplamTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+                          <td>{order.kargoFirmasi || '-'}</td>
+                          <td>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.faturaDurumu === 'ODENDI' ? 'var(--status-success)' : 'var(--color-text-dimmed)' }}>
+                              {order.faturaDurumu}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`badge badge-${order.durum === 'BEKLEMEDE' ? 'pending' : order.durum === 'TESLIM_EDILDI' || order.durum === 'TAMAMLANDI' ? 'success' : order.durum === 'KARGOLANDI' ? 'shipped' : 'error'}`}>
+                              {order.durum}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn btn-secondary btn-sm" onClick={() => viewOrder(order)}>
+                              <Eye size={12} /> İncele
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {sortedOrders.length === 0 && (
+                        <tr>
+                          <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
+                            Kayıtlı sipariş bulunmamaktadır.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tab 6: Returns */}
+        {activeTab === 'returns' && (() => {
+          const filteredReturns = returns.filter(ret => {
+            const matchesSearch = !returnSearch ||
+              (ret.siparis && ret.siparis.siparisNumarasi.toLowerCase().includes(returnSearch.toLowerCase())) ||
+              (ret.siparis && `${ret.siparis.ad} ${ret.siparis.soyad}`.toLowerCase().includes(returnSearch.toLowerCase()));
+            const matchesStatus = !returnFilterStatus || ret.durum === returnFilterStatus;
+            return matchesSearch && matchesStatus;
+          });
+
+          const sortedReturns = getSortedData(filteredReturns, returnSort, (ret, key) => {
+            if (key === 'siparisNumarasi') return ret.siparis?.siparisNumarasi || '';
+            return ret[key];
+          });
+
+          return (
+            <div>
+              <div className="content-header">
+                <h1 className="content-title">İade Talepleri</h1>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="filter-bar">
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Sipariş no veya müşteri adı ara..."
+                    value={returnSearch}
+                    onChange={e => setReturnSearch(e.target.value)}
+                  />
+                </div>
+                <div className="filter-group">
+                  <select
+                    className="form-control"
+                    value={returnFilterStatus}
+                    onChange={e => setReturnFilterStatus(e.target.value)}
+                    style={{ width: '200px' }}
+                  >
+                    <option value="">Tüm Durumlar</option>
+                    <option value="ONAY_BEKLENIYOR">ONAY BEKLENİYOR</option>
+                    <option value="ONAYLANDI">ONAYLANDI</option>
+                    <option value="REDDEDILDI">REDDEDİLDİ</option>
+                    <option value="MUSTERI_GONDERIMI_BEKLENIYOR">Müşteri Gönderimi Bekleniyor</option>
+                    <option value="IADE_TAMAMLANDI">İade İşlemi Tamamlandı</option>
+                  </select>
+                  {(returnSearch || returnFilterStatus) && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setReturnSearch('');
+                        setReturnFilterStatus('');
+                      }}
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th className="sortable-header" onClick={() => handleSort('olusturulmaTarihi', returnSort, setReturnSort)}>
+                          Tarih {renderSortIndicator(returnSort, 'olusturulmaTarihi')}
+                        </th>
+                        <th className="sortable-header" onClick={() => handleSort('siparisNumarasi', returnSort, setReturnSort)}>
+                          Sipariş No {renderSortIndicator(returnSort, 'siparisNumarasi')}
+                        </th>
+                        <th>Müşteri</th>
+                        <th>İade Tipi</th>
+                        <th>Açıklama</th>
+                        <th className="sortable-header" onClick={() => handleSort('durum', returnSort, setReturnSort)}>
+                          Durum {renderSortIndicator(returnSort, 'durum')}
+                        </th>
+                        <th>İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedReturns.map(ret => (
+                        <tr key={ret.id}>
+                          <td>{new Date(ret.olusturulmaTarihi).toLocaleDateString('tr-TR')}</td>
+                          <td style={{ fontWeight: 'bold' }}>#{ret.siparis?.siparisNumarasi || '-'}</td>
+                          <td>{ret.siparis?.ad} {ret.siparis?.soyad}</td>
+                          <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{ret.talepTipi}</td>
+                          <td style={{ maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {ret.aciklama}
+                          </td>
+                          <td>
+                            <span className={`badge badge-${ret.durum === 'ONAY_BEKLENIYOR' ? 'pending' : ret.durum === 'ONAYLANDI' || ret.durum === 'IADE_TAMAMLANDI' ? 'success' : 'error'}`}>
+                              {ret.durum}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn btn-secondary btn-sm" onClick={() => viewReturn(ret)}>
+                              <Eye size={12} /> Detay
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {sortedReturns.length === 0 && (
+                        <tr>
+                          <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
+                            Kayıtlı iade talebi bulunmamaktadır.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tab 7: Settings */}
+        {activeTab === 'settings' && (
+          <div>
+            <div className="content-header">
+              <h1 className="content-title">Sistem Ayarları</h1>
+            </div>
+
+            <form onSubmit={saveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
+
+              {/* Site Genel Bilgileri */}
+              <div className="card">
+                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+                  🏪 Site Genel Bilgileri
+                </h3>
+                <div className="form-group">
+                  <label className="form-label">Site Adı</label>
+                  <input
+                    type="text" className="form-control" placeholder="E-Market"
+                    value={settings.siteAdi || ''}
+                    onChange={e => setSettings({ ...settings, siteAdi: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Hakkımızda Metni</label>
+                  <textarea
+                    className="form-control" rows={4}
+                    placeholder="Şirketiniz hakkında kısa tanıtım metni..."
+                    value={settings.hakkindaMetni || ''}
+                    onChange={e => setSettings({ ...settings, hakkindaMetni: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Adres</label>
+                  <input
+                    type="text" className="form-control" placeholder="İstanbul, Türkiye"
+                    value={settings.adres || ''}
+                    onChange={e => setSettings({ ...settings, adres: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* İletişim Bilgileri */}
+              <div className="card">
+                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+                  📞 İletişim Bilgileri
+                </h3>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">İletişim E-Posta</label>
+                    <input
+                      type="email" className="form-control" placeholder="info@example.com"
+                      value={settings.iletisimEmail || ''}
+                      onChange={e => setSettings({ ...settings, iletisimEmail: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Telefon</label>
+                    <input
+                      type="text" className="form-control" placeholder="+90 212 000 00 00"
+                      value={settings.telefon || ''}
+                      onChange={e => setSettings({ ...settings, telefon: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">WhatsApp Numarası</label>
+                  <input
+                    type="text" className="form-control" placeholder="+905001234567"
+                    value={settings.whatsappNumarasi || ''}
+                    onChange={e => setSettings({ ...settings, whatsappNumarasi: e.target.value })}
+                  />
+                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    Müşteri destek WhatsApp hattı — ülke kodu ile birlikte girin (örn: +905001234567)
+                  </small>
+                </div>
+              </div>
+
+              {/* Sosyal Medya */}
+              <div className="card">
+                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+                  📱 Sosyal Medya
+                </h3>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Instagram URL</label>
+                    <input
+                      type="url" className="form-control" placeholder="https://instagram.com/kullaniciad"
+                      value={settings.instagramUrl || ''}
+                      onChange={e => setSettings({ ...settings, instagramUrl: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Facebook URL</label>
+                    <input
+                      type="url" className="form-control" placeholder="https://facebook.com/sayfaad"
+                      value={settings.facebookUrl || ''}
+                      onChange={e => setSettings({ ...settings, facebookUrl: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">X (Twitter) URL</label>
+                    <input
+                      type="url" className="form-control" placeholder="https://x.com/kullaniciad"
+                      value={settings.twitterUrl || ''}
+                      onChange={e => setSettings({ ...settings, twitterUrl: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">YouTube URL</label>
+                    <input
+                      type="url" className="form-control" placeholder="https://youtube.com/@kanal"
+                      value={settings.youtubeUrl || ''}
+                      onChange={e => setSettings({ ...settings, youtubeUrl: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Entegrasyonlar */}
+              <div className="card">
+                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+                  🔌 Entegrasyonlar ve Servisler
+                </h3>
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label className="form-label">Meta (Facebook) Pixel ID</label>
+                  <input
+                    type="text" className="form-control" placeholder="Örn: 123456789012345"
+                    value={settings.metaPixelId || ''}
+                    onChange={e => setSettings({ ...settings, metaPixelId: e.target.value })}
+                  />
+                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    Meta Pixel entegrasyonu için Pixel ID'nizi girin. Bu kod girildiğinde, mağazanızdaki ziyaretler, sepete eklemeler ve satın alım işlemleri otomatik olarak Meta Panel'e gönderilir.
+                  </small>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Google Merchant Feed Token</span>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '11px', padding: '2px 8px', height: 'auto' }}
+                      onClick={() => {
+                        const randomToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                        setSettings({ ...settings, googleMerchantToken: randomToken });
+                      }}
+                    >
+                      Güvenli Token Üret
+                    </button>
+                  </label>
+                  <input
+                    type="text" className="form-control" placeholder="Örn: my-secure-token-xyz"
+                    value={settings.googleMerchantToken || ''}
+                    onChange={e => setSettings({ ...settings, googleMerchantToken: e.target.value })}
+                  />
+                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    Google Alışveriş XML feed URL'sini korumak için bir güvenlik anahtarı belirleyin. Feed URL'sine bu anahtar ile erişilir.
+                  </small>
+                </div>
+
+                {settings.googleMerchantToken && (
+                  <div className="form-group" style={{ background: 'var(--color-bg-secondary)', padding: '12px', borderRadius: '6px', border: '1px solid var(--color-border)', marginBottom: '20px' }}>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: '600', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Google Shopping XML Feed URL</span>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '11px', padding: '2px 8px', height: 'auto' }}
+                        onClick={() => {
+                          const feedUrl = `${API_URL}/api/v1/feeds/google?token=${settings.googleMerchantToken}`;
+                          navigator.clipboard.writeText(feedUrl);
+                          setCopiedFeed(true);
+                          setTimeout(() => setCopiedFeed(false), 2000);
+                        }}
+                      >
+                        {copiedFeed ? 'Kopyalandı! ✓' : 'URL Kopyala'}
+                      </button>
+                    </label>
+                    <div style={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '11px', padding: '6px', background: 'var(--color-bg-tertiary)', borderRadius: '4px', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
+                      {`${API_URL}/api/v1/feeds/google?token=${settings.googleMerchantToken}`}
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label className="form-label">Google Tag Manager Container ID</label>
+                  <input
+                    type="text" className="form-control" placeholder="Örn: GTM-XXXXXXX"
+                    value={settings.gtmContainerId || ''}
+                    onChange={e => setSettings({ ...settings, gtmContainerId: e.target.value })}
+                  />
+                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    Google Tag Manager entegrasyonu için Container ID'nizi girin (GTM-XXXXXXX). Bu kod girildiğinde GTM kapsayıcısı mağazanızda dinamik olarak başlatılır.
+                  </small>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '10px' }}>
+                  <label className="form-label">Google Analytics 4 Ölçüm Kimliği (Measurement ID)</label>
+                  <input
+                    type="text" className="form-control" placeholder="Örn: G-XXXXXXXXXX"
+                    value={settings.ga4MeasurementId || ''}
+                    onChange={e => setSettings({ ...settings, ga4MeasurementId: e.target.value })}
+                  />
+                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    Google Analytics 4 entegrasyonu için Ölçüm Kimliğinizi girin (G-XXXXXXXXXX). Mağazanızdaki ziyaretler ve e-ticaret etkinlikleri otomatik olarak GA4'e aktarılır.
+                  </small>
+                </div>
+              </div>
+
+              {/* Kargo Ayarları */}
+              <div className="card">
+                <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+                  🚚 Kargo Politikası ve Ayarları
+                </h3>
+
+                <div className="form-group">
+                  <label className="form-label">Kargo Politikası Türü</label>
+                  <select
+                    className="form-control"
+                    value={settings.kargoPolitikaTuru || 'SABIT_UCRET'}
+                    onChange={e => setSettings({ ...settings, kargoPolitikaTuru: e.target.value })}
+                  >
+                    <option value="UCRETSIZ">Ücretsiz Kargo</option>
+                    <option value="SABIT_UCRET">Sabit Ücret</option>
+                    <option value="SEPET_LIMITI">Sepet Limitli Ücretsiz Kargo</option>
+                    <option value="AGIRLIK_KADEMELI">Ağırlık Kademeli (Google Merchant Uyumlu)</option>
+                  </select>
+                  <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                    Google Merchant Center entegrasyonunun askıya alınmasını önlemek için, seçilen politikanın mağaza fiyatları ile feed fiyatlarını eşleştirmesi gerekir.
+                  </small>
+                </div>
+
+                {/* Ücretsiz Kargo Politikası */}
+                {(settings.kargoPolitikaTuru === 'UCRETSIZ') && (
+                  <div style={{ padding: '12px', background: 'rgba(46, 204, 113, 0.1)', border: '1px dashed #2ecc71', borderRadius: '6px', color: '#27ae60', fontSize: '13px', marginBottom: '16px' }}>
+                    <strong>✓ Aktif Politika: Ücretsiz Kargo</strong> - Sitedeki tüm alışverişlerde müşteriye 0.00 TRY kargo yansıtılır. Google Shopping feed'inde de kargo ücretsiz olarak yayınlanır.
+                  </div>
+                )}
+
+                {/* Sabit Ücret Politikası */}
+                {(settings.kargoPolitikaTuru === 'SABIT_UCRET') && (
+                  <div className="form-group">
+                    <label className="form-label">Sabit Kargo Ücreti (₺)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={settings.kargoSabitUcret !== undefined ? settings.kargoSabitUcret : 0}
+                      onChange={e => setSettings({ ...settings, kargoSabitUcret: parseFloat(e.target.value) || 0 })}
+                      required
+                      min="0"
+                      step="0.01"
+                    />
+                    <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                      Tüm siparişlere eklenecek standart kargo bedeli.
+                    </small>
+                  </div>
+                )}
+
+                {/* Sepet Limitli Politikası */}
+                {(settings.kargoPolitikaTuru === 'SEPET_LIMITI') && (
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Ücretsiz Kargo Alt Limiti (₺)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={settings.ucretsizKargoAltLimit !== undefined ? settings.ucretsizKargoAltLimit : 0}
+                        onChange={e => setSettings({ ...settings, ucretsizKargoAltLimit: parseFloat(e.target.value) || 0 })}
+                        required
+                        min="0"
+                        step="0.01"
+                      />
+                      <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                        Bu limit ve üzerindeki alışverişlerde kargo ücretsiz olur.
+                      </small>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Limit Altı Kargo Ağırlık Çarpanı (₺/kg)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={settings.kargoAgirlikCarpani !== undefined ? settings.kargoAgirlikCarpani : 0}
+                        onChange={e => setSettings({ ...settings, kargoAgirlikCarpani: parseFloat(e.target.value) || 0 })}
+                        required
+                        min="0"
+                        step="0.01"
+                      />
+                      <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                        Limit altındaki siparişlerin kargo ücreti: Toplam Ağırlık (kg) x Bu Çarpan olarak hesaplanır.
+                      </small>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ağırlık Kademeli Politikası */}
+                {(settings.kargoPolitikaTuru === 'AGIRLIK_KADEMELI') && (
+                  <div>
+                    <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>📦 Kargo Fiyat Kademeleri</h4>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => {
+                            const currentList = (() => {
+                              try {
+                                return typeof settings.kargoFiyatListesi === 'string'
+                                  ? JSON.parse(settings.kargoFiyatListesi || '[]')
+                                  : (Array.isArray(settings.kargoFiyatListesi) ? settings.kargoFiyatListesi : []);
+                              } catch {
+                                return [];
+                              }
+                            })();
+                            const newList = [...currentList, { maxWeight: currentList.length > 0 ? Math.max(...currentList.map(t => t.maxWeight || 0)) + 5 : 5, price: 50 }];
+                            setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(newList) });
+                          }}
+                        >
+                          <Plus size={14} /> Aralık Ekle
+                        </button>
+                      </div>
+
+                      {(() => {
+                        const currentList = (() => {
+                          try {
+                            return typeof settings.kargoFiyatListesi === 'string'
+                              ? JSON.parse(settings.kargoFiyatListesi || '[]')
+                              : (Array.isArray(settings.kargoFiyatListesi) ? settings.kargoFiyatListesi : []);
+                          } catch {
+                            return [];
+                          }
+                        })();
+
+                        if (currentList.length === 0) {
+                          return (
+                            <div style={{ padding: '16px', textAlign: 'center', border: '1px dashed var(--color-border)', borderRadius: '6px', color: 'var(--color-text-muted)', fontSize: '13px' }}>
+                              Henüz kademe eklenmemiş. Lütfen kargo kademesi ekleyin veya varsayılan baremleri kullanmak için boş bırakın.
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {currentList.map((tier, idx) => {
+                              const prevWeight = idx === 0 ? 0 : (currentList[idx - 1]?.maxWeight || 0);
+                              return (
+                                <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <div style={{ flex: 1.5, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', minWidth: '100px', whiteSpace: 'nowrap' }}>
+                                      {prevWeight} - {tier.maxWeight} kg arası:
+                                    </span>
+                                    <input
+                                      type="number"
+                                      placeholder="Maks. Ağırlık (kg)"
+                                      className="form-control"
+                                      style={{ flex: 1 }}
+                                      value={tier.maxWeight}
+                                      min="0"
+                                      step="0.1"
+                                      onChange={e => {
+                                        const updatedList = [...currentList];
+                                        updatedList[idx] = { ...updatedList[idx], maxWeight: parseFloat(e.target.value) || 0 };
+                                        setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(updatedList) });
+                                      }}
+                                    />
+                                  </div>
+                                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Fiyat (₺):</span>
+                                    <input
+                                      type="number"
+                                      placeholder="Fiyat (₺)"
+                                      className="form-control"
+                                      style={{ flex: 1 }}
+                                      value={tier.price}
+                                      min="0"
+                                      step="0.01"
+                                      onChange={e => {
+                                        const updatedList = [...currentList];
+                                        updatedList[idx] = { ...updatedList[idx], price: parseFloat(e.target.value) || 0 };
+                                        setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(updatedList) });
+                                      }}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="btn btn-danger btn-sm"
+                                    style={{ padding: '8px 10px', height: '38px', display: 'flex', alignItems: 'center' }}
+                                    onClick={() => {
+                                      const updatedList = currentList.filter((_, i) => i !== idx);
+                                      setSettings({ ...settings, kargoFiyatListesi: JSON.stringify(updatedList) });
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-group" style={{ margin: '10px 0' }}>
+                  <label className="form-check">
+                    <input
+                      type="checkbox"
+                      checked={settings.maintenanceMode}
+                      onChange={e => setSettings({ ...settings, maintenanceMode: e.target.checked })}
+                    />
+                    <span><strong>Bakım Modu (Sitenin tamamını bakıma al)</strong></span>
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ padding: '14px', fontSize: '15px' }}>
+                Tüm Ayarları Kaydet
+              </button>
+            </form>
+          </div>
+        )}
+      </main>
+
+      {/* Product Create/Edit Modal */}
+      {showProductModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '750px' }}>
+            <div className="modal-header">
+              <h3>{editingProduct ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowProductModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={saveProduct} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+              <div className="modal-body">
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Ürün Adı *</label>
+                    <input
+                      type="text" className="form-control" value={productForm.ad}
+                      onChange={e => setProductForm({ ...productForm, ad: e.target.value })} required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Stok Adedi *</label>
+                    <input
+                      type="number" className="form-control" value={productForm.stokAdedi}
+                      onChange={e => setProductForm({ ...productForm, stokAdedi: parseInt(e.target.value, 10) })} required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Fiyat (₺) *</label>
+                    <input
+                      type="number" step="0.01" className="form-control" value={productForm.fiyat}
+                      onChange={e => setProductForm({ ...productForm, fiyat: e.target.value })} required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">İndirimli Fiyat (₺)</label>
+                    <input
+                      type="number" step="0.01" className="form-control" value={productForm.indirimliFiyat}
+                      onChange={e => setProductForm({ ...productForm, indirimliFiyat: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Kategori *</label>
+                    <select
+                      className="form-control" value={productForm.kategoriId}
+                      onChange={e => setProductForm({ ...productForm, kategoriId: e.target.value })} required
+                    >
+                      <option value="">Seçiniz</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.ad}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Marka *</label>
+                    <select
+                      className="form-control" value={productForm.markaId}
+                      onChange={e => setProductForm({ ...productForm, markaId: e.target.value })} required
+                    >
+                      <option value="">Seçiniz</option>
+                      {brands.map(b => <option key={b.id} value={b.id}>{b.ad}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Ağırlık (Kg) *</label>
+                    <input
+                      type="number" step="0.1" className="form-control" value={productForm.agirlik}
+                      onChange={e => setProductForm({ ...productForm, agirlik: parseFloat(e.target.value) })} required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Varyant Başlığı</label>
+                    <input
+                      type="text" className="form-control" placeholder="Örn: Renk Seçimi" value={productForm.varyantBasligi}
+                      onChange={e => setProductForm({ ...productForm, varyantBasligi: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Ürün Görseli (R2 Yükleyici - WebP Sıkıştırma)</label>
+                  <div className="image-upload-box">
+                    <input
+                      type="file" accept="image/*" style={{ display: 'none' }} id="prod-img"
+                      onChange={e => handleImageResizeAndUpload(e, 'product')}
+                    />
+                    <label htmlFor="prod-img" style={{ cursor: 'pointer', display: 'block' }}>
+                      <Upload size={32} style={{ color: 'var(--color-primary)', marginBottom: '8px' }} />
+                      <p style={{ fontWeight: 'bold', fontSize: '13px' }}>Görsel Seçmek İçin Tıklayın</p>
+                      <p style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '4px' }}>
+                        Seçilen görsel otomatik olarak 800x800 WebP formatına dönüştürülecektir.
+                      </p>
+                    </label>
+                  </div>
+                  {productForm.resimUrl && (
+                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={productForm.resimUrl.startsWith('http') ? productForm.resimUrl : `${settings.cdnUrl || config.cdnUrl}/${productForm.resimUrl}`}
+                        alt="Önizleme" className="image-preview"
+                      />
+                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', wordBreak: 'break-all' }}>{productForm.resimUrl}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Kısa Açıklama (Ürün kartında görünür)</label>
+                  <input
+                    type="text" className="form-control"
+                    placeholder="Örn: Yüksek performanslı koşu ayakkabısı"
+                    value={productForm.kisaAciklama}
+                    onChange={e => setProductForm({ ...productForm, kisaAciklama: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Renk Seçenekleri (Virgül ile ayırın)</label>
+                  <textarea
+                    className="form-control"
+                    placeholder="Siyah, Beyaz, Kırmızı"
+                    value={Array.isArray(productForm.renkSecenekleri) ? productForm.renkSecenekleri.join(', ') : ''}
+                    onChange={e => setProductForm({ ...productForm, renkSecenekleri: e.target.value.split(/[,\n]/).map(s => s.trim()).filter(Boolean) })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Boyut / Beden Seçenekleri (Virgül ile ayırın)</label>
+                  <textarea
+                    className="form-control"
+                    placeholder="S, M, L, XL  veya  36, 37, 38, 39"
+                    value={Array.isArray(productForm.boyutSecenekleri) ? productForm.boyutSecenekleri.join(', ') : ''}
+                    onChange={e => setProductForm({ ...productForm, boyutSecenekleri: e.target.value.split(/[,\n]/).map(s => s.trim()).filter(Boolean) })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Ürün Açıklaması (Detay Sayfası)</label>
+                  <textarea
+                    className="form-control" value={productForm.aciklama}
+                    onChange={e => setProductForm({ ...productForm, aciklama: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '10px' }}>
+                  <label className="form-check">
+                    <input type="checkbox" checked={productForm.aktif} onChange={e => setProductForm({ ...productForm, aktif: e.target.checked })} />
+                    <span>Ürün Satışta (Aktif)</span>
+                  </label>
+                  <label className="form-check">
+                    <input type="checkbox" checked={productForm.oneCikan} onChange={e => setProductForm({ ...productForm, oneCikan: e.target.checked })} />
+                    <span>Öne Çıkan Ürün</span>
+                  </label>
+                  <label className="form-check">
+                    <input type="checkbox" checked={productForm.firsatUrunu} onChange={e => setProductForm({ ...productForm, firsatUrunu: e.target.checked })} />
+                    <span>Fırsat Ürünü</span>
+                  </label>
+                  <label className="form-check">
+                    <input type="checkbox" checked={productForm.yeniUrun} onChange={e => setProductForm({ ...productForm, yeniUrun: e.target.checked })} />
+                    <span>Yeni Ürün</span>
+                  </label>
+                  <label className="form-check">
+                    <input type="checkbox" checked={productForm.cokSatanlar} onChange={e => setProductForm({ ...productForm, cokSatanlar: e.target.checked })} />
+                    <span>Çok Satanlar</span>
+                  </label>
+                  <label className="form-check">
+                    <input type="checkbox" checked={productForm.iadeImkaniVar !== false} onChange={e => setProductForm({ ...productForm, iadeImkaniVar: e.target.checked })} />
+                    <span>İade İmkânı Var</span>
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowProductModal(false)}>İptal</button>
+                <button type="submit" className="btn btn-primary">Kaydet</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Category Create/Edit Modal */}
+      {showCategoryModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>{editingCategory ? 'Kategoriyi Düzenle' : 'Yeni Kategori Ekle'}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowCategoryModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={saveCategory}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Kategori Adı *</label>
+                  <input
+                    type="text" className="form-control" value={categoryForm.ad}
+                    onChange={e => setCategoryForm({ ...categoryForm, ad: e.target.value })} required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Görüntüleme Sırası</label>
+                  <input
+                    type="number" className="form-control" value={categoryForm.sira}
+                    onChange={e => setCategoryForm({ ...categoryForm, sira: parseInt(e.target.value, 10) })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Kategori Resmi</label>
+                  <input
+                    type="file" accept="image/*" onChange={e => handleImageResizeAndUpload(e, 'category')}
+                  />
+                  {categoryForm.resim && (
+                    <div style={{ marginTop: '10px' }}>
+                      <img
+                        src={categoryForm.resim.startsWith('http') ? categoryForm.resim : `${settings.cdnUrl || config.cdnUrl}/${categoryForm.resim}`}
+                        alt="" className="image-preview"
+                      />
+                    </div>
+                  )}
+                </div>
+                <label className="form-check" style={{ marginTop: '15px' }}>
+                  <input type="checkbox" checked={categoryForm.aktif} onChange={e => setCategoryForm({ ...categoryForm, aktif: e.target.checked })} />
+                  <span>Kategori Aktif</span>
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(false)}>İptal</button>
+                <button type="submit" className="btn btn-primary">Kaydet</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Brand Create/Edit Modal */}
+      {showBrandModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>{editingBrand ? 'Markayı Düzenle' : 'Yeni Marka Ekle'}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowBrandModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={saveBrand}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Marka Adı *</label>
+                  <input
+                    type="text" className="form-control" value={brandForm.ad}
+                    onChange={e => setBrandForm({ ...brandForm, ad: e.target.value })} required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Görüntüleme Sırası</label>
+                  <input
+                    type="number" className="form-control" value={brandForm.sira}
+                    onChange={e => setBrandForm({ ...brandForm, sira: parseInt(e.target.value, 10) })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Marka Logosu</label>
+                  <input
+                    type="file" accept="image/*" onChange={e => handleImageResizeAndUpload(e, 'brand')}
+                  />
+                  {brandForm.logoUrl && (
+                    <div style={{ marginTop: '10px' }}>
+                      <img
+                        src={brandForm.logoUrl.startsWith('http') ? brandForm.logoUrl : `${settings.cdnUrl || config.cdnUrl}/${brandForm.logoUrl}`}
+                        alt="" className="image-preview"
+                      />
+                    </div>
+                  )}
+                </div>
+                <label className="form-check" style={{ marginTop: '15px' }}>
+                  <input type="checkbox" checked={brandForm.aktif} onChange={e => setBrandForm({ ...brandForm, aktif: e.target.checked })} />
+                  <span>Marka Aktif</span>
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowBrandModal(false)}>İptal</button>
+                <button type="submit" className="btn btn-primary">Kaydet</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Order Detail Modal */}
+      {showOrderModal && selectedOrder && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '650px' }}>
+            <div className="modal-header">
+              <h3>Sipariş Detayı - #{selectedOrder.siparisNumarasi}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowOrderModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={saveOrderStatus}>
+              <div className="modal-body" style={{ fontSize: '13px' }}>
+                <div className="grid-2 mb-4" style={{ background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+                  <div>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Müşteri Bilgileri</p>
+                    <p style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '4px' }}>{selectedOrder.ad} {selectedOrder.soyad}</p>
+                    <p>{selectedOrder.eposta}</p>
+                    <p>{selectedOrder.telefon}</p>
+                  </div>
+                  <div>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Teslimat Adresi</p>
+                    <p style={{ marginTop: '4px' }}>{selectedOrder.adres}</p>
+                    <p>{selectedOrder.ilce} / {selectedOrder.sehir} - {selectedOrder.postaKodu}</p>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <p style={{ color: 'var(--color-text-muted)', marginBottom: '8px' }}>Sipariş Kalemleri</p>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '10px' }}>
+                    {selectedOrder.kalemler?.map(item => (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
+                        <div>
+                          <span>{item.urunAdSnapshot || item.urun?.ad || '-'}</span>
+                          {item.secilenRenk && <span style={{ color: 'var(--color-primary)', marginLeft: '8px', fontSize: '11px' }}>({item.secilenRenk})</span>}
+                        </div>
+                        <div style={{ fontWeight: 'bold' }}>
+                          {item.adet} adet x ₺{item.urunFiyatSnapshot.toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontWeight: 'bold', fontSize: '14px' }}>
+                      <span>Toplam Tutar:</span>
+                      <span style={{ color: 'var(--color-primary)' }}>₺{selectedOrder.toplamTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="mb-4">Sipariş Yönetimi</h4>
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Sipariş Durumu</label>
+                      <select
+                        className="form-control" value={orderStatusForm.durum}
+                        onChange={e => setOrderStatusForm({ ...orderStatusForm, durum: e.target.value })}
+                      >
+                        <option value="BEKLEMEDE">BEKLEMEDE</option>
+                        <option value="HAZIRLANIYOR">HAZIRLANIYOR</option>
+                        <option value="KARGOLANDI">KARGOLANDI</option>
+                        <option value="TESLIM_EDILDI">TESLIM_EDILDI</option>
+                        <option value="TAMAMLANDI">TAMAMLANDI</option>
+                        <option value="IPTAL_EDILDI">IPTAL_EDILDI</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Kargo Firması</label>
+                      <input
+                        type="text" className="form-control" placeholder="Örn: Yurtici" value={orderStatusForm.kargoFirmasi}
+                        onChange={e => setOrderStatusForm({ ...orderStatusForm, kargoFirmasi: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Kargo Takip No</label>
+                      <input
+                        type="text" className="form-control" value={orderStatusForm.kargoTakipNo}
+                        onChange={e => setOrderStatusForm({ ...orderStatusForm, kargoTakipNo: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Fatura No</label>
+                      <input
+                        type="text" className="form-control" value={orderStatusForm.faturaNo}
+                        onChange={e => setOrderStatusForm({ ...orderStatusForm, faturaNo: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Güncelleme Notu (Müşteri ve geçmişe eklenecek)</label>
+                    <input
+                      type="text" className="form-control" placeholder="Sipariş hazırlanmaya başlandı." value={orderStatusForm.adminNotu}
+                      onChange={e => setOrderStatusForm({ ...orderStatusForm, adminNotu: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {selectedOrder.gecmis && selectedOrder.gecmis.length > 0 && (
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="mb-3">İşlem Geçmişi</h4>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {selectedOrder.gecmis.map(log => (
+                        <div key={log.id} style={{ display: 'flex', flexDirection: 'column', paddingBottom: '8px', borderBottom: '1px solid var(--border-glass)', gap: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
+                              {log.eskiDurum || 'YENİ'} ➔ {log.yeniDurum}
+                            </span>
+                            <span style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}>
+                              {new Date(log.tarih).toLocaleString('tr-TR')}
+                            </span>
+                          </div>
+                          {log.not && <div style={{ color: 'var(--color-text-dimmed)', fontStyle: 'italic', paddingLeft: '6px', borderLeft: '2px solid var(--color-primary)' }}>Not: {log.not}</div>}
+                          <div style={{ color: 'var(--color-text-muted)', fontSize: '11px', display: 'flex', justifyContent: 'flex-end' }}>
+                            İşlem Yapan: {log.islemYapan}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowOrderModal(false)}>Kapat</button>
+                <button type="submit" className="btn btn-primary">Kaydet</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Return Detail Modal */}
+      {showReturnModal && selectedReturn && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>İade Talebi İnceleme - #{selectedReturn.siparis?.siparisNumarasi}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowReturnModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={saveReturnStatus}>
+              <div className="modal-body" style={{ fontSize: '13px' }}>
+                <div className="mb-4">
+                  <p style={{ color: 'var(--color-text-muted)' }}>Müşteri Açıklaması:</p>
+                  <p style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)', marginTop: '6px', fontSize: '14px', fontStyle: 'italic' }}>
+                    "{selectedReturn.aciklama}"
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <p style={{ color: 'var(--color-text-muted)', marginBottom: '8px' }}>Yüklenen Fotoğraflar:</p>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {Array.isArray(selectedReturn.fotografUrls) && selectedReturn.fotografUrls.map((url, i) => {
+                      const finalUrl = url.startsWith('http') ? url : `${settings.cdnUrl || config.cdnUrl}/${url}`;
+                      return (
+                        <a key={i} href={finalUrl} target="_blank" rel="noreferrer">
+                          <img src={finalUrl} alt="Kanıt" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-glass)' }} />
+                        </a>
+                      );
+                    })}
+                    {(!Array.isArray(selectedReturn.fotografUrls) || selectedReturn.fotografUrls.length === 0) && (
+                      <span style={{ color: 'var(--color-text-dimmed)' }}>Görsel yüklenmemiş.</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="mb-4">Talebi Karara Bağla</h4>
+                  <div className="form-group">
+                    <label className="form-label">Karar Durumu</label>
+                    <select
+                      className="form-control" value={returnStatusForm.durum}
+                      onChange={e => setReturnStatusForm({ ...returnStatusForm, durum: e.target.value })}
+                    >
+                      <option value="ONAYLANDI">ONAYLA (Ödeme iade edilecek)</option>
+                      <option value="REDDEDILDI">REDDET (Talebi geri çevir)</option>
+                      <option value="MUSTERI_GONDERIMI_BEKLENIYOR">Müşteri Gönderimi Bekleniyor</option>
+                      <option value="IADE_TAMAMLANDI">İade İşlemi Tamamlandı</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">İade Kargo Kodu (Varsa)</label>
+                    <input
+                      type="text" className="form-control" placeholder="Örn: 928374827" value={returnStatusForm.manuelIadeKodu}
+                      onChange={e => setReturnStatusForm({ ...returnStatusForm, manuelIadeKodu: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Yönetici İnceleme Notu</label>
+                    <textarea
+                      className="form-control" value={returnStatusForm.adminNotu}
+                      onChange={e => setReturnStatusForm({ ...returnStatusForm, adminNotu: e.target.value })}
+                      placeholder="İade talebiniz incelenerek onaylanmıştır..."
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowReturnModal(false)}>Kapat</button>
+                <button type="submit" className="btn btn-primary">Değerlendir</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Image Cropper Modal */}
+      {cropState.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 200 }}>
+          <div className="modal-content" style={{ maxWidth: '420px' }}>
+            <div className="modal-header">
+              <h3>Görseli Kırp</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', textAlign: 'center' }}>
+                Görseli sürükleyerek hizalayabilir, aşağıdaki sürgü ile yakınlaştırabilirsiniz.
+              </p>
+
+              {/* Crop Container Box */}
+              <div
+                style={{
+                  width: '300px',
+                  height: '300px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  borderRadius: '14px',
+                  border: '2px solid var(--color-primary)',
+                  backgroundColor: '#000',
+                  cursor: 'move',
+                  userSelect: 'none'
+                }}
+                onMouseDown={handleCropMouseDown}
+                onMouseMove={handleCropMouseMove}
+                onMouseUp={handleCropMouseUp}
+                onMouseLeave={handleCropMouseUp}
+                onTouchStart={handleCropTouchStart}
+                onTouchMove={handleCropTouchMove}
+                onTouchEnd={handleCropMouseUp}
+              >
+                <img
+                  src={cropState.imageSrc}
+                  alt="Kırpılacak görsel"
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    pointerEvents: 'none',
+                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                    transformOrigin: 'center center',
+                    transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                  }}
+                />
+                {/* Overlay mask to show square boundary */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  border: '2px dashed rgba(255,255,255,0.4)',
+                  pointerEvents: 'none',
+                  borderRadius: '12px'
+                }} />
+              </div>
+
+              {/* Zoom Slider */}
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  <span>Yakınlaştır</span>
+                  <span>{Math.round(zoom * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.05"
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  style={{
+                    width: '100%',
+                    accentColor: 'var(--color-primary)',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={executeCropAndUpload}
+              >
+                Kırp ve Yükle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
