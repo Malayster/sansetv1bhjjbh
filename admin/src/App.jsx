@@ -15,6 +15,8 @@ import SubscriptionsTab from './components/SubscriptionsTab';
 import ImageCropper from './components/ImageCropper';
 import ProductModal from './components/ProductModal';
 import AdminMobileHeader from './components/AdminMobileHeader';
+import RoleBadge from './components/RoleBadge';
+import { useAdminRole } from './hooks/useAdminRole';
 
 const isLocalhost = typeof window !== 'undefined' &&
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -26,6 +28,7 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('admin_theme') || 'dark');
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { role, email, can } = useAdminRole();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -42,17 +45,14 @@ export default function App() {
   const [productFilterStatus, setProductFilterStatus] = useState('');
   const [productSort, setProductSort] = useState({ key: 'ad', direction: 'asc' });
   const [selectedProductIds, setSelectedProductIds] = useState([]);
-
   const [categorySearch, setCategorySearch] = useState('');
   const [categoryFilterStatus, setCategoryFilterStatus] = useState('');
   const [categorySort, setCategorySort] = useState({ key: 'sira', direction: 'asc' });
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
-
   const [brandSearch, setBrandSearch] = useState('');
   const [brandFilterStatus, setBrandFilterStatus] = useState('');
   const [brandSort, setBrandSort] = useState({ key: 'sira', direction: 'asc' });
   const [selectedBrandIds, setSelectedBrandIds] = useState([]);
-
   const [orderSearch, setOrderSearch] = useState('');
   const [orderFilterStatus, setOrderFilterStatus] = useState('');
   const [orderFilterFatura, setOrderFilterFatura] = useState('');
@@ -60,42 +60,27 @@ export default function App() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderStatusForm, setOrderStatusForm] = useState({});
   const [showOrderModal, setShowOrderModal] = useState(false);
-
   const [returnSearch, setReturnSearch] = useState('');
   const [returnFilterStatus, setReturnFilterStatus] = useState('');
   const [returnSort, setReturnSort] = useState({ key: 'olusturulmaTarihi', direction: 'desc' });
   const [selectedReturn, setSelectedReturn] = useState(null);
   const [returnStatusForm, setReturnStatusForm] = useState({});
   const [showReturnModal, setShowReturnModal] = useState(false);
-
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [productForm, setProductForm] = useState({
-    ad: '', fiyat: '', indirimliFiyat: '', kisaAciklama: '',
-    renkSecenekleri: [], boyutSecenekleri: [], agirlik: 1,
-    aciklama: '', resimUrl: '', resimler: [], stokAdedi: 0,
-    kategoriId: '', markaId: '', aktif: true
-  });
-
+  const [productForm, setProductForm] = useState({ ad: '', fiyat: '', indirimliFiyat: '', kisaAciklama: '', renkSecenekleri: [], boyutSecenekleri: [], agirlik: 1, aciklama: '', resimUrl: '', resimler: [], stokAdedi: 0, kategoriId: '', markaId: '', aktif: true });
   const [cropState, setCropState] = useState({ isOpen: false, imageSrc: '', type: '', file: null });
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('admin_theme', theme);
-  }, [theme]);
-
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('admin_theme', theme); }, [theme]);
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   const adminRequest = async (url, options = {}) => {
     const res = await fetch(url, { ...options, credentials: 'same-origin' });
-    if (res.status === 401 || res.status === 403) {
-      window.location.reload();
-      throw new Error('UNAUTHORIZED');
-    }
+    if (res.status === 401 || res.status === 403) { window.location.reload(); throw new Error('UNAUTHORIZED'); }
     return res;
   };
 
@@ -111,7 +96,6 @@ export default function App() {
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`),
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/analytics`)
       ]);
-
       const prods = await prodRes.json();
       const cats = await catRes.json();
       const brandsData = await brandRes.json();
@@ -119,63 +103,37 @@ export default function App() {
       const rets = await returnRes.json();
       const setts = await settingsRes.json();
       const anals = await analyticsRes.json();
-
       if (prods.status === 'success') setProducts(prods.data || []);
       if (cats.status === 'success') setCategories(cats.data || []);
       if (brandsData.status === 'success') setBrands(brandsData.data || []);
       if (ords.status === 'success') {
         const ordersData = ords.data || [];
         setOrders(ordersData);
-        const totalSales = ordersData
-          .filter(o => o.durum === 'TESLIM_EDILDI' || o.durum === 'TAMAMLANDI')
-          .reduce((sum, o) => sum + parseFloat(o.toplamTutar || 0), 0);
-        setStats({
-          totalSales,
-          totalOrders: ordersData.length,
-          activeProducts: (prods.data || []).filter(p => p.aktif).length,
-          pendingReturns: (rets.data || []).filter(r => r.durum === 'ONAY_BEKLENIYOR').length
-        });
+        const totalSales = ordersData.filter(o => o.durum === 'TESLIM_EDILDI' || o.durum === 'TAMAMLANDI').reduce((sum, o) => sum + parseFloat(o.toplamTutar || 0), 0);
+        setStats({ totalSales, totalOrders: ordersData.length, activeProducts: (prods.data || []).filter(p => p.aktif).length, pendingReturns: (rets.data || []).filter(r => r.durum === 'ONAY_BEKLENIYOR').length });
       }
       if (rets.status === 'success') setReturns(rets.data || []);
       if (setts.status === 'success') setSettings(setts.data || {});
       if (anals.status === 'success') setAnalytics(anals.data);
-    } catch (e) {
-      if (e.message !== 'UNAUTHORIZED') console.error('Fetch error:', e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { if (e.message !== 'UNAUTHORIZED') console.error('Fetch error:', e); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetchData(); }, []);
 
   const handleLogout = () => window.location.assign('/cdn-cgi/access/logout');
-
-  const handleSort = (key, currentSort, setSort) => {
-    const direction = currentSort.key === key && currentSort.direction === 'asc' ? 'desc' : 'asc';
-    setSort({ key, direction });
-  };
-
+  const handleSort = (key, currentSort, setSort) => { const direction = currentSort.key === key && currentSort.direction === 'asc' ? 'desc' : 'asc'; setSort({ key, direction }); };
   const getSortedData = (data, sortConfig, resolveNestedVal = null) => {
     if (!sortConfig.key) return data;
     return [...data].sort((a, b) => {
       let valA = resolveNestedVal ? resolveNestedVal(a, sortConfig.key) : a[sortConfig.key];
       let valB = resolveNestedVal ? resolveNestedVal(b, sortConfig.key) : b[sortConfig.key];
-      if (valA == null) valA = '';
-      if (valB == null) valB = '';
-      if (typeof valA === 'string') {
-        return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      }
+      if (valA == null) valA = ''; if (valB == null) valB = '';
+      if (typeof valA === 'string') return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
       return sortConfig.direction === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
     });
   };
-
-  const renderSortIndicator = (currentSort, key) => {
-    if (currentSort.key !== key) return <span className="sort-indicator">↕</span>;
-    return currentSort.direction === 'asc'
-      ? <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▲</span>
-      : <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▼</span>;
-  };
-
+  const renderSortIndicator = (currentSort, key) => currentSort.key !== key ? <span className="sort-indicator">↕</span> : (currentSort.direction === 'asc' ? <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▲</span> : <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▼</span>);
   const nav = (tab) => { setActiveTab(tab); setSidebarOpen(false); };
 
   const saveProduct = async (e) => {
@@ -195,20 +153,17 @@ export default function App() {
   };
 
   const onImageUpload = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData(); formData.append('file', file);
     try {
       const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/upload`, { method: 'POST', body: formData });
       const data = await res.json();
       if (data.status === 'success') return data.key;
-      alert(data.errorMessage || 'Gagal muat naik');
-      return null;
+      alert(data.errorMessage || 'Gagal muat naik'); return null;
     } catch (err) { if (err.message !== 'UNAUTHORIZED') alert('Ralat muat naik'); return null; }
   };
 
   const saveSettings = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault(); setLoading(true);
     try {
       const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
       const data = await res.json();
@@ -233,24 +188,25 @@ export default function App() {
           <div className="sidebar-logo">E</div>
           <span className="sidebar-title">E-Market Admin</span>
         </div>
+        {role && (
+          <div style={{ marginBottom: 16, padding: '8px 12px', background: 'var(--bg-card)', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>{email}</div>
+            <RoleBadge role={role} />
+          </div>
+        )}
         <nav className="nav-menu">
           <li className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}><button onClick={() => nav('dashboard')}><LayoutDashboard size={18} /> Papan Pemuka</button></li>
-          <li className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}><button onClick={() => nav('products')}><Package size={18} /> Pengurusan Produk</button></li>
-          <li className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`}><button onClick={() => nav('categories')}><Layers size={18} /> Kategori</button></li>
-          <li className={`nav-item ${activeTab === 'brands' ? 'active' : ''}`}><button onClick={() => nav('brands')}><Tag size={18} /> Jenama</button></li>
-          <li className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}><button onClick={() => nav('orders')}><ShoppingBag size={18} /> Pesanan</button></li>
-          <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}><button onClick={() => nav('returns')}><CornerDownLeft size={18} /> Permohonan Pemulangan</button></li>
-          <li className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}><button onClick={() => nav('subscriptions')}><Repeat size={18} /> Langganan</button></li>
-          <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}><button onClick={() => nav('settings')}><SettingsIcon size={18} /> Tetapan Sistem</button></li>
+          {can('products') && <li className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}><button onClick={() => nav('products')}><Package size={18} /> Pengurusan Produk</button></li>}
+          {can('categories') && <li className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`}><button onClick={() => nav('categories')}><Layers size={18} /> Kategori</button></li>}
+          {can('brands') && <li className={`nav-item ${activeTab === 'brands' ? 'active' : ''}`}><button onClick={() => nav('brands')}><Tag size={18} /> Jenama</button></li>}
+          {can('orders') && <li className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}><button onClick={() => nav('orders')}><ShoppingBag size={18} /> Pesanan</button></li>}
+          {can('returns') && <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}><button onClick={() => nav('returns')}><CornerDownLeft size={18} /> Permohonan Pemulangan</button></li>}
+          {can('subscriptions') && <li className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}><button onClick={() => nav('subscriptions')}><Repeat size={18} /> Langganan</button></li>}
+          {can('settings') && <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}><button onClick={() => nav('settings')}><SettingsIcon size={18} /> Tetapan Sistem</button></li>}
         </nav>
         <div className="sidebar-footer">
-          <button className="btn btn-secondary" onClick={toggleTheme} style={{ width: '100%', marginBottom: 12 }}>
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            <span>{theme === 'dark' ? 'Tema Cerah' : 'Tema Gelap'}</span>
-          </button>
-          <button className="btn btn-secondary" onClick={handleLogout} style={{ width: '100%' }}>
-            <LogOut size={16} /> Log Keluar
-          </button>
+          <button className="btn btn-secondary" onClick={toggleTheme} style={{ width: '100%', marginBottom: 12 }}>{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}<span>{theme === 'dark' ? 'Tema Cerah' : 'Tema Gelap'}</span></button>
+          <button className="btn btn-secondary" onClick={handleLogout} style={{ width: '100%' }}><LogOut size={16} /> Log Keluar</button>
         </div>
       </aside>
 
@@ -259,23 +215,13 @@ export default function App() {
         <main className="main-content">
           {loading && <div style={{ padding: 20 }}>Memuatkan...</div>}
           {activeTab === 'dashboard' && <DashboardTab stats={stats} analytics={analytics} />}
-          {activeTab === 'products' && (
-            <ProductsTab products={products} categories={categories} brands={brands} productSearch={productSearch} setProductSearch={setProductSearch} productFilterCategory={productFilterCategory} setProductFilterCategory={setProductFilterCategory} productFilterBrand={productFilterBrand} setProductFilterBrand={setProductFilterBrand} productFilterStatus={productFilterStatus} setProductFilterStatus={setProductFilterStatus} productSort={productSort} setProductSort={setProductSort} selectedProductIds={selectedProductIds} setSelectedProductIds={setSelectedProductIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteProducts={bulkDeleteProducts} setEditingProduct={setEditingProduct} setProductForm={setProductForm} setShowProductModal={setShowProductModal} config={config} deleteProduct={deleteProduct} />
-          )}
-          {activeTab === 'categories' && (
-            <CategoriesTab categories={categories} categorySearch={categorySearch} setCategorySearch={setCategorySearch} categoryFilterStatus={categoryFilterStatus} setCategoryFilterStatus={setCategoryFilterStatus} categorySort={categorySort} setCategorySort={setCategorySort} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteCategories={bulkDeleteCategories} setEditingCategory={() => {}} setCategoryForm={() => {}} setShowCategoryModal={() => {}} deleteCategory={deleteCategory} />
-          )}
-          {activeTab === 'brands' && (
-            <BrandsTab brands={brands} brandSearch={brandSearch} setBrandSearch={setBrandSearch} brandFilterStatus={brandFilterStatus} setBrandFilterStatus={setBrandFilterStatus} brandSort={brandSort} setBrandSort={setBrandSort} selectedBrandIds={selectedBrandIds} setSelectedBrandIds={setSelectedBrandIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteBrands={bulkDeleteBrands} setEditingBrand={() => {}} setBrandForm={() => {}} setShowBrandModal={() => {}} deleteBrand={deleteBrand} />
-          )}
-          {activeTab === 'orders' && (
-            <OrdersTab orders={orders} orderSearch={orderSearch} setOrderSearch={setOrderSearch} orderFilterStatus={orderFilterStatus} setOrderFilterStatus={setOrderFilterStatus} orderFilterFatura={orderFilterFatura} setOrderFilterFatura={setOrderFilterFatura} orderSort={orderSort} setOrderSort={setOrderSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedOrder={setSelectedOrder} setOrderStatusForm={setOrderStatusForm} setShowOrderModal={setShowOrderModal} />
-          )}
-          {activeTab === 'returns' && (
-            <ReturnsTab returns={returns} returnSearch={returnSearch} setReturnSearch={setReturnSearch} returnFilterStatus={returnFilterStatus} setReturnFilterStatus={setReturnFilterStatus} returnSort={returnSort} setReturnSort={setReturnSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedReturn={setSelectedReturn} setReturnStatusForm={setReturnStatusForm} setShowReturnModal={setShowReturnModal} />
-          )}
-          {activeTab === 'subscriptions' && <SubscriptionsTab adminRequest={adminRequest} ADMIN_API_URL={ADMIN_API_URL} />}
-          {activeTab === 'settings' && <SettingsTab settings={settings} setSettings={setSettings} saveSettings={saveSettings} loading={loading} />}
+          {activeTab === 'products' && can('products') && <ProductsTab products={products} categories={categories} brands={brands} productSearch={productSearch} setProductSearch={setProductSearch} productFilterCategory={productFilterCategory} setProductFilterCategory={setProductFilterCategory} productFilterBrand={productFilterBrand} setProductFilterBrand={setProductFilterBrand} productFilterStatus={productFilterStatus} setProductFilterStatus={setProductFilterStatus} productSort={productSort} setProductSort={setProductSort} selectedProductIds={selectedProductIds} setSelectedProductIds={setSelectedProductIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteProducts={bulkDeleteProducts} setEditingProduct={setEditingProduct} setProductForm={setProductForm} setShowProductModal={setShowProductModal} config={config} deleteProduct={deleteProduct} />}
+          {activeTab === 'categories' && can('categories') && <CategoriesTab categories={categories} categorySearch={categorySearch} setCategorySearch={setCategorySearch} categoryFilterStatus={categoryFilterStatus} setCategoryFilterStatus={setCategoryFilterStatus} categorySort={categorySort} setCategorySort={setCategorySort} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteCategories={bulkDeleteCategories} setEditingCategory={() => {}} setCategoryForm={() => {}} setShowCategoryModal={() => {}} deleteCategory={deleteCategory} />}
+          {activeTab === 'brands' && can('brands') && <BrandsTab brands={brands} brandSearch={brandSearch} setBrandSearch={setBrandSearch} brandFilterStatus={brandFilterStatus} setBrandFilterStatus={setBrandFilterStatus} brandSort={brandSort} setBrandSort={setBrandSort} selectedBrandIds={selectedBrandIds} setSelectedBrandIds={setSelectedBrandIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteBrands={bulkDeleteBrands} setEditingBrand={() => {}} setBrandForm={() => {}} setShowBrandModal={() => {}} deleteBrand={deleteBrand} />}
+          {activeTab === 'orders' && can('orders') && <OrdersTab orders={orders} orderSearch={orderSearch} setOrderSearch={setOrderSearch} orderFilterStatus={orderFilterStatus} setOrderFilterStatus={setOrderFilterStatus} orderFilterFatura={orderFilterFatura} setOrderFilterFatura={setOrderFilterFatura} orderSort={orderSort} setOrderSort={setOrderSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedOrder={setSelectedOrder} setOrderStatusForm={setOrderStatusForm} setShowOrderModal={setShowOrderModal} />}
+          {activeTab === 'returns' && can('returns') && <ReturnsTab returns={returns} returnSearch={returnSearch} setReturnSearch={setReturnSearch} returnFilterStatus={returnFilterStatus} setReturnFilterStatus={setReturnFilterStatus} returnSort={returnSort} setReturnSort={setReturnSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedReturn={setSelectedReturn} setReturnStatusForm={setReturnStatusForm} setShowReturnModal={setShowReturnModal} />}
+          {activeTab === 'subscriptions' && can('subscriptions') && <SubscriptionsTab adminRequest={adminRequest} ADMIN_API_URL={ADMIN_API_URL} />}
+          {activeTab === 'settings' && can('settings') && <SettingsTab settings={settings} setSettings={setSettings} saveSettings={saveSettings} loading={loading} />}
         </main>
       </div>
 
