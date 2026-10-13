@@ -6,7 +6,7 @@ import { Star, ChevronRight } from 'lucide-react';
 
 /**
  * FeaturedProducts - Displays featured products (oneCikan) on the homepage.
- * No filters, just a clean product grid with a "see all" link.
+ * 100% hardcoded Bahasa Melayu.
  */
 export function FeaturedProducts() {
     const navigate = useNavigate();
@@ -44,17 +44,17 @@ export function FeaturedProducts() {
                         </div>
                         <div>
                             <h2 className="text-2xl md:text-3xl font-black text-corporate-black">
-                                Öne Çıkan Ürünler
+                                Produk Pilihan Ramai
                             </h2>
-                            <p className="text-gray-500 text-sm">En beğenilen ürünlerimiz</p>
+                            <p className="text-gray-500 text-sm">Koleksi barangan terlaris dan paling diminati</p>
                         </div>
                     </div>
 
                     <button
                         onClick={() => navigate('/magaza')}
-                        className="hidden md:flex items-center gap-2 text-corporate-black font-bold hover:text-indigo-600 transition-colors group"
+                        className="hidden md:flex items-center gap-2 text-corporate-black font-bold hover:text-indigo-600 transition-colors group cursor-pointer"
                     >
-                        Tümünü Gör
+                        Lihat Semua
                         <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
@@ -78,9 +78,9 @@ export function FeaturedProducts() {
                 <div className="mt-8 text-center md:hidden">
                     <button
                         onClick={() => navigate('/magaza')}
-                        className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors"
+                        className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors cursor-pointer"
                     >
-                        Tümünü Gör
+                        Lihat Semua
                         <ChevronRight size={18} />
                     </button>
                 </div>
@@ -88,3 +88,5 @@ export function FeaturedProducts() {
         </section>
     );
 }
+
+export default FeaturedProducts;

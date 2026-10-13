@@ -6,7 +6,7 @@ export const config = {
   port: 8787,
   corsOrigin: '*',
   nodeEnv: 'development',
-  paymentProvider: 'param',
+  paymentProvider: 'toyyibpay',
   param: {
     clientCode: '',
     clientUsername: '',
@@ -34,11 +34,11 @@ export const config = {
     baseUrl: 'https://toyyibpay.com'
   },
   email: {
-    sender: 'E-Market <siparis@ecommerceflaredev.web.tr>',
-    replyTo: 'siparis@ecommerceflaredev.web.tr',
+    sender: "DIN'O EMPIRE <dinoempire.my@gmail.com>",
+    replyTo: 'dinoempire.my@gmail.com',
   },
-  clientUrl: 'http://localhost:3000',
-  orderNotificationEmail: 'siparis@ecommerceflaredev.web.tr',
+  clientUrl: 'http://localhost:8000',
+  orderNotificationEmail: 'dinoempire.my@gmail.com',
   cdnUrl: 'https://cdn.ecommerceflaredev.web.tr',
   googleMerchantToken: ''
 };
@@ -59,7 +59,7 @@ export function initConfig(env) {
   config.orderNotificationEmail = env.ORDER_NOTIFICATION_EMAIL || 'siparis@ecommerceflaredev.web.tr';
   config.cdnUrl = env.CDN_URL || 'https://cdn.ecommerceflaredev.web.tr';
   config.googleMerchantToken = env.GOOGLE_MERCHANT_TOKEN || '';
-  config.paymentProvider = env.PAYMENT_PROVIDER || 'param';
+  config.paymentProvider = env.PAYMENT_PROVIDER || 'toyyibpay';
 
   // In-place update for Param POS parameters to preserve references
   Object.assign(config.param, {

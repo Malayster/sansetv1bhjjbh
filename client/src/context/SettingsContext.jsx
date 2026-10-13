@@ -7,40 +7,61 @@ const SettingsContext = createContext();
 
 export function SettingsProvider({ children }) {
     const [settings, setSettings] = useState({
-        siteTitle: 'E-Market',
-        companyName: 'E-Market',
-        currency: 'TRY',
-        kargoDesiCarpani: 15,
-        ucretsizKargoAltLimit: 10000 // Default fallback
+        siteTitle: "DIN'O EMPIRE",
+        companyName: "DIN'O EMPIRE Enterprise",
+        currency: 'MYR',
+        kargoSabitUcret: 8.00,
+        ucretsizKargoAltLimit: 100.00
+    });
+    const [cms, setCms] = useState({
+        hero_slides: [],
+        announcement_bar: {
+            active: true,
+            text: "PENGHANTARAN PERCUMA ke seluruh Semenanjung untuk pesanan RM100 ke atas! Terus dari Kilang Kuala Ketil.",
+            link: "/magaza",
+            theme: "amber"
+        },
+        info_kedai: {
+            namaKedai: "DIN'O EMPIRE",
+            telefon: "016-6911020",
+            whatsapp: "013-2359647",
+            email: "dinoempireenterprise@gmail.com",
+            alamat: "Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah",
+            waktuOperasi: "Isnin - Sabtu: 9:00 AM - 6:00 PM"
+        }
     });
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const response = await api.get('/api/v1/settings');
-                // Ensure numbers are numbers
-                const formattedSettings = {
-                    ...response.data,
-                    kargoDesiCarpani: Number(response.data.kargoDesiCarpani),
-                    ucretsizKargoAltLimit: Number(response.data.ucretsizKargoAltLimit)
-                };
-                setSettings(formattedSettings);
-                if (formattedSettings.metaPixelId) {
-                    initFacebookPixel(formattedSettings.metaPixelId);
-                }
-                if (formattedSettings.gtmContainerId) {
-                    initGTM(formattedSettings.gtmContainerId);
-                }
-            } catch (error) {
-                console.error('Settings Fetch Error:', error);
-                // Keep defaults on error
-            } finally {
-                setLoading(false);
-            }
-        };
+    const refreshSettingsAndCMS = async () => {
+        try {
+            const [setRes, cmsRes] = await Promise.all([
+                api.get('/api/v1/settings').catch(() => ({ data: {} })),
+                api.get('/api/v1/cms').catch(() => ({ data: { data: {} } }))
+            ]);
 
-        fetchSettings();
+            if (setRes.data) {
+                setSettings({
+                    ...setRes.data,
+                    siteTitle: setRes.data.siteAdi || "DIN'O EMPIRE",
+                    companyName: setRes.data.siteAdi || "DIN'O EMPIRE Enterprise",
+                    currency: 'MYR',
+                    kargoSabitUcret: Number(setRes.data.kargoSabitUcret || 8.00),
+                    ucretsizKargoAltLimit: Number(setRes.data.ucretsizKargoAltLimit || 100.00)
+                });
+            }
+
+            if (cmsRes.data?.data) {
+                setCms(prev => ({ ...prev, ...cmsRes.data.data }));
+            }
+        } catch (error) {
+            console.error('Settings & CMS Fetch Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        refreshSettingsAndCMS();
     }, []);
 
     if (!loading && settings.maintenanceMode) {
@@ -48,7 +69,7 @@ export function SettingsProvider({ children }) {
     }
 
     return (
-        <SettingsContext.Provider value={{ settings, loading }}>
+        <SettingsContext.Provider value={{ settings, cms, setCms, refreshSettingsAndCMS, loading }}>
             {children}
         </SettingsContext.Provider>
     );

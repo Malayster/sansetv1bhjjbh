@@ -1,142 +1,96 @@
 import React from 'react';
-import { Shield, Truck, Award, Users } from 'lucide-react';
+import { Shield, Truck, Award, Users, CheckCircle2 } from 'lucide-react';
 import SEO from '../components/SEO';
 
 export function AboutPage() {
     return (
         <div className="bg-bg-soft min-h-screen py-10">
             <SEO
-                title="Hakkımızda"
-                description="E-Market - Profesyonel e-ticaret tedarikçiniz. Kalite, güven ve müşteri memnuniyeti odaklı hizmetimizle yanınızdayız."
-                keywords="e-market hakkında, e-ticaret mağazası, kurumsal, alışveriş"
+                title="Tentang Kami - DIN'O EMPIRE"
+                description="DIN'O EMPIRE - Pembekal barangan eksklusif terus dari Kilang Kuala Ketil, Kedah. Kualiti dijamin Halal dan penghantaran pantas ke seluruh Malaysia."
+                keywords="dino empire, kilang kuala ketil, kedah, barangan kilang, halal malaysia"
             />
 
             <div className="max-w-6xl mx-auto px-4">
                 {/* Header */}
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black text-corporate-black mb-2">Hakkımızda</h1>
-                    <div className="w-24 h-1 bg-brand-primary mx-auto rounded-full" />
+                    <h1 className="text-3xl font-black text-corporate-black mb-2">Tentang Kami</h1>
+                    <div className="w-24 h-1 bg-amber-500 mx-auto rounded-full" />
                 </div>
 
                 <div className="space-y-8">
                     {/* Intro Section */}
                     <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="max-w-3xl mx-auto text-center">
-                            <p className="text-xl text-gray-700 leading-relaxed mb-6 font-medium">
-                                Geniş ürün yelpazesi ve kaliteli hizmet anlayışı ile güvenilir alışveriş adresiniz.
-                                Kalite, hız ve müşteri memnuniyeti odaklı hizmet anlayışımızla yanınızdayız.
+                            <p className="text-xl text-gray-800 leading-relaxed mb-6 font-semibold">
+                                Destinasi barangan eksklusif terus dari kilang dengan piawaian kualiti tertinggi, harga berpatutan, dan penghantaran selamat ke seluruh Malaysia.
                             </p>
-                            <p className="text-base text-gray-500">
-                                <strong>ecommerceflaredev.web.tr</strong>, Türkiye genelinde hizmet veren <strong>E-Market Teknoloji ve Ticaret Limited Şirketi</strong>'nin dijital satış kanalıdır.
-                                Siparişleriniz, E-Market güvencesiyle paketlenmekte ve faturalandırılmaktadır.
+                            <p className="text-base text-gray-600 leading-relaxed">
+                                <strong>DIN'O EMPIRE</strong> beroperasi terus dari Kawasan Perusahaan Kuala Ketil, Kedah. Kami beriltizam membekalkan produk berkualiti terus kepada pengguna akhir tanpa orang tengah, memastikan setiap pembelian berbaloi dan berkualiti terjamin.
                             </p>
+                        </div>
+                    </div>
+
+                    {/* Features Grid */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 hover:border-amber-400 transition-all text-center group">
+                            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                <Award size={28} />
+                            </div>
+                            <h3 className="font-bold text-lg text-gray-900 mb-2">Terus Dari Kilang</h3>
+                            <p className="text-sm text-gray-600">Diproses dan dibungkus terus dari fasiliti kami di Kuala Ketil, Kedah.</p>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 hover:border-amber-400 transition-all text-center group">
+                            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                <Shield size={28} />
+                            </div>
+                            <h3 className="font-bold text-lg text-gray-900 mb-2">Kualiti Dijamin Halal</h3>
+                            <p className="text-sm text-gray-600">Pematuhan kebersihan ketat dan piawaian Halal yang diyakini pengguna Muslim.</p>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 hover:border-amber-400 transition-all text-center group">
+                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                <Truck size={28} />
+                            </div>
+                            <h3 className="font-bold text-lg text-gray-900 mb-2">Penghantaran Pantas</h3>
+                            <p className="text-sm text-gray-600">Kerjasama kurier dipercayai ke Kedah, Semenanjung, serta Sabah & Sarawak.</p>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 hover:border-amber-400 transition-all text-center group">
+                            <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                <Users size={28} />
+                            </div>
+                            <h3 className="font-bold text-lg text-gray-900 mb-2">Khidmat Pelanggan Mesra</h3>
+                            <p className="text-sm text-gray-600">Sokongan terus menerusi WhatsApp dan e-mel untuk sebarang pertanyaan pesanan.</p>
                         </div>
                     </div>
 
                     {/* Mission & Vision */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 border-l-8 border-indigo-600 hover:translate-y-[-4px] transition-transform duration-300">
-                            <h2 className="text-2xl font-bold text-corporate-black mb-4 flex items-center gap-2">
-                                <Award className="text-indigo-600" /> Misyonumuz
-                            </h2>
-                            <p className="text-gray-600 leading-relaxed">
-                                Türkiye genelindeki tüm kullanıcılara
-                                en kaliteli ürünleri en uygun fiyatlarla, hızlı ve güvenilir
-                                bir şekilde ulaştırmak. Müşteri memnuniyetini her şeyin önünde tutarak,
-                                sektörde lider bir e-ticaret platformu olmak.
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="bg-white p-8 rounded-2xl shadow-lg border-l-4 border-amber-500">
+                            <h3 className="text-xl font-black text-gray-900 mb-3">Visi Kami</h3>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Menjadi jenama e-dagang tempatan terkemuka dari utara Malaysia yang dipercayai oleh setiap isi rumah dengan produk berkualiti tinggi dan harga berpatutan.
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 border-l-8 border-action-red hover:translate-y-[-4px] transition-transform duration-300">
-                            <h2 className="text-2xl font-bold text-corporate-black mb-4 flex items-center gap-2">
-                                <Shield className="text-action-red" /> Vizyonumuz
-                            </h2>
-                            <p className="text-gray-600 leading-relaxed">
-                                Türkiye'nin en güvenilir ve tercih edilen online alışveriş
-                                platformu olmak. Teknoloji ve kalite odaklı yaklaşımımızla, müşterilerimize
-                                7/24 kesintisiz hizmet sunarak, sektörde dijital dönüşümün öncüsü olmak.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Values */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10">
-                        <h2 className="text-2xl font-bold text-corporate-black mb-8 text-center">Değerlerimiz</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <div className="text-center group">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-primary transition-colors duration-300">
-                                    <Shield size={32} className="text-indigo-600 group-hover:text-corporate-black transition-colors duration-300" />
-                                </div>
-                                <h3 className="font-bold text-corporate-black mb-2">Güven</h3>
-                                <p className="text-sm text-gray-500">
-                                    %100 orijinal ürünler ve şeffaf hizmet.
-                                </p>
-                            </div>
-                            <div className="text-center group">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-primary transition-colors duration-300">
-                                    <Award size={32} className="text-indigo-600 group-hover:text-corporate-black transition-colors duration-300" />
-                                </div>
-                                <h3 className="font-bold text-corporate-black mb-2">Kalite</h3>
-                                <p className="text-sm text-gray-500">
-                                    Sadece en iyi markalarla çalışıyoruz.
-                                </p>
-                            </div>
-                            <div className="text-center group">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-primary transition-colors duration-300">
-                                    <Truck size={32} className="text-indigo-600 group-hover:text-corporate-black transition-colors duration-300" />
-                                </div>
-                                <h3 className="font-bold text-corporate-black mb-2">Hız</h3>
-                                <p className="text-sm text-gray-500">
-                                    Hızlı kargo ve zamanında teslimat.
-                                </p>
-                            </div>
-                            <div className="text-center group">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-primary transition-colors duration-300">
-                                    <Users size={32} className="text-indigo-600 group-hover:text-corporate-black transition-colors duration-300" />
-                                </div>
-                                <h3 className="font-bold text-corporate-black mb-2">Müşteri Odaklılık</h3>
-                                <p className="text-sm text-gray-500">
-                                    7/24 destek ile her zaman yanınızdayız.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Why Choose Us */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10">
-                        <h2 className="text-2xl font-bold text-corporate-black mb-8">Neden Bizi Seçmelisiniz?</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {[
-                                { title: 'Geniş Ürün Yelpazesi', desc: 'Binlerce kategoride aradığınız her şey tek platformda.' },
-                                { title: 'Güvenli Alışveriş', desc: '256-bit SSL ve 3D Secure ile tam koruma.' },
-                                { title: 'Kolay İade', desc: '14 gün içinde koşulsuz iade hakkı.' },
-                                { title: 'Hızlı Kargo', desc: 'Siparişleriniz en kısa sürede güvenle kapınızda.' },
-                                { title: 'Profesyonel Destek', desc: 'Alanında uzman ekibimizle teknik destek.' }
-                            ].map((item, index) => (
-                                <div key={index} className="flex gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
-                                    <div className="w-8 h-8 bg-black text-indigo-600 rounded-full flex items-center justify-center shrink-0 font-bold">✓</div>
-                                    <div>
-                                        <h3 className="font-bold text-corporate-black mb-1">{item.title}</h3>
-                                        <p className="text-sm text-gray-500">{item.desc}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Contact CTA */}
-                    <div className="bg-corporate-black text-white rounded-2xl shadow-lg p-8 md:p-12 text-center">
-                        <h2 className="text-2xl font-bold mb-4">Sorularınız mı var?</h2>
-                        <p className="text-gray-400 mb-8 max-w-xl mx-auto">
-                            Size yardımcı olmak için buradayız. Ürünler, siparişler veya projeleriniz hakkında bizimle iletişime geçin.
-                        </p>
-                        <div className="flex flex-wrap gap-4 justify-center">
-                            <a href="/iletisim" className="bg-brand-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all hover:shadow-lg hover:shadow-yellow-500/20">
-                                İletişim Sayfası
-                            </a>
-                            <a href="https://wa.me/908500000000?text=Merhaba%2C%20ecommerceflaredev.web.tr%20%C3%BCzerinden%20size%20ula%C5%9F%C4%B1yorum." target="_blank" rel="noopener noreferrer" className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-500 transition-all hover:shadow-lg hover:shadow-green-500/20">
-                                WhatsApp Destek
-                            </a>
+                        <div className="bg-white p-8 rounded-2xl shadow-lg border-l-4 border-amber-600">
+                            <h3 className="text-xl font-black text-gray-900 mb-3">Misi Kami</h3>
+                            <ul className="text-gray-600 space-y-2 text-sm">
+                                <li className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-amber-600 shrink-0" />
+                                    <span>Menyediakan barangan terus dari kilang dengan penjimatan maksimum.</span>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-amber-600 shrink-0" />
+                                    <span>Memastikan standard kualiti dan integriti produk sentiasa terpelihara.</span>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-amber-600 shrink-0" />
+                                    <span>Memberikan pengalaman membeli-belah atas talian yang pantas, mudah dan telus.</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -144,3 +98,5 @@ export function AboutPage() {
         </div>
     );
 }
+
+export default AboutPage;

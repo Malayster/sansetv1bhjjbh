@@ -1,0 +1,18 @@
+{
+  "Kedah": ["Kuala Ketil", "Baling", "Bandar Baharu", "Kota Setar / Alor Setar", "Kuala Muda / Sungai Petani", "Kubang Pasu / Jitra", "Kulim", "Langkawi", "Padang Terap", "Pendang", "Pokok Sena", "Sik", "Yan"],
+  "Pulau Pinang": ["Georgetown", "Bayan Lepas", "Butterworth", "Bukit Mertajam", "Nibong Tebal", "Seberang Perai", "Balik Pulau", "Kepala Batas"],
+  "Perlis": ["Kangar", "Arau", "Padang Besar", "Kuala Perlis", "Simpang Empat"],
+  "Perak": ["Ipoh", "Taiping", "Teluk Intan", "Manjung / Seri Manjung", "Kuala Kangsar", "Batu Gajah", "Kampar", "Tanjung Malim", "Tapah", "Parit Buntar", "Gerik"],
+  "Selangor": ["Shah Alam", "Petaling Jaya", "Subang Jaya", "Klang", "Kajang", "Ampang", "Rawang", "Bangi", "Sepang / Cyberjaya", "Banting", "Kuala Selangor"],
+  "Wilayah Persekutuan Kuala Lumpur": ["Kuala Lumpur", "Cheras", "Kepong", "Setapak", "Wangsa Maju", "Bukit Bintang", "Bangsar", "Sentul"],
+  "Wilayah Persekutuan Putrajaya": ["Putrajaya"],
+  "Negeri Sembilan": ["Seremban", "Port Dickson", "Nilai", "Senawang", "Bahau", "Tampin", "Kuala Pilah", "Rembau", "Jelebu"],
+  "Melaka": ["Melaka Tengah", "Alor Gajah", "Jasin", "Ayer Keroh", "Batu Berendam"],
+  "Johor": ["Johor Bahru", "Batu Pahat", "Muar", "Kluang", "Kulai", "Segamat", "Kota Tinggi", "Pontian", "Tangkak", "Mersing", "Pasir Gudang", "Iskandar Puteri"],
+  "Pahang": ["Kuantan", "Temerloh", "Bentong", "Raub", "Jerantut", "Pekan", "Maran", "Rompin", "Cameron Highlands", "Kuala Lipis"],
+  "Terengganu": ["Kuala Terengganu", "Kemaman / Chukai", "Dungun", "Besut / Jerteh", "Marang", "Hulu Terengganu", "Setiu", "Kuala Nerus"],
+  "Kelantan": ["Kota Bharu", "Pasir Mas", "Tumpat", "Bachok", "Tanah Merah", "Pasir Puteh", "Kuala Krai", "Machang", "Gua Musang", "Jeli"],
+  "Sabah": ["Kota Kinabalu", "Sandakan", "Tawau", "Lahad Datu", "Keningau", "Penampang", "Papar", "Tuaran", "Kudat", "Beaufort", "Ranau", "Semporna"],
+  "Sarawak": ["Kuching", "Miri", "Sibu", "Bintulu", "Samarahan", "Sri Aman", "Sarikei", "Kapit", "Limbang", "Betong", "Mukah", "Serian"],
+  "Wilayah Persekutuan Labuan": ["Labuan"]
+}

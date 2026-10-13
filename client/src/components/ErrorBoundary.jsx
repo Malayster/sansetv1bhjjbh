@@ -51,17 +51,17 @@ class ErrorBoundary extends React.Component {
                         </div>
 
                         <h1 className="text-2xl font-black text-gray-900 mb-2">
-                            Bir Hata Oluştu
+                            Ralat Berlaku
                         </h1>
 
                         <p className="text-gray-600 mb-6">
-                            Üzgünüz, beklenmeyen bir hata oluştu. Lütfen sayfayı yenileyin veya ana sayfaya dönün.
+                            Maaf, ralat yang tidak dijangka telah berlaku. Sila muat semula halaman atau kembali ke laman utama.
                         </p>
 
                         {process.env.NODE_ENV === 'development' && this.state.error && (
                             <details className="text-left mb-6 p-4 bg-gray-100 rounded-lg text-sm">
                                 <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-                                    Hata Detayları (Geliştirici Modu)
+                                    Butiran Ralat (Mod Pembangun)
                                 </summary>
                                 <pre className="text-xs text-red-600 overflow-auto">
                                     {this.state.error.toString()}
@@ -76,13 +76,13 @@ class ErrorBoundary extends React.Component {
                                 onClick={() => window.location.reload()}
                                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
                             >
-                                Sayfayı Yenile
+                                Muat Semula Halaman
                             </button>
                             <button
                                 onClick={this.handleReset}
                                 className="px-6 py-2 bg-brand-primary text-corporate-black rounded-lg font-bold hover:bg-yellow-300 transition-colors"
                             >
-                                Ana Sayfaya Dön
+                                Kembali ke Laman Utama
                             </button>
                         </div>
                     </div>

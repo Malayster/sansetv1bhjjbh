@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, ChevronDown, ChevronRight, Phone, Truck } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, ChevronDown, ChevronRight, Phone, Truck, Lock, User, Sparkles } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useTranslation } from 'react-i18next';
 import { useCategories } from '../hooks/useCategories';
 import { useSettings } from '../context/SettingsContext';
 
@@ -11,9 +10,8 @@ import { useSettings } from '../context/SettingsContext';
  * Refactored to use custom hooks for data fetching (follows DIP)
  */
 export function Header() {
-    const { t } = useTranslation();
     const { toggleSidebar, cartCount } = useCart();
-    const { settings, loading } = useSettings();
+    const { settings, cms, loading } = useSettings();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,22 +39,46 @@ export function Header() {
         setMobileMenuOpen(false);
     };
 
+    const phoneNo = cms?.info_kedai?.telefon || settings?.telefon || '016-6911020';
+
     return (
         <>
             <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
+                {/* 1. Bar Pengumuman Dinamik CMS */}
+                {cms?.announcement_bar?.active && cms?.announcement_bar?.text && (
+                    <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-white text-xs font-bold py-2 px-4 text-center tracking-wide flex items-center justify-center gap-2 shadow-inner">
+                        <Sparkles size={14} className="shrink-0 animate-pulse text-amber-200" />
+                        {cms.announcement_bar.link ? (
+                            <Link to={cms.announcement_bar.link} className="hover:underline flex items-center gap-1">
+                                <span>{cms.announcement_bar.text}</span>
+                            </Link>
+                        ) : (
+                            <span>{cms.announcement_bar.text}</span>
+                        )}
+                    </div>
+                )}
+
                 {/* 2. Secondary Utility Bar */}
                 <div className="bg-white border-b border-gray-100 hidden md:block">
                     <div className="container mx-auto px-4 h-10 flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
                         <div className="flex items-center gap-4">
-                            {/* Free Shipping Banner Removed */}
+                            <span className="flex items-center gap-1.5 text-amber-600 font-extrabold">
+                                <Truck size={14} />
+                                Terus Dari Kilang Kuala Ketil, Kedah
+                            </span>
                         </div>
                         <div className="flex items-center gap-4">
                             <Link to="/sss" className="hover:text-action-red transition-colors">Soalan Lazim</Link>
                             <Link to="/iletisim" className="hover:text-action-red transition-colors">Hubungi Kami</Link>
-                            <a href="tel:0166911020" className="flex items-center gap-1 hover:text-action-red transition-colors">
+                            <a href={`tel:${phoneNo.replace(/[^0-9]/g, '')}`} className="flex items-center gap-1 hover:text-action-red transition-colors">
                                 <Phone size={14} />
-                                016-6911020
+                                {phoneNo}
                             </a>
+                            <span className="text-gray-300">|</span>
+                            <Link to="/login" className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold transition-colors" title="Log Masuk Pentadbir">
+                                <Lock size={12} />
+                                <span>Log Masuk Pentadbir</span>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -92,7 +114,16 @@ export function Header() {
                         </form>
 
                         {/* Right Actions (Desktop) */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
+                            <Link
+                                to="/login"
+                                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg border border-gray-200 hover:border-amber-300 transition-all shadow-xs"
+                                title="Log Masuk Pentadbir"
+                            >
+                                <Lock size={15} className="text-amber-600" />
+                                <span>Admin</span>
+                            </Link>
+
                             <button
                                 className="flex items-center gap-1.5 md:gap-3 bg-action-red text-white px-3 md:px-5 py-2 md:py-2.5 rounded-lg hover:bg-red-700 transition-all shadow-md transform hover:scale-105 active:scale-95 group relative overflow-hidden"
                                 onClick={toggleSidebar}
@@ -159,7 +190,7 @@ export function Header() {
                                                         )}
                                                         <div className="flex-1">
                                                             <div className="font-black text-sm group-hover/item:text-action-red transition-colors">{sub.ad}</div>
-                                                            <div className="text-[10px] text-gray-400 font-bold uppercase">Ürünleri İncele</div>
+                                                            <div className="text-[10px] text-gray-400 font-bold uppercase">Lihat Barangan</div>
                                                         </div>
                                                         <ChevronRight size={16} className="text-gray-300 group-hover/item:translate-x-1 transition-transform" />
                                                     </button>
@@ -192,7 +223,7 @@ export function Header() {
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Ürün ara..."
+                                    placeholder="Cari barangan..."
                                     className="w-full bg-gray-100 text-corporate-black placeholder-gray-500 px-4 py-3 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                                 />
                                 <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-corporate-black p-1">
@@ -232,12 +263,24 @@ export function Header() {
                                                 onClick={() => handleCategoryClick(cat)}
                                                 className="w-full px-4 py-2 text-left text-sm font-bold text-action-red"
                                             >
-                                                Tümünü Gör →
+                                                Lihat Semua →
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Mobile Admin Link */}
+                        <div className="p-4 border-t border-gray-100 bg-slate-50 space-y-2">
+                            <Link
+                                to="/login"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="w-full py-3 px-4 bg-amber-500/10 border border-amber-500/30 text-amber-700 font-bold rounded-xl flex items-center justify-center gap-2 text-sm hover:bg-amber-500/20 transition-colors"
+                            >
+                                <Lock size={16} />
+                                Log Masuk Pentadbir
+                            </Link>
                         </div>
                     </div>
                 </div>

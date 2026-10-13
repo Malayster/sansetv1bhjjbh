@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import api from '../lib/axios';
-import { CheckCircle, Clock, Package, AlertCircle, Phone, XCircle, MapPin } from 'lucide-react';
+import { CheckCircle, Clock, Package, AlertCircle, Phone, XCircle, MapPin, Truck, MessageCircle } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
-
-import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 
 export function OrderTrackingPage() {
-    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const [order, setOrder] = useState(null);
@@ -29,13 +27,13 @@ export function OrderTrackingPage() {
                 iadeTipi: returnType,
                 sebepAciklamasi: returnReason
             });
-            alert('İade talebiniz alındı! Değerlendirildikten sonra size dönüş yapılacaktır.');
+            alert('Permohonan pemulangan anda telah diterima! Pihak kami akan menghubungi anda dalam tempoh 1-2 hari bekerja.');
             setIsReturnModalOpen(false);
             // Refresh
             const response = await api.get(`/api/v1/orders/track?token=${token}`);
             if (response.data.status === 'success') setOrder(response.data.data);
         } catch (err) {
-            alert(err.response?.data?.errorMessage || 'Bir hata oluştu.');
+            alert(err.response?.data?.errorMessage || 'Ralat berlaku semasa menghantar permohonan pemulangan.');
         } finally {
             setLoading(false);
         }
@@ -44,7 +42,7 @@ export function OrderTrackingPage() {
     useEffect(() => {
         const fetchOrder = async () => {
             if (!token) {
-                setError('Takip kodu bulunamadı.');
+                setError('Kod penjejakan tidak dijumpai. Sila pastikan pautan pesanan anda lengkap.');
                 setLoading(false);
                 return;
             }
@@ -54,10 +52,10 @@ export function OrderTrackingPage() {
                 if (response.data.status === 'success') {
                     setOrder(response.data.data);
                 } else {
-                    setError('Sipariş bulunamadı.');
+                    setError('Maklumat pesanan tidak dijumpai dalam rekod.');
                 }
             } catch (err) {
-                setError('Sipariş bilgileri alınırken bir hata oluştu veya takip kodu geçersiz.');
+                setError('Ralat berlaku semasa mendapatkan maklumat pesanan atau kod penjejakan tidak sah.');
             } finally {
                 setLoading(false);
             }
@@ -74,7 +72,6 @@ export function OrderTrackingPage() {
         try {
             setLoading(true);
             await api.post(`/api/v1/orders/cancel`, { token, reason: cancelReason });
-            // Refresh order
             const response = await api.get(`/api/v1/orders/track?token=${token}`);
             if (response.data.status === 'success') {
                 setOrder(response.data.data);
@@ -82,110 +79,140 @@ export function OrderTrackingPage() {
                 setCancelReason("");
             }
         } catch (err) {
-            alert(err.response?.data?.errorMessage || t('orders.cancelError'));
+            alert(err.response?.data?.errorMessage || 'Pesanan tidak dapat dibatalkan. Sila hubungi khidmat pelanggan.');
         } finally {
             setLoading(false);
         }
     };
 
-    const whatsappLink = order ? `https://wa.me/908500000000?text=Merhaba, Sipariş No: ${order.siparisNumarasi} hakkında destek almak istiyorum.` : '#';
+    const whatsappLink = order
+        ? `https://wa.me/60166911020?text=${encodeURIComponent(`Salam DIN'O EMPIRE, saya ingin menyemak status Pesanan No: #${order.siparisNumarasi}`)}`
+        : 'https://wa.me/60166911020';
+
+    const getStatusLabel = (durum) => {
+        switch (durum) {
+            case 'TAMAMLANDI':
+            case 'DELIVERED':
+                return 'Selesai';
+            case 'HAZIRLANIYOR':
+            case 'PREPARING':
+                return 'Sedang Disediakan';
+            case 'KARGOLANDI':
+            case 'SHIPPED':
+                return 'Dalam Penghantaran';
+            case 'TESLIM_EDILDI':
+                return 'Telah Dihantar';
+            case 'IPTAL_EDILDI':
+            case 'CANCELLED':
+                return 'Dibatalkan';
+            case 'BEKLEMEDE':
+            case 'PENDING':
+                return 'Menunggu Pembayaran';
+            default: return durum || 'Sedang Diproses';
+        }
+    };
 
     const renderContent = () => {
         if (loading) {
             return (
-                <div className="flex justify-center items-center h-48">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <div className="flex flex-col justify-center items-center h-64 gap-3">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-600 border-t-transparent"></div>
+                    <p className="text-gray-500 font-medium text-sm">Memuatkan maklumat pesanan...</p>
                 </div>
             );
         }
 
         if (error) {
             return (
-                <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md text-center">
+                <div className="max-w-2xl mx-auto my-12 p-8 bg-white rounded-2xl shadow-md border border-gray-100 text-center">
                     <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Hata</h2>
+                    <h2 className="text-2xl font-black text-gray-800 mb-2">Maklumat Tidak Dijumpai</h2>
                     <p className="text-gray-600 mb-6">{error}</p>
-                    <a href="/" className="inline-block bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition">
-                        {t('status.backToHome')}
-                    </a>
+                    <Link to="/" className="inline-block bg-amber-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-amber-700 transition">
+                        Kembali ke Laman Utama
+                    </Link>
                 </div>
             );
         }
 
         return (
             <div className="max-w-6xl mx-auto px-4 py-10 relative">
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                <SEO
+                    title={`Penjejakan Pesanan #${order.siparisNumarasi} - DIN'O EMPIRE`}
+                    description="Semak status dan butiran penghantaran pesanan DIN'O EMPIRE anda."
+                />
+
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
                     {/* Header */}
-                    <div className="bg-linear-to-r from-primary-600 to-primary-800 text-white p-6">
-                        <div className="flex justify-between items-center">
+                    <div className="bg-linear-to-r from-gray-900 via-gray-800 to-amber-950 text-white p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <h1 className="text-2xl font-bold">{t('header.trackOrder')}</h1>
-                                <p className="text-primary-100 mt-1">Sipariş No: #{order.siparisNumarasi}</p>
+                                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Penjejakan Pesanan</span>
+                                <h1 className="text-2xl md:text-3xl font-black mt-1">Pesanan #{order.siparisNumarasi}</h1>
+                                <p className="text-gray-300 text-sm mt-1">
+                                    Tarikh Pesanan: {order.olusturulmaTarihi ? new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                                </p>
                             </div>
-                            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-xs flex gap-2">
-                                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-white hover:text-green-200 transition" title={t('orders.whatsappSupport')}>
-                                    <Phone size={20} />
+                            <div className="flex items-center gap-3">
+                                <a
+                                    href={whatsappLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition"
+                                    title="Hubungi Khidmat Pelanggan WhatsApp"
+                                >
+                                    <MessageCircle size={18} />
+                                    <span>Bantuan WhatsApp</span>
                                 </a>
-                                <Clock className="w-6 h-6 text-white" />
                             </div>
                         </div>
                     </div>
 
                     {/* Status Bar */}
-                    <div className="p-6 border-b bg-gray-50">
-                        <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-gray-700">{t('orders.status')}:</span>
-                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${order.durum === 'TAMAMLANDI' ? 'bg-green-100 text-green-700' :
-                                order.iadeTalebi ? 'bg-orange-100 text-orange-700' :
-                                    order.durum === 'BEKLEMEDE' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-gray-100 text-gray-700'
-                                }`}>
-                                {order.iadeTalebi ? (
-                                    <>
-                                        <span className="block sm:inline">{order.iadeTalebi.durum.replace(/_/g, ' ')}</span>
-                                    </>
-                                ) : (
-                                    order.durum === 'TAMAMLANDI' ? 'Tamamlandı' :
-                                        order.durum === 'HAZIRLANIYOR' ? 'Hazırlanıyor' :
-                                            order.durum === 'KARGOLANDI' ? 'Kargoya Verildi' :
-                                                order.durum === 'TESLIM_EDILDI' ? 'Teslim Edildi' :
-                                                    order.durum === 'IPTAL_EDILDI' ? 'İptal Edildi' :
-                                                        order.durum === 'BEKLEMEDE' ? 'Ödeme Bekleniyor' : order.durum
-                                )}
+                    <div className="p-6 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <span className="font-bold text-gray-700 text-sm">Status Pesanan:</span>
+                            <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                                order.durum === 'TAMAMLANDI' || order.durum === 'TESLIM_EDILDI' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                                order.iadeTalebi ? 'bg-orange-100 text-orange-800 border border-orange-300' :
+                                order.durum === 'KARGOLANDI' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                                order.durum === 'HAZIRLANIYOR' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                                order.durum === 'IPTAL_EDILDI' ? 'bg-red-100 text-red-800 border border-red-300' :
+                                'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                            }`}>
+                                {getStatusLabel(order.durum)}
                             </span>
 
+                            {order.kargoTakipNo && (
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                                    <Truck size={14} />
+                                    <span>Tracking: {order.kargoFirmasi || 'Kurier'} - {order.kargoTakipNo}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
                             {(order.durum === 'BEKLEMEDE' || order.durum === 'HAZIRLANIYOR') && (
                                 <button
                                     onClick={handleCancelClick}
-                                    className="ml-auto sm:ml-4 flex items-center gap-1 text-red-600 hover:text-red-800 text-sm font-medium border border-red-200 px-3 py-1 rounded-full hover:bg-red-50 transition"
+                                    className="flex items-center gap-1.5 text-red-600 hover:text-red-800 text-xs font-bold border border-red-200 px-3.5 py-1.5 rounded-full hover:bg-red-50 transition"
                                 >
-                                    <XCircle size={14} /> {t('orders.cancelOrder')}
+                                    <XCircle size={14} /> Batalkan Pesanan
                                 </button>
                             )}
 
                             {order.durum === 'TESLIM_EDILDI' && !order.iadeTalebi && (
                                 <button
                                     onClick={() => setIsReturnModalOpen(true)}
-                                    className="ml-auto sm:ml-4 flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium border border-blue-200 px-3 py-1 rounded-full hover:bg-blue-50 transition"
+                                    className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-bold border border-blue-200 px-3.5 py-1.5 rounded-full hover:bg-blue-50 transition"
                                 >
-                                    <Package size={14} /> İade Talep Et
+                                    <Package size={14} /> Mohon Pemulangan
                                 </button>
                             )}
 
                             {order.iadeTalebi && (
-                                <div className="ml-auto sm:ml-4 flex items-center gap-1 text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
-                                    <span className="text-sm font-semibold">İade Durumu: {order.iadeTalebi.durum.replace('_', ' ')}</span>
-                                    {order.iadeTalebi.manuelIadeKodu && (
-                                        <span className="font-bold ml-2">Kod: {order.iadeTalebi.manuelIadeKodu} - {order.iadeTalebi.kargoFirmasi}</span>
-                                    )}
-                                </div>
-                            )}
-
-                            {(['KARGOLANDI', 'TESLIM_EDILDI', 'TAMAMLANDI'].includes(order.durum)) && (
-                                <div className="ml-auto sm:ml-4 flex items-center gap-1 text-gray-500 text-xs sm:text-sm bg-gray-100 px-3 py-1 rounded-full border border-gray-200" title="Sipariş kargoya verildiği için bu aşamada iptal edilemez. Lütfen bizimle iletişime geçin.">
-                                    <AlertCircle size={14} />
-                                    <span className="hidden sm:inline">Kargolandığı için iptal edilemez</span>
-                                    <span className="sm:hidden">İptal Edilemez</span>
+                                <div className="text-xs font-bold text-orange-700 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
+                                    Status Pemulangan: {order.iadeTalebi.durum}
                                 </div>
                             )}
                         </div>
@@ -194,10 +221,10 @@ export function OrderTrackingPage() {
                     {/* Order Details Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-150">
                         {/* Left Side: Order Items */}
-                        <div className="p-6 lg:col-span-2 space-y-6">
-                            <h2 className="text-lg font-bold text-gray-800 border-b pb-2 flex items-center gap-2">
-                                <Package className="text-primary-600" size={20} />
-                                Sipariş Detayları
+                        <div className="p-6 md:p-8 lg:col-span-2 space-y-6">
+                            <h2 className="text-lg font-bold text-gray-900 border-b pb-3 flex items-center gap-2">
+                                <Package className="text-amber-600" size={20} />
+                                Senarai Barangan Dipesan
                             </h2>
 
                             <div className="divide-y divide-gray-100 space-y-4">
@@ -213,63 +240,82 @@ export function OrderTrackingPage() {
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="bg-gray-100 p-4 rounded-xl text-gray-400 shrink-0 shadow-xs">
+                                                <div className="bg-gray-100 p-4 rounded-xl text-gray-400 shrink-0">
                                                     <Package size={24} />
                                                 </div>
                                             )}
                                             <div>
-                                                <p className="font-semibold text-gray-850">{item.urunAd}</p>
-                                                <p className="text-sm text-gray-500 mt-0.5">{item.adet} Adet x ₺{Number(item.birimFiyat).toFixed(2)}</p>
+                                                <p className="font-bold text-gray-900">{item.urunAd || item.urunAdSnapshot || item.name || 'Produk'}</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {item.adet || item.quantity || 1} Unit x RM {Number(item.birimFiyat || item.fiyat || item.price || 0).toFixed(2)}
+                                                </p>
                                                 {item.secilenRenk && (
-                                                    <p className="text-xs text-gray-550 mt-1 bg-gray-100 px-2.5 py-1 rounded-full inline-block font-semibold">
-                                                        {item.varyantBasligi || 'Renk'}: {item.secilenRenk}
-                                                    </p>
+                                                    <span className="text-[11px] text-gray-600 mt-1.5 bg-gray-100 px-2.5 py-0.5 rounded-full inline-block font-semibold">
+                                                        Varian: {item.secilenRenk}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <span className="font-bold text-gray-900">₺{(Number(item.birimFiyat) * item.adet).toFixed(2)}</span>
+                                        <span className="font-black text-gray-900">
+                                            RM {(Number(item.birimFiyat || item.fiyat || item.price || 0) * (item.adet || item.quantity || 1)).toFixed(2)}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         {/* Right Side: Order Summary & Shipping */}
-                        <div className="p-6 bg-gray-50/40 flex flex-col justify-between space-y-6">
+                        <div className="p-6 md:p-8 bg-gray-50/50 flex flex-col justify-between space-y-6">
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-850 border-b pb-2">Ödeme Özeti</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 border-b pb-3">Ringkasan Pembayaran</h3>
 
-                                    <div className="mt-4 space-y-3">
-                                        <div className="flex justify-between items-center text-gray-650 font-medium">
-                                            <span>Ara Toplam</span>
-                                            <span>₺{(Number(order.toplamTutar) - Number(order.kargoUcreti)).toFixed(2)}</span>
+                                    <div className="mt-4 space-y-3 text-sm">
+                                        <div className="flex justify-between items-center text-gray-600">
+                                            <span>Jumlah Barangan</span>
+                                            <span className="font-semibold text-gray-900">
+                                                RM {(Number(order.toplamTutar) - Number(order.kargoUcreti || 0)).toFixed(2)}
+                                            </span>
                                         </div>
-                                        <div className="flex justify-between items-center text-gray-650 font-medium">
-                                            <span>Kargo Ücreti</span>
-                                            <span>₺{Number(order.kargoUcreti || 0).toFixed(2)}</span>
+                                        <div className="flex justify-between items-center text-gray-600">
+                                            <span>Kadar Penghantaran Pos</span>
+                                            <span className="font-semibold text-gray-900">
+                                                {Number(order.kargoUcreti || 0) === 0 ? (
+                                                    <span className="text-emerald-600 font-bold">PERCUMA</span>
+                                                ) : (
+                                                    `RM ${Number(order.kargoUcreti).toFixed(2)}`
+                                                )}
+                                            </span>
                                         </div>
-                                        <div className="flex justify-between items-center text-xl font-extrabold text-gray-900 border-t pt-3 mt-3">
-                                            <span>Toplam Tutar</span>
-                                            <span className="text-primary-700">₺{Number(order.toplamTutar).toFixed(2)}</span>
+                                        <div className="flex justify-between items-center text-lg font-black text-gray-900 border-t pt-3 mt-3">
+                                            <span>Jumlah Keseluruhan</span>
+                                            <span className="text-amber-600">RM {Number(order.toplamTutar).toFixed(2)}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-primary-50/70 p-5 rounded-2xl border border-primary-100">
-                                    <h4 className="font-bold text-primary-900 mb-2 flex items-center gap-1.5 text-sm uppercase tracking-wider">
-                                        <MapPin size={16} /> Teslimat Adresi
+                                <div className="bg-amber-50/70 p-5 rounded-2xl border border-amber-200/60">
+                                    <h4 className="font-bold text-amber-950 mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                                        <MapPin size={15} className="text-amber-600" /> Alamat Penghantaran
                                     </h4>
-                                    <p className="text-primary-850 font-semibold text-sm">{order.teslimatAdresi?.ilce || ''}, {order.teslimatAdresi?.sehir || ''}</p>
-                                    <p className="text-xs text-primary-600 mt-2 font-medium leading-relaxed">* Güvenlik nedeniyle tam adres gizlenmiştir.</p>
+                                    <p className="text-gray-800 font-semibold text-sm">
+                                        {order.teslimatAdresi?.adSoyad || ''}
+                                    </p>
+                                    <p className="text-gray-600 text-xs mt-1">
+                                        {order.teslimatAdresi?.sehir || ''}, {order.teslimatAdresi?.ilce || ''}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 mt-2 italic">
+                                        * Alamat lengkap dilindungi demi privasi pelanggan mengikut PDPA.
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="p-6 bg-gray-50 text-center border-t">
-                        <a href="/" className="text-primary-600 hover:text-primary-800 font-medium hover:underline">
-                            {t('cart.continueShopping')}
-                        </a>
+                            <div className="pt-4 border-t border-gray-200 text-center">
+                                <Link to="/magaza" className="text-amber-600 hover:text-amber-700 font-bold text-sm hover:underline">
+                                    ← Teruskan Membeli-belah
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -281,7 +327,7 @@ export function OrderTrackingPage() {
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                                         <AlertCircle className="w-6 h-6 text-red-500" />
-                                        {t('orders.cancelOrder')}
+                                        Batalkan Pesanan
                                     </h3>
                                     <button
                                         onClick={() => setIsCancelModalOpen(false)}
@@ -291,101 +337,88 @@ export function OrderTrackingPage() {
                                     </button>
                                 </div>
 
-                                <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
-                                    <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-bold text-orange-800">
-                                            İade / İptal Kısıtlaması
-                                        </p>
-                                        <p className="text-xs text-orange-700 mt-1">
-                                            Siparişiniz özel yapım veya iade edilemeyen ürün(ler) içeriyor olabilir (Örn: Kişiye özel hazırlanan/üretilen veya kişiselleştirilen ürünler). İptal talebiniz onaylanırken bu ürünler değerlendirmeye alınacaktır.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <p className="text-gray-600 mb-6 font-medium">
-                                    {t('orders.cancelConfirm')}
+                                <p className="text-gray-600 mb-4 text-sm">
+                                    Adakah anda pasti ingin membatalkan pesanan ini? Pembatalan hanya dibenarkan jika pesanan belum diserahkan kepada pihak kurier.
                                 </p>
 
                                 <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        {t('orders.cancelReason')} (İsteğe bağlı)
+                                    <label className="block text-xs font-bold text-gray-700 mb-2">
+                                        Sebab Pembatalan (Pilihan)
                                     </label>
                                     <textarea
                                         value={cancelReason}
                                         onChange={(e) => setCancelReason(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[100px] resize-none text-sm"
-                                        placeholder="Lütfen iptal nedeninizi kısaca belirtin..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[90px] resize-none text-sm"
+                                        placeholder="Sila nyatakan sebab pembatalan..."
                                     />
                                 </div>
 
                                 <div className="flex gap-3 justify-end">
                                     <button
                                         onClick={() => setIsCancelModalOpen(false)}
-                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-sm transition-colors"
                                     >
-                                        Vazgeç
+                                        Kembali
                                     </button>
                                     <button
                                         onClick={confirmCancel}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-lg shadow-red-500/30 transition-all hover:scale-[1.02]"
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-all"
                                     >
-                                        Siparişi İptal Et
+                                        Sahkan Pembatalan
                                     </button>
                                 </div>
-                            </div>
-                            <div className="bg-red-50 p-4 border-t border-red-100 flex items-center gap-2 text-sm text-red-700">
-                                <span className='font-semibold'>⚠️ Dikkat:</span> Bu işlem geri alınamaz.
                             </div>
                         </div>
                     </div>
                 )}
+
                 {/* Return Request Modal */}
                 {isReturnModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="p-6">
-                                <h3 className="text-xl font-bold text-gray-900 mb-4">İade Talebi Oluştur</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">Mohon Pemulangan Barangan</h3>
 
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">İade Nedeni</label>
+                                    <label className="block text-xs font-bold text-gray-700 mb-1">Sebab Pemulangan</label>
                                     <select
-                                        className="w-full border rounded-lg p-2"
+                                        className="w-full border border-gray-300 rounded-xl p-2.5 text-sm font-medium"
                                         value={returnType}
                                         onChange={(e) => setReturnType(e.target.value)}
                                     >
-                                        <option value="KUSURLU_URUN">Kusurlu / Hasarlı Ürün</option>
-                                        <option value="KEYFI_IADE">Keyfi İade / Vazgeçtim</option>
+                                        <option value="KUSURLU_URUN">Barangan Rosak / Cacat</option>
+                                        <option value="KEYFI_IADE">Tersalah Pesan / Tukar Fikiran</option>
                                     </select>
                                 </div>
 
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Detaylı Açıklama</label>
+                                    <label className="block text-xs font-bold text-gray-700 mb-1">Penerangan Terperinci</label>
                                     <textarea
-                                        className="w-full border rounded-lg p-2 min-h-[100px]"
-                                        placeholder="Lütfen iade sebebinizi detaylandırın..."
+                                        className="w-full border border-gray-300 rounded-xl p-2.5 text-sm min-h-[90px]"
+                                        placeholder="Sila terangkan kerosakan atau sebab pemulangan..."
                                         value={returnReason}
                                         onChange={(e) => setReturnReason(e.target.value)}
                                     />
                                 </div>
 
                                 <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Fotoğraf (Opsiyonel)</label>
-                                    <p className="text-xs text-gray-500 mb-2">Hasarlı ürün fotoğraflarını Whatsapp hattımızdan veya bilgi@ecommerceflaredev.web.tr adresinden sipariş numaranızla iletmeniz süreci hızlandıracaktır.</p>
+                                    <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                        💡 Sila hantarkan bukti gambar barangan yang rosak ke WhatsApp kami di <strong>016-6911020</strong> untuk pemprosesan segera.
+                                    </p>
                                 </div>
 
                                 <div className="flex justify-end gap-2">
                                     <button
                                         onClick={() => setIsReturnModalOpen(false)}
-                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl text-sm font-bold"
                                     >
-                                        Vazgeç
+                                        Batal
                                     </button>
                                     <button
                                         onClick={submitReturnRequest}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                        className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 shadow-md"
                                     >
-                                        Talebi Gönder
+                                        Hantar Permohonan
                                     </button>
                                 </div>
                             </div>
@@ -402,4 +435,6 @@ export function OrderTrackingPage() {
             <FeaturesSection />
         </div>
     );
-};
+}
+
+export default OrderTrackingPage;

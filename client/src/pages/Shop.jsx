@@ -109,36 +109,36 @@ export function Shop() {
         switch (sortBy) {
             case 'price-asc': return a.fiyat - b.fiyat;
             case 'price-desc': return b.fiyat - a.fiyat;
-            case 'name-asc': return a.ad.localeCompare(b.ad, 'tr');
-            case 'name-desc': return b.ad.localeCompare(a.ad, 'tr');
+            case 'name-asc': return a.ad.localeCompare(b.ad, 'ms');
+            case 'name-desc': return b.ad.localeCompare(a.ad, 'ms');
             case 'newest': default: return new Date(b.olusturulmaTarihi) - new Date(a.olusturulmaTarihi);
         }
     });
 
     // SEO Titles
     const getFilterTitle = () => {
-        if (filterType === 'deals') return 'Fırsat Ürünleri';
-        if (filterType === 'bestsellers') return 'Çok Satanlar';
-        if (filterType === 'new') return 'Yeni Ürünler';
-        if (filterType === 'featured') return 'Öne Çıkan Ürünler';
+        if (filterType === 'deals') return 'Tawaran Hebat';
+        if (filterType === 'bestsellers') return 'Paling Laris';
+        if (filterType === 'new') return 'Barangan Baru';
+        if (filterType === 'featured') return 'Produk Pilihan Ramai';
         return null;
     };
 
     const pageTitle = activeCategory
-        ? `${activeCategory.ad} - Ürünler`
+        ? `${activeCategory.ad} - Barangan`
         : searchQuery
-            ? `"${searchQuery}" Arama Sonuçları`
-            : getFilterTitle() || 'Mağaza';
+            ? `"${searchQuery}" Keputusan Carian`
+            : getFilterTitle() || 'Katalog Kedai';
 
     const seoDescription = activeCategory
-        ? `${activeCategory.ad} kategorisindeki tüm ürünleri keşfedin.`
-        : 'E-Market - Binlerce ürünü en uygun fiyatlarla kapınıza getiren e-ticaret platformu.';
+        ? `Terokai semua barangan berkualiti dalam kategori ${activeCategory.ad}.`
+        : "DIN'O EMPIRE - Portaj, Kilang Kuala Ketil & Barangan Terpilih Malaysia.";
 
     const structuredData = combineSchemas(
         generateWebsiteSchema(),
         generateProductListSchema(
             displayProducts.slice(0, 10),
-            activeCategory ? `${activeCategory.ad} Ürünler` : getFilterTitle() || `"${searchQuery}" Arama Sonuçları`
+            activeCategory ? `${activeCategory.ad} Barangan` : getFilterTitle() || `"${searchQuery}" Keputusan Carian`
         )
     );
 
@@ -147,18 +147,18 @@ export function Shop() {
             <SEO
                 title={pageTitle}
                 description={seoDescription}
-                keywords={activeCategory ? `${activeCategory.ad}, alışveriş, e-market` : undefined}
+                keywords={activeCategory ? `${activeCategory.ad}, beli belah, dino empire` : undefined}
                 structuredData={structuredData}
-                canonical={activeCategory ? `https://ecommerceflaredev.web.tr/magaza?kategori=${activeCategory.slug || activeCategory.id}` : 'https://ecommerceflaredev.web.tr/magaza'}
+                canonical={activeCategory ? `https://dinoempire.my/magaza?kategori=${activeCategory.slug || activeCategory.id}` : 'https://dinoempire.my/magaza'}
             />
 
             <div className="container mx-auto px-4 py-6 md:py-10">
                 {/* Breadcrumb / Header */}
                 <div className="flex flex-col gap-3 mb-8">
                     <nav className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/')}>Anasayfa</span>
+                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/')}>Laman Utama</span>
                         <ChevronRight size={14} className="text-gray-300" />
-                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/magaza')}>Mağaza</span>
+                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/magaza')}>Kedai</span>
 
                         {activeCategory && (
                             <>
@@ -174,17 +174,17 @@ export function Shop() {
                                 {activeCategory ? `${activeCategory.ad}` : pageTitle}
                             </h1>
                             {!loading && (
-                                <p className="text-gray-400 text-xs font-medium">{displayProducts.length} ürün listeleniyor</p>
+                                <p className="text-gray-400 text-xs font-medium">{displayProducts.length} barangan disenaraikan</p>
                             )}
                         </div>
 
                         {/* Mobile Filter Toggle */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className="md:hidden flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 hover:border-indigo-600/50 transition-all text-sm font-semibold text-gray-700"
+                            className="md:hidden flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 hover:border-indigo-600/50 transition-all text-sm font-semibold text-gray-700 cursor-pointer"
                         >
                             <SlidersHorizontal size={16} />
-                            <span>Filtrele</span>
+                            <span>Tapis</span>
                         </button>
                     </div>
                 </div>
@@ -225,13 +225,13 @@ export function Shop() {
                             {displayProducts.length === 0 && (
                                     <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                                         <Package size={56} className="mx-auto text-gray-300 mb-5" />
-                                        <h3 className="text-lg font-black text-gray-700 mb-2">Ürün Bulunamadı</h3>
-                                        <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Seçtiğiniz filtre kombinasyonuna uygun ürün henüz mevcut değil.</p>
+                                        <h3 className="text-lg font-black text-gray-700 mb-2">Tiada Barangan Ditemui</h3>
+                                        <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Tiada barangan yang sepadan dengan gabungan penapis yang anda pilih.</p>
                                         <button
                                             onClick={() => navigate('/magaza')}
-                                            className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-black text-sm hover:bg-indigo-700 transition-colors shadow-xs"
+                                            className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-black text-sm hover:bg-amber-600 transition-colors shadow-xs cursor-pointer"
                                         >
-                                            Filtreleri Temizle
+                                            Kosongkan Penapis
                                         </button>
                                     </div>
                                 )}

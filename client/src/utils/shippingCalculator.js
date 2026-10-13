@@ -1,131 +1,88 @@
 /**
- * Shipping calculation utilities
- * Supports 4 policies: UCRETSIZ, SABIT_UCRET, SEPET_LIMITI, and AGIRLIK_KADEMELI
+ * Kalkulator Kos Penghantaran Pos DIN'O EMPIRE (Malaysia)
+ * Kadar berdasarkan Negeri & Had Kelayakan Pos Percuma RM 100:
+ * - Kedah (Kawasan Setempat / Kilang): RM 6.00
+ * - Semenanjung Malaysia: RM 8.00
+ * - Sabah, Sarawak & Labuan: RM 15.00
+ * - Percuma untuk Semenanjung & Kedah bagi pembelian RM 100 ke atas.
  */
 
 /**
- * Calculate total weight for cart items
- * @param {Array} cartItems - Array of cart items with agirlik and quantity
- * @returns {number} Total weight in kg
+ * Hitung jumlah berat keseluruhan item dalam troli
+ * @param {Array} cartItems - Senarai item dengan agirlik dan quantity
+ * @returns {number} Jumlah berat dalam kg
  */
-export const calculateTotalWeight = (cartItems) => {
+export const calculateTotalWeight = (cartItems = []) => {
     return cartItems.reduce((acc, item) => {
-        const itemWeight = Number(item.agirlik || 1);
-        return acc + (itemWeight * item.quantity);
+        const itemWeight = Number(item.agirlik || item.desi || 0.3);
+        return acc + (itemWeight * (item.quantity || item.adet || 1));
     }, 0);
 };
 
 /**
- * Calculate shipping fee based on cart total, weight, and policy settings
- * @param {Object} params - Calculation parameters
- * @param {number} params.cartTotal - Total cart value
- * @param {number} params.totalWeight - Total weight in kg
- * @param {Object} params.settings - Settings object with shipping configuration
+ * Hitung kos pos berdasarkan jumlah belian, berat, dan pilihan Negeri
+ * @param {Object} params
+ * @param {number} params.cartTotal - Nilai keseluruhan troli (RM)
+ * @param {number} params.totalWeight - Berat keseluruhan (kg)
+ * @param {Object} params.settings - Tetapan sistem
+ * @param {string} params.stateName - Nama Negeri di Malaysia
  * @returns {Object} { shippingFee, isFreeShipping, weightError }
  */
-export const calculateShippingFee = ({ cartTotal, totalWeight, settings }) => {
-    const policy = settings?.kargoPolitikaTuru || 'SABIT_UCRET';
-    const sabitUcret = settings?.kargoSabitUcret !== undefined ? Number(settings.kargoSabitUcret) : 0;
-    const ucretsizKargoAltLimit = settings?.ucretsizKargoAltLimit !== undefined ? Number(settings.ucretsizKargoAltLimit) : 5000;
-    const weightMultiplier = settings?.kargoAgirlikCarpani > 0 ? Number(settings.kargoAgirlikCarpani) : 15.00;
-
-    let shippingFee;
-    let isFreeShipping;
+export const calculateShippingFee = ({ cartTotal = 0, totalWeight = 0, settings = {}, stateName = '' }) => {
     let weightError = false;
-
-    if (policy === 'UCRETSIZ') {
-        shippingFee = 0;
-        isFreeShipping = true;
-    } else if (policy === 'SABIT_UCRET') {
-        shippingFee = sabitUcret;
-        isFreeShipping = (shippingFee === 0);
-    } else if (policy === 'SEPET_LIMITI') {
-        if (cartTotal >= ucretsizKargoAltLimit) {
-            shippingFee = 0;
-            isFreeShipping = true;
-        } else {
-            shippingFee = totalWeight * weightMultiplier;
-            isFreeShipping = (shippingFee === 0);
-        }
-    } else if (policy === 'AGIRLIK_KADEMELI') {
-        // Dynamic weight-based pricing
-        let priceList = settings?.kargoFiyatListesi;
-        if (typeof priceList === 'string') {
-            try {
-                priceList = JSON.parse(priceList);
-            } catch {
-                priceList = null;
-            }
-        }
-
-        if (Array.isArray(priceList) && priceList.length > 0) {
-            // Sort list by maxWeight
-            const sortedList = [...priceList].sort((a, b) => a.maxWeight - b.maxWeight);
-            const matchingTier = sortedList.find(tier => totalWeight <= tier.maxWeight);
-
-            if (matchingTier) {
-                shippingFee = Number(matchingTier.price);
-            } else {
-                // Exceeds max weight logic - no multiplier allowed!
-                shippingFee = null;
-                weightError = true;
-            }
-        } else {
-            // Fallback check (Hardcoded if no settings or empty tiers)
-            if (totalWeight <= 1) shippingFee = 65.00;
-            else if (totalWeight <= 2) shippingFee = 85.00;
-            else if (totalWeight <= 3) shippingFee = 105.00;
-            else if (totalWeight <= 4) shippingFee = 125.00;
-            else if (totalWeight <= 5) shippingFee = 145.00;
-            else if (totalWeight <= 10) shippingFee = 200.00;
-            else if (totalWeight <= 20) shippingFee = 350.00;
-            else if (totalWeight <= 35) shippingFee = 550.00;
-            else if (totalWeight <= 50) shippingFee = 800.00;
-            else if (totalWeight <= 75) shippingFee = 1200.00;
-            else if (totalWeight <= 100) shippingFee = 1600.00;
-            else {
-                shippingFee = null;
-                weightError = true;
-            }
-        }
-
-        isFreeShipping = (shippingFee === 0);
-    } else {
-        // Fallback safety
-        shippingFee = sabitUcret;
-        isFreeShipping = (shippingFee === 0);
+    if (totalWeight > 100) {
+        weightError = true;
     }
 
-    if (shippingFee !== null) {
-        shippingFee = Number(Number(shippingFee).toFixed(2));
+    const freeShippingLimit = Number(settings?.ucretsizKargoAltLimit ?? 100.00);
+    const normalizedState = (stateName || '').toLowerCase().trim();
+
+    const isKedah = normalizedState.includes('kedah');
+    const isBorneo = normalizedState.includes('sabah') ||
+                     normalizedState.includes('sarawak') ||
+                     normalizedState.includes('labuan');
+
+    let shippingFee = 8.00; // Semenanjung standard
+
+    if (isKedah) {
+        shippingFee = Number(settings?.posKedah ?? 6.00);
+    } else if (isBorneo) {
+        shippingFee = Number(settings?.posBorneo ?? 15.00);
+    } else {
+        shippingFee = Number(settings?.kargoSabitUcret ?? settings?.posSemenanjung ?? 8.00);
+    }
+
+    // Kelayakan pos percuma RM 100+ bagi Semenanjung & Kedah
+    let isFreeShipping = false;
+    if (cartTotal >= freeShippingLimit && !isBorneo) {
+        shippingFee = 0.00;
+        isFreeShipping = true;
     }
 
     return {
-        shippingFee,
+        shippingFee: Number(shippingFee.toFixed(2)),
         isFreeShipping,
         weightError
     };
 };
 
 /**
- * Get shipping info message for display
- * @param {Object} shippingInfo - Result from calculateShippingFee
- * @param {number} cartTotal - Current cart total
- * @param {Object} settings - Settings object
- * @returns {string|null} Message to display, or null if no message needed
+ * Mesej makluman kelayakan pos percuma
+ * @param {Object} shippingInfo
+ * @param {number} cartTotal
+ * @param {Object} settings
+ * @returns {string|null}
  */
-export const getShippingMessage = (shippingInfo, cartTotal, settings) => {
-    if (shippingInfo.isFreeShipping) {
-        return '✓ Ücretsiz Kargo kazandınız!';
+export const getShippingMessage = (shippingInfo, cartTotal = 0, settings = {}) => {
+    if (shippingInfo?.isFreeShipping) {
+        return '✓ Tahniah! Anda layak menikmati Penghantaran Percuma!';
     }
 
-    const policy = settings?.kargoPolitikaTuru || 'SABIT_UCRET';
-    if (policy === 'SEPET_LIMITI') {
-        const ucretsizKargoAltLimit = settings?.ucretsizKargoAltLimit !== undefined ? Number(settings.ucretsizKargoAltLimit) : 5000;
-        const diff = ucretsizKargoAltLimit - cartTotal;
-        if (diff > 0) {
-            return `Ücretsiz kargo için ${diff.toFixed(2)} TL daha ekleyin!`;
-        }
+    const freeLimit = Number(settings?.ucretsizKargoAltLimit ?? 100.00);
+    const diff = freeLimit - cartTotal;
+
+    if (diff > 0) {
+        return `Tambah lagi RM ${diff.toFixed(2)} untuk nikmati Penghantaran Percuma (Semenanjung & Kedah)!`;
     }
 
     return null;

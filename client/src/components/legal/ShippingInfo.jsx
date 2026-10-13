@@ -1,77 +1,73 @@
 import React from 'react';
+import { Truck, MapPin, CheckCircle, ShieldCheck } from 'lucide-react';
 
 export const ShippingInfo = () => {
     return (
-        <div className="space-y-4 text-gray-700">
-            <p className="mb-4"><strong>Son Güncelleme:</strong> 11 Ocak 2026</p>
-
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">1. Kargo Kapsamı</h2>
-            <p className="mb-4">
-                E-Market olarak <span className="bg-brand-primary/30 px-1 rounded-sm">Türkiye genelinde</span> tüm illere kargo ile teslimat yapıyoruz.
-            </p>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4 rounded-r">
-                <strong>📍 Not:</strong> Yurtdışına teslimat hizmetimiz bulunmamaktadır.
+        <div className="space-y-6 text-gray-700 leading-relaxed text-sm">
+            <div className="flex items-center gap-3 border-b pb-4">
+                <Truck className="text-amber-600" size={32} />
+                <div>
+                    <h2 className="text-2xl font-black text-gray-900">Kadar & Maklumat Penghantaran</h2>
+                    <p className="text-xs text-gray-500">Kilang Kuala Ketil, Kedah &middot; Penghantaran Ke Seluruh Malaysia</p>
+                </div>
             </div>
 
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">2. Kargo Ücretleri</h2>
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse mb-4">
-                    <thead>
-                        <tr className="bg-corporate-black text-white">
-                            <th className="p-3 text-left border border-gray-300">Sipariş Tutarı</th>
-                            <th className="p-3 text-left border border-gray-300">Kargo Ücreti</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr className="bg-white">
-                            <td className="p-3 border border-gray-300">Tüm Siparişler</td>
-                            <td className="p-3 border border-gray-300">Ağırlık bazlı (kg) hesaplanır</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <p className="mb-4">
-                <strong>Ağırlık Hesaplama:</strong> Kargo ücreti, ürünlerin toplam ağırlığına (kg) göre hesaplanır. Sepet sayfasında hesaplanan kargo ücreti görüntülenir.
-            </p>
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">1. Kawasan Liputan Penghantaran</h3>
+                <p>
+                    DIN'O EMPIRE menyediakan perkhidmatan penghantaran ke seluruh negeri di Malaysia termasuk Semenanjung Malaysia, Sabah, dan Sarawak menggunakan khidmat syarikat kurier rakan niaga rasmi kami (J&T Express, Pos Laju, Flash Express, Ninja Van).
+                </p>
+            </section>
 
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">3. Teslimat Süresi</h2>
-            <ul className="list-disc pl-5 mb-4 space-y-1">
-                <li><strong>Büyükşehirler:</strong> 1-3 iş günü</li>
-                <li><strong>Diğer İller:</strong> 2-5 iş günü</li>
-                <li><strong>Aynı Gün Kargo:</strong> Saat 14:00'e kadar verilen siparişler aynı gün kargoya verilir</li>
-            </ul>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4 rounded-r">
-                <strong>⏰ Önemli:</strong> Resmi tatil günlerinde ve hafta sonlarında kargo çıkışı yapılmamaktadır. Bu günlerde verilen siparişler takip eden ilk iş gününde kargoya verilir.
-            </div>
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">2. Jadual Kadar Bayaran Pos</h3>
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-100 text-gray-900 font-bold text-xs uppercase">
+                                <th className="p-3.5 border-b">Zon Destinasi</th>
+                                <th className="p-3.5 border-b">Kadar Pos Asas</th>
+                                <th className="p-3.5 border-b">Tawaran Penghantaran Percuma</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 text-sm">
+                            <tr className="hover:bg-amber-50/40">
+                                <td className="p-3.5 font-bold text-gray-900">Kedah (Tempatan)</td>
+                                <td className="p-3.5 font-bold text-amber-600">RM 6.00</td>
+                                <td className="p-3.5 text-emerald-600 font-bold">Percuma untuk pesanan RM 100 ke atas</td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/40">
+                                <td className="p-3.5 font-bold text-gray-900">Semenanjung Malaysia</td>
+                                <td className="p-3.5 font-bold text-amber-600">RM 8.00</td>
+                                <td className="p-3.5 text-emerald-600 font-bold">Percuma untuk pesanan RM 100 ke atas</td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/40">
+                                <td className="p-3.5 font-bold text-gray-900">Sabah & Sarawak</td>
+                                <td className="p-3.5 font-bold text-amber-600">RM 15.00</td>
+                                <td className="p-3.5 text-gray-600">Kadar standard kurier Borneo</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">4. Kargo Firmaları</h2>
-            <p className="mb-2">Siparişleriniz aşağıdaki anlaşmalı kargo firmalarından biriyle gönderilir:</p>
-            <ul className="list-disc pl-5 mb-4 space-y-1">
-                <li>Aras Kargo</li>
-                <li>Yurtiçi Kargo</li>
-                <li>MNG Kargo</li>
-            </ul>
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">3. Tempoh Pemprosesan & Penghantaran</h3>
+                <ul className="list-disc pl-5 space-y-1.5">
+                    <li>Pesanan yang disahkan sebelum jam <strong>2:00 Petang</strong> pada hari bekerja akan diproses dan dibungkus pada hari yang sama.</li>
+                    <li>Masa penghantaran ke Semenanjung Malaysia mengambil masa antara <strong>1 hingga 3 hari bekerja</strong>.</li>
+                    <li>Masa penghantaran ke Sabah & Sarawak mengambil masa antara <strong>3 hingga 5 hari bekerja</strong> tertakluk kepada jadual penerbangan kurier.</li>
+                </ul>
+            </section>
 
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">5. Kargo Takip</h2>
-            <p className="mb-4">
-                Siparişiniz kargoya verildiğinde, kayıtlı e-posta adresinize kargo takip numarası gönderilir. Ayrıca sipariş takip sayfamızdan da kargo durumunuzu takip edebilirsiniz.
-            </p>
-
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">6. Teslimat Koşulları</h2>
-            <ul className="list-disc pl-5 mb-4 space-y-1">
-                <li>Teslimat, sipariş sırasında belirtilen adrese yapılır</li>
-                <li>Teslimat sırasında kimlik gösterilmesi istenebilir</li>
-                <li>Paket teslim alınırken hasar kontrolü yapılmalıdır</li>
-                <li>Hasarlı paketler kargo görevlisinin tutanak tutması şartıyla teslim alınabilir</li>
-            </ul>
-
-            <h2 className="text-xl font-bold text-corporate-black mt-6 mb-3">7. Hasarlı Teslimat</h2>
-            <p className="mb-2">Kargo tesliminde ürününüz hasarlı ise:</p>
-            <ol className="list-decimal pl-5 mb-4 space-y-1">
-                <li>Kargo görevlisine <strong>tutanak</strong> tutturun</li>
-                <li>Hasarlı ürünün fotoğrafını çekin</li>
-                <li>24 saat içinde <strong>bilgi@ecommerceflaredev.web.tr</strong> adresine bildirimde bulunun</li>
-            </ol>
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">4. Penjejakan Pesanan (Tracking Number)</h3>
+                <p>
+                    Nombor penjejakan kurier akan dikemas kini secara automatik ke dalam sistem kami sebaik sahaja bungkusan diserahkan kepada pihak kurier. Anda boleh memasukkan kod pesanan di halaman <strong>Jejak Pesanan</strong> untuk melihat lokasi terkini bungkusan anda.
+                </p>
+            </section>
         </div>
     );
 };
+
+export default ShippingInfo;

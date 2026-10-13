@@ -14,7 +14,7 @@ export function CategoryGrid({ activeCategory }) {
                     className="cursor-pointer hover:text-indigo-600 transition-colors font-medium text-gray-600 hover:underline"
                     onClick={() => navigate('/')}
                 >
-                    Anasayfa
+                    Laman Utama
                 </span>
                 <ChevronRight size={16} className="text-gray-400" />
                 <span className="font-bold text-corporate-black">{activeCategory.ad}</span>
@@ -22,7 +22,7 @@ export function CategoryGrid({ activeCategory }) {
 
             <h2 className="text-3xl md:text-4xl font-black text-corporate-black mb-10 flex items-center gap-4">
                 <span className="w-2 h-12 bg-brand-primary rounded-full"></span>
-                {activeCategory.ad} Kategorileri
+                Kategori: {activeCategory.ad}
             </h2>
 
             {activeCategory.altKategoriler && activeCategory.altKategoriler.length > 0 ? (
@@ -45,14 +45,16 @@ export function CategoryGrid({ activeCategory }) {
                             </div>
                             <div className="p-5 text-center bg-white">
                                 <h3 className="font-black text-base text-corporate-black group-hover:text-indigo-600 transition-colors duration-300 line-clamp-2">{sub.ad}</h3>
-                                <p className="text-xs text-gray-500 font-bold uppercase mt-2 tracking-wider">Ürünleri İncele →</p>
+                                <p className="text-xs text-gray-500 font-bold uppercase mt-2 tracking-wider">Lihat Barangan →</p>
                             </div>
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className="text-gray-500 italic">Alt kategori bulunamadı.</p>
+                <p className="text-gray-500 italic">Tiada subkategori ditemui.</p>
             )}
         </section>
     );
 }
+
+export default CategoryGrid;

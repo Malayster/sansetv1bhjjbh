@@ -25,8 +25,8 @@ export function ProductFilters({
                 {/* Mobile Close Button */}
                 {showFilters && (
                     <div className="md:hidden flex items-center justify-between p-4 border-b">
-                        <h3 className="font-bold text-lg">Filtreler</h3>
-                        <button onClick={() => setShowFilters(false)} className="p-2">
+                        <h3 className="font-bold text-lg">Penapis Barangan</h3>
+                        <button onClick={() => setShowFilters(false)} className="p-2 cursor-pointer">
                             <X size={24} />
                         </button>
                     </div>
@@ -37,11 +37,11 @@ export function ProductFilters({
                     <div>
                         <h3 className="font-bold text-corporate-black mb-4 flex items-center gap-2">
                             <span className="w-1 h-5 bg-brand-primary rounded-full"></span>
-                            Fiyat Aralığı
+                            Julat Harga
                         </h3>
                         <div className="space-y-3">
                             <div>
-                                <label className="text-xs font-bold text-gray-600 mb-1 block uppercase">Min Fiyat (₺)</label>
+                                <label className="text-xs font-bold text-gray-600 mb-1 block uppercase">Harga Min (RM)</label>
                                 <input
                                     type="number"
                                     value={minPrice}
@@ -51,26 +51,27 @@ export function ProductFilters({
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-gray-600 mb-1 block uppercase">Max Fiyat (₺)</label>
+                                <label className="text-xs font-bold text-gray-600 mb-1 block uppercase">Harga Max (RM)</label>
                                 <input
                                     type="number"
                                     value={maxPrice}
                                     onChange={(e) => setMaxPrice(e.target.value)}
-                                    placeholder="10000"
+                                    placeholder="1000"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-indigo-600 transition-colors"
                                 />
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={applyPriceFilter}
-                                    className="flex-1 bg-brand-primary text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors"
+                                    className="flex-1 bg-brand-primary text-white px-4 py-2 rounded-lg font-bold hover:bg-amber-600 transition-colors cursor-pointer"
                                 >
-                                    Uygula
+                                    Tapis
                                 </button>
                                 {(minPriceParam || maxPriceParam) && (
                                     <button
                                         onClick={clearPriceFilter}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                                        title="Kosongkan tapisan harga"
                                     >
                                         <X size={18} />
                                     </button>
@@ -78,7 +79,7 @@ export function ProductFilters({
                             </div>
                             {(minPriceParam || maxPriceParam) && (
                                 <div className="text-xs text-gray-500 pt-2">
-                                    Filtreleniyor: {minPriceParam || '0'} ₺ - {maxPriceParam || '∞'} ₺
+                                    Ditapis: RM {minPriceParam || '0'} - RM {maxPriceParam || '∞'}
                                 </div>
                             )}
                         </div>
@@ -88,7 +89,7 @@ export function ProductFilters({
                     <div className="border-t border-gray-200 pt-6">
                         <h3 className="font-bold text-corporate-black mb-4 flex items-center gap-2">
                             <span className="w-1 h-5 bg-brand-primary rounded-full"></span>
-                            Marka
+                            Jenama / Pengeluar
                         </h3>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-sm transition-colors">
@@ -99,7 +100,7 @@ export function ProductFilters({
                                     onChange={() => applyBrandFilter('')}
                                     className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                                 />
-                                <span className="text-sm font-medium">Tüm Markalar</span>
+                                <span className="text-sm font-medium">Semua Jenama</span>
                             </label>
                             {brands.map(brand => (
                                 <label key={brand.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-sm transition-colors">
@@ -120,18 +121,18 @@ export function ProductFilters({
                     <div className="border-t border-gray-200 pt-6">
                         <h3 className="font-bold text-corporate-black mb-4 flex items-center gap-2">
                             <span className="w-1 h-5 bg-brand-primary rounded-full"></span>
-                            Sıralama
+                            Susunan
                         </h3>
                         <select
                             value={sortBy}
                             onChange={(e) => applySorting(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-indigo-600 transition-colors font-medium text-sm"
                         >
-                            <option value="newest">En Yeni</option>
-                            <option value="price-asc">Fiyat (Düşükten Yükseğe)</option>
-                            <option value="price-desc">Fiyat (Yüksekten Düşüğe)</option>
-                            <option value="name-asc">İsim (A-Z)</option>
-                            <option value="name-desc">İsim (Z-A)</option>
+                            <option value="newest">Paling Baru</option>
+                            <option value="price-asc">Harga (Rendah ke Tinggi)</option>
+                            <option value="price-desc">Harga (Tinggi ke Rendah)</option>
+                            <option value="name-asc">Nama (A-Z)</option>
+                            <option value="name-desc">Nama (Z-A)</option>
                         </select>
                     </div>
                 </div>
@@ -139,3 +140,5 @@ export function ProductFilters({
         </aside>
     );
 }
+
+export default ProductFilters;

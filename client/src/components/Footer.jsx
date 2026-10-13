@@ -144,7 +144,9 @@ export function Footer() {
                             {[
                                 { name: 'Kadar Penghantaran', href: '/kargo-bilgileri' },
                                 { name: 'Syarat Pemulangan', href: '/iade-degisim' },
-                                { name: 'Soalan Lazim', href: '/sss' },
+                                { name: 'Dasar Privasi (PDPA)', href: '/gizlilik-ve-kvkk' },
+                                { name: 'Soalan Lazim (FAQ)', href: '/sss' },
+                                { name: 'Log Masuk Pentadbir', href: '/login' },
                                 { name: 'Hubungi WhatsApp', href: `https://wa.me/${cleanNum}?text=${waText}` }
                             ].map((item) => (
                                 <li key={item.name}>
@@ -179,11 +181,11 @@ export function Footer() {
                 {/* Bottom Bar */}
                 <div className="pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="text-center md:text-left">
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                            &copy; {new Date().getFullYear()} {siteTitle}. Tüm Hakları Saklıdır.
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            &copy; {new Date().getFullYear()} {siteTitle}. Hak Cipta Terpelihara.
                         </p>
-                        <p className="text-[11px] text-gray-700 mt-0.5">
-                            {siteTitle} Teknoloji ve Ticaret Limited Şirketi | MERSİS: 0123456789012345
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                            DIN'O EMPIRE | Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah, Malaysia
                         </p>
                     </div>
 

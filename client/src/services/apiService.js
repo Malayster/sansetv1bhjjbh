@@ -1,81 +1,80 @@
 import api from '../lib/axios';
 
 /**
- * API Service Layer
- * Abstracts all API calls and provides a clean interface for data fetching.
- * Implements Dependency Inversion Principle - components depend on this abstraction, not on axios directly.
+ * Lapisan Servis API DIN'O EMPIRE
+ * Menguruskan semua panggilan data produk, kategori, pesanan, dan tetapan kedai.
  */
 
 // ============================================
-// Product Service
+// Servis Produk
 // ============================================
 
 /**
- * Fetch all products with optional filters
- * @param {Object} params - Query parameters (markaId, kategoriId, search, limit)
- * @returns {Promise<Array>} Array of products
+ * Dapatkan senarai semua produk dengan tapisan
+ * @param {Object} params - Parameter carian (markaId, kategoriId, search, limit)
+ * @returns {Promise<Array>} Senarai produk
  */
 export const fetchProducts = async (params = {}) => {
     try {
         const response = await api.get('/api/v1/products', { params });
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch products:', error);
-        throw new Error('Ürünler yüklenemedi. Lütfen tekrar deneyin.', { cause: error });
+        console.error('Gagal mendapatkan senarai produk:', error);
+        throw new Error('Gagal memuatkan barangan. Sila cuba sebentar lagi.', { cause: error });
     }
 };
 
 /**
- * Fetch a single product by ID
- * @param {string} id - Product ID
- * @returns {Promise<Object>} Product details
+ * Dapatkan produk berdasarkan ID
+ * @param {string} id - ID Produk
+ * @returns {Promise<Object>} Butiran produk
  */
 export const fetchProductById = async (id) => {
     try {
         const response = await api.get(`/api/v1/products/${id}`);
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch product with id:', id, error);
-        throw new Error('Ürün detayları yüklenemedi.', { cause: error });
+        console.error('Gagal mendapatkan produk mengikut ID:', id, error);
+        throw new Error('Butiran produk tidak dapat dimuatkan.', { cause: error });
     }
 };
 
 /**
- * Fetch a single product by Slug
- * @param {string} slug - Product Slug
- * @returns {Promise<Object>} Product details
+ * Dapatkan produk berdasarkan Slug
+ * @param {string} slug - Slug Produk
+ * @returns {Promise<Object>} Butiran produk
  */
 export const fetchProductBySlug = async (slug) => {
     try {
         const response = await api.get(`/api/v1/products/slug/${slug}`);
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch product with slug:', slug, error);
-        throw new Error('Ürün detayları yüklenemedi.', { cause: error });
+        console.error('Gagal mendapatkan produk mengikut slug:', slug, error);
+        throw new Error('Butiran produk tidak dapat dimuatkan.', { cause: error });
     }
 };
 
 // ============================================
-// Category Service
+// Servis Kategori
 // ============================================
 
 /**
- * Fetch all categories
- * @returns {Promise<Array>} Array of categories with subcategories
+ * Dapatkan semua kategori
+ * @returns {Promise<Array>} Senarai kategori
  */
 export const fetchCategories = async () => {
     try {
         const response = await api.get('/api/v1/categories');
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch categories:', error);
-        throw new Error('Kategoriler yüklenemedi.', { cause: error });
+        console.error('Gagal memuatkan kategori:', error);
+        throw new Error('Kategori barangan tidak dapat dimuatkan.', { cause: error });
     }
 };
 
 /**
- * Get top-level categories (no parent)
- * @returns {Promise<Array>} Array of top-level categories sorted by order
+ * Dapatkan kategori utama (tanpa kategori induk)
+ * @returns {Promise<Array>}
  */
 export const fetchTopCategories = async () => {
     try {
@@ -89,57 +88,57 @@ export const fetchTopCategories = async () => {
 };
 
 // ============================================
-// Brand Service
+// Servis Jenama (Brand)
 // ============================================
 
 /**
- * Fetch all brands
- * @returns {Promise<Array>} Array of brands
+ * Dapatkan semua jenama
+ * @returns {Promise<Array>}
  */
 export const fetchBrands = async () => {
     try {
         const response = await api.get('/api/v1/brands');
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch brands:', error);
-        throw new Error('Markalar yüklenemedi.', { cause: error });
+        console.error('Gagal memuatkan jenama:', error);
+        throw new Error('Jenama tidak dapat dimuatkan.', { cause: error });
     }
 };
 
 // ============================================
-// Order Service
+// Servis Pesanan & Pembayaran
 // ============================================
 
 /**
- * Create a new order and initiate payment
- * @param {Object} orderData - Order details including items, guestInfo, invoiceInfo
- * @returns {Promise<Object>} Order response with payment URL
+ * Buat pesanan baru dan mulakan pembayaran ToyyibPay / FPX
+ * @param {Object} orderData - Butiran pesanan (item, maklumat pelanggan, alamat)
+ * @returns {Promise<Object>} Respon pesanan bersama pautan bayaran
  */
 export const createOrder = async (orderData) => {
     try {
         const response = await api.post('/api/v1/orders/checkout', orderData);
         return response.data;
     } catch (error) {
-        console.error('Failed to create order:', error);
+        console.error('Gagal mencipta pesanan:', error);
 
-        // Extract validation errors if available
+        // Ekstrak ralat pengesahan jika ada
         if (error.response?.data?.errors) {
             const validationErrors = {};
             error.response.data.errors.forEach(err => {
                 const fieldName = err.path?.length > 1 ? err.path[1] : err.path?.[0];
                 if (fieldName) validationErrors[fieldName] = err.message;
             });
-            throw { validationErrors, message: 'Lütfen form bilgilerinizi kontrol edin.' };
+            throw { validationErrors, message: 'Sila semak semula maklumat borang anda.' };
         }
 
-        throw new Error('Sipariş oluşturulamadı. Lütfen tekrar deneyin.', { cause: error });
+        throw new Error('Pesanan gagal dicipta. Sila cuba sebentar lagi.', { cause: error });
     }
 };
 
 /**
- * Track an order by token
- * @param {string} token - Order tracking token
- * @returns {Promise<Object>} Order details
+ * Jejak pesanan menggunakan token
+ * @param {string} token - Token penjejakan pesanan
+ * @returns {Promise<Object>} Butiran pesanan
  */
 export const trackOrder = async (token) => {
     try {
@@ -148,45 +147,50 @@ export const trackOrder = async (token) => {
         });
         return response.data;
     } catch (error) {
-        console.error('Failed to track order:', error);
-        throw new Error('Sipariş bulunamadı. Lütfen takip numaranızı kontrol edin.', { cause: error });
+        console.error('Gagal menjejaki pesanan:', error);
+        throw new Error('Pesanan tidak dijumpai. Sila semak kod penjejakan anda.', { cause: error });
     }
 };
 
 /**
- * Cancel an order
- * @param {string} token - Order tracking token
- * @param {string} reason - Cancellation reason
- * @returns {Promise<Object>} Cancellation response
+ * Batalkan pesanan
+ * @param {string} token - Token penjejakan pesanan
+ * @param {string} reason - Sebab pembatalan
+ * @returns {Promise<Object>}
  */
 export const cancelOrder = async (token, reason) => {
     try {
         const response = await api.post('/api/v1/orders/cancel', { token, reason });
         return response.data;
     } catch (error) {
-        console.error('Failed to cancel order:', error);
-        throw new Error('Sipariş iptal edilemedi. Lütfen müşteri hizmetleri ile iletişime geçin.', { cause: error });
+        console.error('Gagal membatalkan pesanan:', error);
+        throw new Error('Pesanan tidak dapat dibatalkan. Sila hubungi khidmat pelanggan kami.', { cause: error });
     }
 };
 
 // ============================================
-// Settings Service
+// Servis Tetapan Kedai
 // ============================================
 
 /**
- * Fetch application settings
- * @returns {Promise<Object>} Settings object
+ * Dapatkan tetapan sistem kedai
+ * @returns {Promise<Object>}
  */
 export const fetchSettings = async () => {
     try {
         const response = await api.get('/api/v1/settings');
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch settings:', error);
-        // Return default settings if fetch fails
+        console.error('Gagal mendapatkan tetapan sistem:', error);
+        // Tetapan lalai DIN'O EMPIRE Malaysia (Percuma atas RM 100)
         return {
-            ucretsizKargoAltLimit: 2500,
-            kargoDesiCarpani: 15
+            siteAdi: "DIN'O EMPIRE",
+            ucretsizKargoAltLimit: 100,
+            kargoDesiCarpani: 8,
+            telefon: "016-6911020",
+            whatsappNumarasi: "60166911020",
+            iletisimEmail: "dinoempire.my@gmail.com",
+            adres: "Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah, Malaysia"
         };
     }
 };

@@ -1,53 +1,49 @@
-import { Info } from 'lucide-react';
 import React from 'react';
+import { Info, CheckCircle } from 'lucide-react';
 
-/**
- * Ön Bilgilendirme Formu
- * 2026 Yönetmeliği Uyumlu
- */
 export function PreliminaryInfoForm() {
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-black mb-6 flex items-center gap-3">
-                <Info className="text-brand-primary" size={32} />
-                Ön Bilgilendirme Formu
-            </h1>
-
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xs border border-gray-100 space-y-6 text-gray-700 leading-relaxed text-sm">
-
-                <section>
-                    <h2 className="text-lg font-bold text-corporate-black uppercase mb-2">1. Satıcı Bilgileri</h2>
-                    <ul className="list-disc pl-5 space-y-1">
-                        <li><strong>Unvan:</strong> E-Market Teknoloji ve Ticaret Limited Şirketi</li>
-                        <li><strong>Adres:</strong> Karaköy Mah. Rıhtım Cd. No: 15 Beyoğlu / İstanbul</li>
-                        <li><strong>Mersis No:</strong> 0123456789012345</li>
-                        <li><strong>Telefon:</strong> 0850 000 00 00</li>
-                        <li><strong>E-posta:</strong> bilgi@ecommerceflaredev.web.tr</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2 className="text-lg font-bold text-corporate-black uppercase mb-2">2. Ürün ve Fiyat Bilgileri</h2>
-                    <p>Sipariş aşamasında ALICI’nın incelediği ürünlerin temel nitelikleri, tüm vergiler dahil toplam satış fiyatı, adet bilgisi ve nakliye giderleri sipariş özeti ekranında açıkça belirtilmiştir. ALICI bu bilgileri görerek onaylamıştır.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-lg font-bold text-corporate-black uppercase mb-2">3. Ödeme ve Teslimat</h2>
-                    <p>Ödeme, kredi kartı veya banka kartı ile sipariş anında tahsil edilir. Teslimat, anlaşmalı kargo şirketi aracılığıyla ALICI’nın belirttiği adrese yapılır. Kargo ücreti, aksi belirtilmedikçe ALICI'ya aittir ve sipariş toplamına eklenir.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-lg font-bold text-corporate-black uppercase mb-2">4. Cayma Hakkı</h2>
-                    <p>ALICI, 14 (on dört) gün içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir. Cayma süresi, malın ALICI'ya teslim edildiği gün başlar.</p>
-                    <p className="mt-2 text-red-600 font-bold">İstisnalar:</p>
-                    <p>Alıcının istekleri veya kişisel ihtiyaçları doğrultusunda hazırlanan kişiye özel ürünler, hızlı bozulan veya son kullanma tarihi geçebilecek ürünler, tesliminden sonra koruyucu unsurları açılmış iadesi sağlık/hijyen açısından uygun olmayan ürünler ve doğası gereği iadesi mümkün olmayan mallarda cayma hakkı kullanılamaz.</p>
-                </section>
-                <section>
-                    <h2 className="text-lg font-bold text-corporate-black uppercase mb-2">5. Şikayet ve İtirazlar</h2>
-                    <p>Tüketici, şikayet ve itirazları konusundaki başvurularını, her yıl Gümrük ve Ticaret Bakanlığı tarafından belirlenen parasal sınırlar dahilinde, yerleşim yerinin bulunduğu veya tüketici işleminin yapıldığı yerdeki Tüketici Hakem Heyetine veya Tüketici Mahkemesine yapabilir.</p>
-                </section>
-
+        <div className="space-y-6 text-gray-700 leading-relaxed text-sm">
+            <div className="flex items-center gap-3 border-b pb-4">
+                <Info className="text-amber-600" size={32} />
+                <div>
+                    <h2 className="text-2xl font-black text-gray-900">Maklumat Awal Pembelian</h2>
+                    <p className="text-xs text-gray-500">DIN'O EMPIRE &middot; Panduan Pembelian Pelanggan</p>
+                </div>
             </div>
+
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">1. Maklumat Asas Penjual</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Jenama / Entiti:</strong> DIN'O EMPIRE</li>
+                    <li><strong>Alamat:</strong> Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah, Malaysia</li>
+                    <li><strong>Telefon:</strong> 016-6911020</li>
+                    <li><strong>E-mel:</strong> dinoempire.my@gmail.com</li>
+                </ul>
+            </section>
+
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">2. Ciri-ciri Asas Produk & Harga</h3>
+                <p>
+                    Maklumat mengenai jenis barangan, kuantiti, saiz varian, serta harga dinyatakan secara telus pada setiap halaman produk. Semua harga adalah muktamad dalam Ringgit Malaysia (RM).
+                </p>
+            </section>
+
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">3. Kos Penghantaran & Pembayaran</h3>
+                <p>
+                    Kadar pos penghantaran adalah RM 6.00 (Kedah), RM 8.00 (Semenanjung), dan RM 15.00 (Sabah/Sarawak). Pembelian bernilai RM 100 ke atas melayakkan anda menikmati pos percuma untuk Semenanjung. Pembayaran dibuat secara dalam talian melalui gerbang FPX toyyibPay.
+                </p>
+            </section>
+
+            <section className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900 uppercase">4. Hak Penolakan & Pemulangan</h3>
+                <p>
+                    Pelanggan mempunyai hak untuk memulangkan barangan dalam tempoh 7 hari sekiranya barangan yang diterima rosak atau salah mengikut syarat-syarat dalam Dasar Pemulangan kami.
+                </p>
+            </section>
         </div>
     );
 }
+
+export default PreliminaryInfoForm;

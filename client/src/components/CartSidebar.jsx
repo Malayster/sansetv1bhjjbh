@@ -1,11 +1,10 @@
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
 /**
  * Enhanced CartSidebar Component.
- * Features: Improved styling, animated sidebar, discount price display, better UX.
+ * 100% hardcoded Bahasa Melayu, currency in RM.
  */
 export function CartSidebar() {
     const {
@@ -17,7 +16,6 @@ export function CartSidebar() {
         cartTotal,
         cartCount
     } = useCart();
-    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const handleCheckout = () => {
@@ -44,8 +42,8 @@ export function CartSidebar() {
                             <ShoppingBag size={20} className="text-corporate-black" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-corporate-black">{t('cart.title')}</h2>
-                            <p className="text-sm text-gray-500">{cartCount} ürün</p>
+                            <h2 className="text-lg font-bold text-corporate-black">Beg Beli-Belah Saya</h2>
+                            <p className="text-sm text-gray-500">{cartCount} barangan</p>
                         </div>
                     </div>
                     <button
@@ -63,13 +61,13 @@ export function CartSidebar() {
                             <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                                 <ShoppingBag size={48} className="text-gray-300" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-700 mb-2">Sepetiniz Boş</h3>
-                            <p className="text-gray-500 mb-6">Henüz sepetinize ürün eklemediniz.</p>
+                            <h3 className="text-lg font-bold text-gray-700 mb-2">Beg Anda Masih Kosong</h3>
+                            <p className="text-gray-500 mb-6">Anda belum memasukkan sebarang barangan ke dalam beg lagi.</p>
                             <button
                                 onClick={closeSidebar}
                                 className="bg-brand-primary text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2"
                             >
-                                Alışverişe Başla
+                                Mula Membeli-belah
                                 <ArrowRight size={18} />
                             </button>
                         </div>
@@ -102,17 +100,17 @@ export function CartSidebar() {
                                                 {item.ad}
                                             </h3>
                                             {item.selectedColor && (
-                                                <p className="text-xs text-gray-500 mb-1">{item.varyantBasligi || 'Renk'}: {item.selectedColor}</p>
+                                                <p className="text-xs text-gray-500 mb-1">{item.varyantBasligi || 'Warna'}: {item.selectedColor}</p>
                                             )}
 
                                             {/* Price */}
                                             <div className="flex items-baseline gap-2 mb-2">
                                                 <span className={`font-bold ${hasDiscount ? 'text-action-red' : 'text-corporate-black'}`}>
-                                                    ₺{itemPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                                    RM {itemPrice.toFixed(2)}
                                                 </span>
                                                 {hasDiscount && (
                                                     <span className="text-xs text-gray-400 line-through">
-                                                        ₺{Number(item.fiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                                        RM {Number(item.fiyat).toFixed(2)}
                                                     </span>
                                                 )}
                                             </div>
@@ -155,31 +153,31 @@ export function CartSidebar() {
                     <div className="border-t bg-white px-6 py-6 space-y-4">
                         {/* Subtotal */}
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Ara Toplam</span>
+                            <span className="text-gray-600">Jumlah Kecil</span>
                             <span className="text-xl font-black text-corporate-black">
-                                ₺{cartTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                RM {cartTotal.toFixed(2)}
                             </span>
                         </div>
 
                         <p className="text-xs text-gray-500">
-                            Kargo ve vergiler ödeme adımında hesaplanır.
+                            Kos penghantaran dikira semasa langkah pembayaran.
                         </p>
 
                         {/* Checkout Button */}
                         <button
                             onClick={handleCheckout}
-                            className="w-full bg-brand-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-corporate-black hover:text-indigo-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transform active:scale-95"
+                            className="w-full bg-brand-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-corporate-black hover:text-indigo-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transform active:scale-95 cursor-pointer"
                         >
-                            Ödemeye Geç
+                            Teruskan ke Pembayaran
                             <ArrowRight size={20} />
                         </button>
 
                         {/* Bulk Order Info */}
-                        <div className="bg-blue-50 p-3 rounded-xl">
-                            <p className="text-xs text-blue-700 text-center">
-                                Toplu siparişler için{' '}
-                                <a href="mailto:satis@ecommerceflaredev.web.tr" className="font-bold underline">
-                                    satis@ecommerceflaredev.web.tr
+                        <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                            <p className="text-xs text-amber-900 text-center">
+                                Untuk pesanan pukal atau borong kilang, sila hubungi kami di WhatsApp atau e-mel{' '}
+                                <a href="mailto:dinoempire.my@gmail.com" className="font-bold underline">
+                                    dinoempire.my@gmail.com
                                 </a>
                             </p>
                         </div>

@@ -51,6 +51,8 @@ export class OrderController {
                 siparisNumarasi: order.siparisNumarasi,
                 durum: order.durum,
                 olusturulmaTarihi: order.olusturulmaTarihi,
+                kargoTakipNo: order.kargoTakipNo || null,
+                kargoFirmasi: order.kargoFirmasi || null,
 
                 // Financials
                 toplamTutar: order.toplamTutar,

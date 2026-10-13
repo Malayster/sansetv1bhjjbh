@@ -1,39 +1,54 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 export function HeroSection({ scrollToProducts }) {
+    const { cms } = useSettings();
     const [currentSlide, setCurrentSlide] = useState(0);
 
-    const slides = [
+    const defaultSlides = [
         {
-            title: "YENİ SEZON",
-            subtitle: "KAMPANYALARIMIZ",
-            description: "En popüler ve en yeni ürünler avantajlı fiyatlarla kapınızda.",
+            title: "TAWARAN HEBAT",
+            subtitle: "KILANG KUALA KETIL",
+            description: "Barangan terpilih berkualiti premium terus daripada pembekal kilang dengan harga berpatutan.",
             image: "/images/hero/shopping_hero.png",
-            badge: "Yeni Trendler"
+            badge: "Pilihan Ramai",
+            buttonText: "Lihat Barangan"
         },
         {
-            title: "ÖZEL VE SEÇKİN",
-            subtitle: "KOLEKSİYONLAR",
-            description: "Başka hiçbir yerde bulamayacağınız en seçkin ürünlerimizi hemen keşfedin.",
+            title: "KOLEKSI KHAS",
+            subtitle: "EKSKLUSIF MALAYSIA",
+            description: "Dapatkan produk berkualiti tinggi dan pilihan terlaris hanya di DIN'O EMPIRE.",
             image: "/images/hero/tech_hero.png",
-            badge: "Sadece Bizde"
+            badge: "Kualiti Dijamin",
+            buttonText: "Beli Sekarang"
         },
         {
-            title: "GÜVENLİ VE HIZLI",
-            subtitle: "ALIŞVERİŞ",
-            description: "En kaliteli ürünler, güvenli ödeme ve hızlı teslimat seçenekleriyle kapınızda.",
+            title: "PANTAS & SELAMAT",
+            subtitle: "BAYARAN FPX",
+            description: "Urus niaga mudah menggunakan ToyyibPay FPX dan penghantaran pos pantas ke seluruh negara.",
             image: "/images/hero/deals_hero.png",
-            badge: "Kolay Ödeme"
+            badge: "Bayaran Mudah",
+            buttonText: "Terokai Koleksi"
         }
     ];
 
+    const slides = (cms?.hero_slides && cms.hero_slides.length > 0) ? cms.hero_slides : defaultSlides;
+
     useEffect(() => {
+        if (slides.length <= 1) return;
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % slides.length);
         }, 5000);
         return () => clearInterval(timer);
     }, [slides.length]);
+
+    // Reset slide index jika melebihi panjang semasa
+    useEffect(() => {
+        if (currentSlide >= slides.length) {
+            setCurrentSlide(0);
+        }
+    }, [slides.length, currentSlide]);
 
     return (
         <section className="container mx-auto px-4 mb-8 overflow-hidden">
@@ -56,7 +71,7 @@ export function HeroSection({ scrollToProducts }) {
                                 </span>
                                 <h1 className="text-3xl md:text-8xl font-black text-white mb-4 md:mb-8 leading-[0.9] tracking-tighter">
                                     {slide.title} <br />
-                                    <span className="text-indigo-600 italic">{slide.subtitle}</span>
+                                    <span className="text-amber-500 italic">{slide.subtitle}</span>
                                 </h1>
                                 <p className="text-sm md:text-2xl text-gray-200 mb-6 md:mb-12 font-medium max-w-xl leading-relaxed drop-shadow-md line-clamp-2 md:line-clamp-none">
                                     {slide.description}
@@ -64,9 +79,9 @@ export function HeroSection({ scrollToProducts }) {
                                 <div className="flex flex-col sm:flex-row gap-6">
                                     <button
                                         onClick={scrollToProducts}
-                                        className="group bg-brand-primary text-white px-6 py-3 md:px-12 md:py-6 rounded-xl md:rounded-2xl font-black text-sm md:text-xl hover:bg-indigo-700 transition-all duration-500 shadow-2xl flex items-center justify-center gap-2 md:gap-4 transform hover:-translate-y-2"
+                                        className="group bg-brand-primary text-white px-6 py-3 md:px-12 md:py-6 rounded-xl md:rounded-2xl font-black text-sm md:text-xl hover:bg-amber-600 transition-all duration-500 shadow-2xl flex items-center justify-center gap-2 md:gap-4 transform hover:-translate-y-2 cursor-pointer"
                                     >
-                                        Ürünleri Keşfet
+                                        {slide.buttonText || "Lihat Barangan"}
                                         <ArrowRight size={16} className="md:w-6 md:h-6 group-hover:translate-x-3 transition-transform" />
                                     </button>
                                 </div>
@@ -88,3 +103,5 @@ export function HeroSection({ scrollToProducts }) {
         </section>
     );
 }
+
+export default HeroSection;

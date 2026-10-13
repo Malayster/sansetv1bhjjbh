@@ -64,7 +64,7 @@ export default defineConfig({
     envDir: '..',
     server: {
         host: true,
-        port: 3000,
+        port: 8000,
         proxy: {
             '/api': {
                 target: 'http://localhost:8787',

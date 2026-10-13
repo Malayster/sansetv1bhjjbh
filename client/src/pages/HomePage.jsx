@@ -35,8 +35,8 @@ export function HomePage() {
     };
 
     // SEO
-    const seoTitle = 'E-Market - Online Alışveriş Platformu';
-    const seoDescription = 'E-Market - Binlerce ürünü en uygun fiyatlarla, hızlı teslimat ve güvenli ödeme seçenekleriyle kapınıza getiren e-ticaret platformu.';
+    const seoTitle = "DIN'O EMPIRE - Kilang Kuala Ketil & Barangan Terpilih Malaysia";
+    const seoDescription = "DIN'O EMPIRE - Nikmati pelbagai barangan berkualiti terus dari kilang Kuala Ketil dengan penghantaran pos pantas dan pembayaran FPX ToyyibPay selamat.";
     const structuredData = combineSchemas(generateWebsiteSchema(), generateOrganizationSchema());
 
     // We can fetch categories here to pass to CategoryGrid if needed,

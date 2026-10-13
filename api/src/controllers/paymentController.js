@@ -39,14 +39,14 @@ export class PaymentController {
     initiatePayment = asyncHandler(async (req, res) => {
         const { orderId, cardInfo, buyerInfo } = req.body;
 
-        if (!orderId || !cardInfo) {
+        if (!orderId) {
             return res.status(400).json({
                 status: 'failure',
-                errorMessage: 'Geçersiz istek: orderId ve cardInfo zorunludur.'
+                errorMessage: 'Permintaan tidak sah: orderId diperlukan.'
             });
         }
 
-        const result = await this.orderService.initiatePayment(orderId, cardInfo, buyerInfo);
+        const result = await this.orderService.initiatePayment(orderId, cardInfo || {}, buyerInfo || {});
 
         if (result.status === 'success') {
             return res.json(result);

@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Eye, Check } from 'lucide-react';
 
 /**
  * Enhanced ProductCard Component.
- * Features: Discount badge, stock status, wishlist button, quick add animation, hover effects.
+ * 100% hardcoded Bahasa Melayu, currency in RM.
  */
 export function ProductCard({ product }) {
-    const { t } = useTranslation();
     const { addToCart } = useCart();
     const [isAdding, setIsAdding] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(false);
@@ -23,16 +21,6 @@ export function ProductCard({ product }) {
     const stockCount = Number(product.stokAdedi ?? 0);
     const isActive = product.aktif !== false;
     const inStock = isActive && stockCount > 0;
-
-    // Helper to strip HTML. DOMParser builds an inert document: unlike innerHTML on a
-    // live element, it never loads images or runs event handlers such as onerror.
-    const stripHtml = (html) => {
-        if (!html) return '';
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        return doc.body.textContent || '';
-    };
-
-    const plainDescription = stripHtml(product.aciklama).substring(0, 80) + (product.aciklama?.length > 80 ? '...' : '');
 
     const handleAddToCart = (e) => {
         e.preventDefault();
@@ -80,16 +68,15 @@ export function ProductCard({ product }) {
                 <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                     {discountPercentage > 0 && (
                         <div className="bg-brand-primary text-white px-2 py-0.5 rounded-xs shadow-xl flex flex-col items-center leading-none">
-                            <span className="text-[9px] font-black tracking-tighter uppercase">İNDİRİM</span>
-                            <span className="text-xs font-black tracking-tighter">%{discountPercentage} İndirim</span>
+                            <span className="text-[9px] font-black tracking-tighter uppercase">DISKAUN</span>
+                            <span className="text-xs font-black tracking-tighter">Diskaun {discountPercentage}%</span>
                         </div>
                     )}
                     {!inStock && (
                         <span className="bg-gray-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            TÜKENDİ
+                            HABIS STOK
                         </span>
                     )}
-
                 </div>
 
                 {/* Wishlist Button */}
@@ -99,7 +86,7 @@ export function ProductCard({ product }) {
                         ? 'bg-action-red text-white scale-110'
                         : 'bg-white/90 text-gray-600 opacity-0 group-hover:opacity-100 hover:bg-action-red hover:text-white'
                         }`}
-                    aria-label="Favorilere Ekle"
+                    aria-label="Tambah ke Kegemaran"
                 >
                     <Heart size={16} fill={isWishlisted ? 'currentColor' : 'none'} />
                 </button>
@@ -122,26 +109,21 @@ export function ProductCard({ product }) {
                     </h3>
                 </Link>
 
-                {/* Description - REMOVED as per request */}
-                {/* <p className="text-sm text-gray-500 mb-4 line-clamp-2 grow">
-                    {plainDescription}
-                </p> */}
-
                 {/* Price & Add to Cart */}
                 <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between gap-2">
                     <div className="flex flex-col">
                         {product.indirimliFiyat ? (
                             <>
                                 <span className="text-[11px] text-gray-400 line-through leading-none">
-                                    ₺{Number(product.fiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                    RM {Number(product.fiyat).toFixed(2)}
                                 </span>
                                 <span className="text-base font-black text-corporate-black tracking-tight leading-tight">
-                                    ₺{Number(product.indirimliFiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                    RM {Number(product.indirimliFiyat).toFixed(2)}
                                 </span>
                             </>
                         ) : (
                             <span className="text-base font-black text-corporate-black leading-tight">
-                                ₺{Number(product.fiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                RM {Number(product.fiyat).toFixed(2)}
                             </span>
                         )}
                     </div>
@@ -153,23 +135,23 @@ export function ProductCard({ product }) {
                             isAdding
                             ? 'bg-green-600 text-white scale-95 shadow-md'
                             : inStock
-                                ? 'bg-action-red text-white hover:bg-corporate-black hover:text-indigo-600 shadow-xs hover:shadow-md active:scale-95'
+                                ? 'bg-action-red text-white hover:bg-corporate-black hover:text-indigo-600 shadow-xs hover:shadow-md active:scale-95 cursor-pointer'
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
-                        aria-label="Sepete Ekle"
+                        aria-label="Tambah ke Beg"
                     >
                         {isAdding ? (
                             <>
                                 <Check size={14} />
-                                <span className="hidden sm:inline">Eklendi</span>
+                                <span className="hidden sm:inline">Ditambah</span>
                             </>
                         ) : inStock ? (
                             <>
                                 <ShoppingCart size={14} />
-                                <span className="hidden sm:inline">Sepete Ekle</span>
+                                <span className="hidden sm:inline">Tambah ke Beg</span>
                             </>
                         ) : (
-                            <span>Tükendi</span>
+                            <span>Habis Stok</span>
                         )}
                     </button>
                 </div>
