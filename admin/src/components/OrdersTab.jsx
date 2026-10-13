@@ -1,4 +1,6 @@
-import { Eye } from 'lucide-react';
+import { Eye, Truck } from 'lucide-react';
+import { useState } from 'react';
+import ShippingQuoteModal from './ShippingQuoteModal';
 
 export default function OrdersTab({
   orders,
@@ -17,6 +19,8 @@ export default function OrdersTab({
   setOrderStatusForm,
   setShowOrderModal
 }) {
+  const [shippingOrder, setShippingOrder] = useState(null);
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = !orderSearch ||
       (order.siparisNumarasi && order.siparisNumarasi.toLowerCase().includes(orderSearch.toLowerCase())) ||
@@ -81,7 +85,7 @@ export default function OrdersTab({
                 <th className="sortable-header" onClick={() => handleSort('olusturulmaTarihi', orderSort, setOrderSort)}>
                   Tarikh {renderSortIndicator(orderSort, 'olusturulmaTarihi')}
                 </th>
-                <th style={{ width: 80 }}>Tindakan</th>
+                <th style={{ width: 100 }}>Tindakan</th>
               </tr>
             </thead>
             <tbody>
@@ -108,6 +112,9 @@ export default function OrdersTab({
                       });
                       setShowOrderModal(true);
                     }}><Eye size={16} /></button>
+                    <button className="btn-icon" title="Penghantaran" onClick={() => setShippingOrder(order)}>
+                      <Truck size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -115,6 +122,12 @@ export default function OrdersTab({
           </table>
         </div>
       </div>
+
+      <ShippingQuoteModal
+        show={!!shippingOrder}
+        order={shippingOrder}
+        onClose={() => setShippingOrder(null)}
+      />
     </div>
   );
 }
