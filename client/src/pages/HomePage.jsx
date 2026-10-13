@@ -10,7 +10,7 @@ import { BrandSlider } from '../components/home/BrandSlider';
 import { FeaturedProducts } from '../components/home/FeaturedProducts';
 import { ComparisonTable } from '../components/home/ComparisonTable';
 import { LanggananSection } from '../components/home/LanggananSection';
-import { useCategories } from '../hooks/useCategories';
+import { TestimonialsSection } from '../components/home/TestimonialsSection';
 
 export function HomePage() {
     const navigate = useNavigate();
@@ -54,6 +54,8 @@ export function HomePage() {
             <FeaturedProducts />
 
             <ComparisonTable />
+
+            <TestimonialsSection />
 
             <FeaturesSection />
         </div>
