@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Globe,
     Plus,
@@ -13,9 +13,15 @@ import {
     Phone,
     MapPin,
     Building2,
-    ExternalLink
+    ExternalLink,
+    Video,
+    Play,
+    ShoppingBag,
+    Share2
 } from 'lucide-react';
 import api from '../../lib/axios';
+import ImageUploader from '../common/ImageUploader';
+import { parseTikTokInput, getTikTokEmbedUrl } from '../../utils/tiktokParser';
 
 export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
     // Slaid Hero State
@@ -49,6 +55,36 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
         alamat: 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah',
         waktuOperasi: 'Isnin - Sabtu: 9:00 AM - 6:00 PM'
     });
+
+    // Video TikTok Shoppable Reels State
+    const [tiktokVideos, setTiktokVideos] = useState(cmsData?.tiktok_videos || []);
+    const [videoModalOpen, setVideoModalOpen] = useState(false);
+    const [editingVideoIndex, setEditingVideoIndex] = useState(null);
+    const [videoForm, setVideoForm] = useState({
+        title: '',
+        videoInput: '',
+        videoId: '',
+        productId: '',
+        badge: 'Viral Kilang',
+        active: true
+    });
+
+    // Halaman Bio TikTok (/tt) State
+    const [bioData, setBioData] = useState(cmsData?.bio_links || {
+        profileTitle: "DIN'O EMPIRE",
+        profileTagline: "Terus Dari Kilang Kuala Ketil • Harga Borong Tanpa Orang Tengah",
+        voucherCode: "TIKTOK10",
+        voucherDiscountText: "Diskaun 10% Pesanan Pertama",
+        socialProofText: "🔥 5,000+ Bungkusan Berjaya Dihantar Seluruh Malaysia"
+    });
+
+    const [productList, setProductList] = useState([]);
+    useEffect(() => {
+        api.get('/api/v1/products?limit=100').then(res => {
+            const list = res.data?.data || res.data?.urunler || [];
+            setProductList(list);
+        }).catch(() => {});
+    }, []);
 
     const [isSaving, setIsSaving] = useState(false);
 
@@ -102,6 +138,72 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
         }
     };
 
+    // Buka Modal Tambah Video TikTok
+    const openAddVideoModal = () => {
+        setEditingVideoIndex(null);
+        setVideoForm({
+            title: '',
+            videoInput: '',
+            videoId: '',
+            productId: '',
+            badge: 'Viral Kilang',
+            active: true
+        });
+        setVideoModalOpen(true);
+    };
+
+    // Buka Modal Sunting Video TikTok
+    const openEditVideoModal = (vid, idx) => {
+        setEditingVideoIndex(idx);
+        setVideoForm({
+            id: vid.id,
+            title: vid.title || '',
+            videoInput: vid.videoUrl || vid.videoId || '',
+            videoId: vid.videoId || '',
+            productId: vid.productId || '',
+            badge: vid.badge || 'Viral Kilang',
+            active: vid.active !== false
+        });
+        setVideoModalOpen(true);
+    };
+
+    // Simpan Borang Video TikTok Tempatan
+    const handleSaveVideoForm = (e) => {
+        e.preventDefault();
+        const extractedId = parseTikTokInput(videoForm.videoInput) || videoForm.videoId;
+        if (!extractedId) {
+            alert('Sila masukkan pautan atau kod embed TikTok yang sah (nombor ID video diperlukan).');
+            return;
+        }
+
+        const newVideo = {
+            id: videoForm.id || 'tt_' + Math.random().toString(36).substring(2, 7),
+            title: videoForm.title,
+            videoId: extractedId,
+            videoUrl: videoForm.videoInput,
+            productId: videoForm.productId || null,
+            badge: videoForm.badge || 'Viral Kilang',
+            active: videoForm.active
+        };
+
+        const updated = [...tiktokVideos];
+        if (editingVideoIndex !== null) {
+            updated[editingVideoIndex] = newVideo;
+        } else {
+            updated.push(newVideo);
+        }
+
+        setTiktokVideos(updated);
+        setVideoModalOpen(false);
+    };
+
+    // Padam Video TikTok
+    const handleDeleteVideo = (idx) => {
+        if (window.confirm('Padam video TikTok ini dari paparan?')) {
+            setTiktokVideos(tiktokVideos.filter((_, i) => i !== idx));
+        }
+    };
+
     // Simpan Keseluruhan CMS ke API Server
     const handleSaveEntireCms = async () => {
         setIsSaving(true);
@@ -109,9 +211,11 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
             await api.put('/api/v1/admin/cms', {
                 hero_slides: slides,
                 announcement_bar: announcement,
-                info_kedai: infoKedai
+                info_kedai: infoKedai,
+                tiktok_videos: tiktokVideos,
+                bio_links: bioData
             });
-            showNotif('Semua perubahan kandungan CMS berjaya disimpan ke pangkalan data!');
+            showNotif('Semua perubahan kandungan CMS & TikTok berjaya disimpan ke pangkalan data!');
             if (onSaveSuccess) onSaveSuccess();
         } catch (error) {
             console.error('Ralat simpan CMS:', error);
@@ -358,6 +462,304 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                 </div>
             </div>
 
+            {/* SEKSYEN 4: VIDEO TIKTOK SHOPPABLE REELS (TIKTOK SHOWCASE) */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 md:p-8 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 className="text-lg font-black text-white flex items-center gap-2">
+                            <Video size={20} className="text-rose-400" />
+                            Video TikTok Shoppable Reels (Laman Utama & Bio)
+                        </h2>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            Tampal pautan atau kod embed TikTok. Video akan dipaparkan dalam bentuk 9:16 reels dengan butang beli produk.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={openAddVideoModal}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition cursor-pointer self-start sm:self-auto shadow-md"
+                    >
+                        <Plus size={16} />
+                        <span>Tambah Video TikTok</span>
+                    </button>
+                </div>
+
+                {/* Senarai Video TikTok */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {tiktokVideos.map((vid, index) => {
+                        const linkedProd = productList.find(p => String(p.id) === String(vid.productId));
+
+                        return (
+                            <div
+                                key={vid.id || index}
+                                className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 relative group"
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                        <Play size={10} className="fill-current" />
+                                        <span>{vid.badge || 'TikTok Live'}</span>
+                                    </span>
+
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => openEditVideoModal(vid, index)}
+                                            className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-900 rounded-lg transition"
+                                            title="Sunting"
+                                        >
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteVideo(index)}
+                                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-lg transition"
+                                            title="Padam"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-sm font-bold text-white line-clamp-2 leading-snug">
+                                        {vid.title}
+                                    </h4>
+                                    <p className="text-[11px] font-mono text-slate-500 truncate mt-1">
+                                        ID: {vid.videoId}
+                                    </p>
+                                </div>
+
+                                {linkedProd ? (
+                                    <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
+                                        <ShoppingBag size={14} className="text-amber-400 shrink-0" />
+                                        <span className="truncate font-semibold">{linkedProd.ad}</span>
+                                    </div>
+                                ) : (
+                                    <div className="text-[10px] text-slate-500 italic">
+                                        Tiada produk dikaitkan
+                                    </div>
+                                )}
+
+                                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                                    <span className={`text-[10px] font-bold ${vid.active !== false ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                        {vid.active !== false ? '● Dipaparkan' : '○ Disembunyikan'}
+                                    </span>
+
+                                    <a
+                                        href={`https://www.tiktok.com/@dinoempire/video/${vid.videoId}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white"
+                                    >
+                                        <span>Buka TikTok</span>
+                                        <ExternalLink size={11} />
+                                    </a>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {tiktokVideos.length === 0 && (
+                        <div className="md:col-span-3 text-center py-8 text-slate-500 text-xs">
+                            Belum ada video TikTok dimasukkan. Klik butang di atas untuk menambah video pertama!
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* SEKSYEN 5: TETAPAN HALAMAN BIO TIKTOK (/tt & /bio) */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 md:p-8 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 className="text-lg font-black text-white flex items-center gap-2">
+                            <Share2 size={20} className="text-amber-400" />
+                            Halaman Khas Bio TikTok (dinoempire.my/tt)
+                        </h2>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            Halaman pautan profil khas untuk bio media sosial TikTok, Instagram & WhatsApp.
+                        </p>
+                    </div>
+
+                    <a
+                        href="/tt"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs border border-slate-700 transition"
+                    >
+                        <span>Uji Halaman: /tt</span>
+                        <ExternalLink size={13} />
+                    </a>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Tajuk Profil Bio</label>
+                        <input
+                            type="text"
+                            value={bioData.profileTitle}
+                            onChange={(e) => setBioData({ ...bioData, profileTitle: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Kod Kupon Diskaun Bio</label>
+                        <input
+                            type="text"
+                            value={bioData.voucherCode}
+                            onChange={(e) => setBioData({ ...bioData, voucherCode: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500"
+                            placeholder="TIKTOK10"
+                        />
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Bio Tagline Kilang</label>
+                        <input
+                            type="text"
+                            value={bioData.profileTagline}
+                            onChange={(e) => setBioData({ ...bioData, profileTagline: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Teks Bukti Sosial</label>
+                        <input
+                            type="text"
+                            value={bioData.socialProofText}
+                            onChange={(e) => setBioData({ ...bioData, socialProofText: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-emerald-400 focus:outline-none focus:border-amber-500"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* MODAL TAMBAH / SUNTING VIDEO TIKTOK */}
+            {videoModalOpen && (
+                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                            <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                <Video size={20} className="text-rose-400" />
+                                {editingVideoIndex !== null ? 'Sunting Video TikTok' : 'Tambah Video TikTok Baharu'}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setVideoModalOpen(false)}
+                                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveVideoForm} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-300 mb-1">
+                                    Pautan / Kod Embed TikTok <span className="text-rose-400">*</span>
+                                </label>
+                                <textarea
+                                    rows="3"
+                                    required
+                                    value={videoForm.videoInput}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        const parsed = parseTikTokInput(val);
+                                        setVideoForm({
+                                            ...videoForm,
+                                            videoInput: val,
+                                            videoId: parsed || ''
+                                        });
+                                    }}
+                                    placeholder="https://www.tiktok.com/@dinoempire/video/7123456789012345678 atau tampal kod embed blockquote"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+                                />
+
+                                {videoForm.videoId ? (
+                                    <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
+                                        <Check size={13} />
+                                        <span>ID Video Dikesan: {videoForm.videoId}</span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-1.5 text-[10px] text-slate-400">
+                                        Sistem akan mengekstrak ID video secara automatik daripada pautan atau kod embed.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-300 mb-1">Tajuk Video (Kapsyen)</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={videoForm.title}
+                                    onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })}
+                                    placeholder="Contoh: Proses Jahitan & Fabrik Kilang Kuala Ketil"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Lencana (Badge)</label>
+                                    <input
+                                        type="text"
+                                        value={videoForm.badge}
+                                        onChange={(e) => setVideoForm({ ...videoForm, badge: e.target.value })}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-1">Produk Berkaitan (Shoppable)</label>
+                                    <select
+                                        value={videoForm.productId || ''}
+                                        onChange={(e) => setVideoForm({ ...videoForm, productId: e.target.value })}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                                    >
+                                        <option value="">-- Tiada Produk Dikaitkan --</option>
+                                        {productList.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.ad} (RM {Number(p.indirimliFiyat || p.fiyat || 0).toFixed(2)})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="pt-2 flex items-center justify-between border-t border-slate-800">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={videoForm.active}
+                                        onChange={(e) => setVideoForm({ ...videoForm, active: e.target.checked })}
+                                        className="w-4 h-4 rounded text-amber-500 focus:ring-0 bg-slate-950 border-slate-700"
+                                    />
+                                    <span className="text-xs font-bold text-slate-300">Aktifkan Paparan Video</span>
+                                </label>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setVideoModalOpen(false)}
+                                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs"
+                                    >
+                                        Simpan Video
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* MODAL TAMBAH / SUNTING SLAID */}
             {slideModalOpen && (
                 <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -428,16 +830,14 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold text-slate-300 mb-1">URL Imej Latar Belakang</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={slideForm.image}
-                                    onChange={(e) => setSlideForm({ ...slideForm, image: e.target.value })}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 font-mono text-xs"
-                                />
-                            </div>
+                            <ImageUploader
+                                label="Imej Latar Belakang Slaid"
+                                value={slideForm.image}
+                                onChange={(url) => setSlideForm({ ...slideForm, image: url })}
+                                folder="cms"
+                                placeholder="/images/hero/shopping_hero.png"
+                                required
+                            />
 
                             <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
                                 <button

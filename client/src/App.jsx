@@ -25,17 +25,22 @@ import { MySubscriptionsPage } from './pages/MySubscriptionsPage';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { TikTokBioPage } from './pages/TikTokBioPage';
 
 function AppLayout() {
     const location = useLocation();
     const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/login';
+    const isBioRoute = location.pathname === '/tt' || location.pathname === '/bio';
+    const isCustomLayout = isAdminRoute || isBioRoute;
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
-            {!isAdminRoute && <Header />}
-            <main className={isAdminRoute ? "flex-1 min-h-0" : "pt-20 md:pt-48 flex-1 min-h-0"}>
+            {!isCustomLayout && <Header />}
+            <main className={isCustomLayout ? "flex-1 min-h-0" : "pt-20 md:pt-48 flex-1 min-h-0"}>
                 <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/tt" element={<TikTokBioPage />} />
+                    <Route path="/bio" element={<TikTokBioPage />} />
                     <Route path="/magaza" element={<Shop />} />
                     <Route path="/bina-box" element={<BoxBuilderPage />} />
                     <Route path="/langganan" element={<MySubscriptionsPage />} />
@@ -62,9 +67,9 @@ function AppLayout() {
                     <Route path="/gizlilik-ve-kvkk" element={<LegalPage title="Dasar Privasi & Perlindungan Data (PDPA)" contentKey="gizlilik-ve-kvkk" />} />
                 </Routes>
             </main>
-            {!isAdminRoute && <Footer />}
-            {!isAdminRoute && <CartSidebar />}
-            {!isAdminRoute && <WhatsAppButton />}
+            {!isCustomLayout && <Footer />}
+            <CartSidebar />
+            {!isCustomLayout && <WhatsAppButton />}
         </div>
     );
 }

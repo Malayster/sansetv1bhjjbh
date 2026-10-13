@@ -10,6 +10,7 @@ import { BrandSlider } from '../components/home/BrandSlider';
 import { FeaturedProducts } from '../components/home/FeaturedProducts';
 import { ComparisonTable } from '../components/home/ComparisonTable';
 import { LanggananSection } from '../components/home/LanggananSection';
+import { TikTokReelsSection } from '../components/home/TikTokReelsSection';
 import { TestimonialsSection } from '../components/home/TestimonialsSection';
 import { FinalCTA } from '../components/home/FinalCTA';
 
@@ -49,6 +50,9 @@ export function HomePage() {
             <LanggananSection />
 
             <FeaturedProducts />
+
+            {/* SEKSYEN BARU TERSENDIRI: TIKTOK SHOPPABLE REELS KILANG */}
+            <TikTokReelsSection />
 
             <ComparisonTable />
 

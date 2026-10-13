@@ -8,6 +8,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_PATH = path.join(__dirname, 'local_dino.db');
 
+// Muat turun pembolehubah persekitaran daripada .dev.vars
+const devVarsPath = path.join(__dirname, '.dev.vars');
+if (fs.existsSync(devVarsPath)) {
+    const lines = fs.readFileSync(devVarsPath, 'utf8').split('\n');
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            let val = trimmed.slice(eqIdx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                val = val.slice(1, -1);
+            }
+            process.env[key] = val;
+        }
+    }
+    console.log('🔑 Pembolehubah persekitaran dimuatkan dari .dev.vars (ToyyibPay URL:', process.env.TOYYIBPAY_BASE_URL || 'https://toyyibpay.com', ')');
+}
+
 // Inisialisasi Pangkalan Data SQLite
 let db;
 function initDatabase() {
@@ -45,6 +65,61 @@ function initDatabase() {
             tindakan TEXT NOT NULL,
             butiran TEXT,
             pengguna TEXT DEFAULT 'Admin',
+            tarikh DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS points (
+            eposta TEXT PRIMARY KEY,
+            baki INTEGER DEFAULT 0,
+            jumlahDiperoleh INTEGER DEFAULT 0,
+            jumlahDigunakan INTEGER DEFAULT 0,
+            guncellenmeTarihi DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS points_log (
+            id TEXT PRIMARY KEY,
+            eposta TEXT NOT NULL,
+            jumlah INTEGER NOT NULL,
+            jenis TEXT NOT NULL,
+            nota TEXT,
+            rujukan TEXT,
+            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS langganan (
+            id TEXT PRIMARY KEY,
+            eposta TEXT NOT NULL,
+            ad TEXT NOT NULL,
+            soyad TEXT,
+            telefon TEXT,
+            alamat TEXT,
+            sehir TEXT,
+            poskod TEXT,
+            frekuensi TEXT DEFAULT 'BULANAN',
+            status TEXT DEFAULT 'AKTIF',
+            diskaunPeratus REAL DEFAULT 0,
+            jumlahAsas REAL DEFAULT 0,
+            jumlahAkhir REAL DEFAULT 0,
+            paymentToken TEXT,
+            skipSeterusnya INTEGER DEFAULT 0,
+            tarikhSeterusnya DATETIME,
+            olusturulmaTarihi DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS langganan_item (
+            id TEXT PRIMARY KEY,
+            langgananId TEXT NOT NULL,
+            urunId TEXT NOT NULL,
+            kuantiti INTEGER DEFAULT 1,
+            harga REAL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS admin_notifications (
+            id TEXT PRIMARY KEY,
+            tajuk TEXT NOT NULL,
+            mesej TEXT NOT NULL,
+            jenis TEXT DEFAULT 'info',
+            dibaca INTEGER DEFAULT 0,
             tarikh DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     `);
@@ -110,6 +185,97 @@ function initDatabase() {
         };
         db.prepare(`INSERT INTO cms_kandungan (kunci, kandunganJson) VALUES ('info_kedai', ?)`).run(JSON.stringify(defaultInfo));
     }
+
+    const existingTikTok = db.prepare(`SELECT kunci FROM cms_kandungan WHERE kunci = 'tiktok_videos'`).get();
+    if (!existingTikTok) {
+        const defaultTikTokVideos = [
+            {
+                id: 'tt_1',
+                title: "Proses Jahitan Jersi & Kualiti Fabrik Kilang Kuala Ketil",
+                videoId: "7123456789012345678",
+                videoUrl: "https://www.tiktok.com/@dinoempire/video/7123456789012345678",
+                productId: null,
+                badge: "Viral Kilang",
+                active: true
+            },
+            {
+                id: 'tt_2',
+                title: "Unboxing Bungkusan Pakej Box Kilang: Berbaloi & Jimat!",
+                videoId: "7234567890123456789",
+                videoUrl: "https://www.tiktok.com/@dinoempire/video/7234567890123456789",
+                productId: null,
+                badge: "Pilihan Ramai",
+                active: true
+            },
+            {
+                id: 'tt_3',
+                title: "Packing Order Pelanggan: Penghantaran Laju Seluruh Semenanjung",
+                videoId: "7345678901234567890",
+                videoUrl: "https://www.tiktok.com/@dinoempire/video/7345678901234567890",
+                productId: null,
+                badge: "Pos Laju",
+                active: true
+            }
+        ];
+        db.prepare(`INSERT INTO cms_kandungan (kunci, kandunganJson) VALUES ('tiktok_videos', ?)`).run(JSON.stringify(defaultTikTokVideos));
+    }
+
+    const existingBio = db.prepare(`SELECT kunci FROM cms_kandungan WHERE kunci = 'bio_links'`).get();
+    if (!existingBio) {
+        const defaultBioData = {
+            profileTitle: "DIN'O EMPIRE",
+            profileTagline: "Terus Dari Kilang Kuala Ketil • Harga Borong Tanpa Orang Tengah",
+            verifiedBadge: true,
+            voucherCode: "TIKTOK10",
+            voucherDiscountText: "Diskaun 10% Pesanan Pertama",
+            socialProofText: "🔥 5,000+ Bungkusan Berjaya Dihantar Seluruh Malaysia",
+            customLinks: [
+                {
+                    id: 'link_1',
+                    title: "📦 Bina Box Anda Sendiri & Jimat Sehingga 15%",
+                    subtitle: "Campur produk kegemaran kilang ikut bajet anda",
+                    url: "/bina-box",
+                    highlight: true
+                },
+                {
+                    id: 'link_2',
+                    title: "🛍️ Terokai Katalog Lengkap Kilang Kuala Ketil",
+                    subtitle: "Pelbagai barangan kualiti premium harga kilang",
+                    url: "/magaza",
+                    highlight: false
+                },
+                {
+                    id: 'link_3',
+                    title: "🚚 Semak Status Tracking Bungkusan Anda",
+                    subtitle: "Masukkan nombor pesanan atau token tracking",
+                    url: "/siparis-takip",
+                    highlight: false
+                },
+                {
+                    id: 'link_4',
+                    title: "💬 WhatsApp Customer Service Kilang",
+                    subtitle: "Tanya stok & konsultasi terus bersama staf kami",
+                    url: "https://wa.me/60132359647?text=Hai%20Admin%20DIN'O%20EMPIRE,%20saya%20dari%20TikTok%20nak%20tanya%20produk%20kilang",
+                    highlight: false
+                }
+            ]
+        };
+        db.prepare(`INSERT INTO cms_kandungan (kunci, kandunganJson) VALUES ('bio_links', ?)`).run(JSON.stringify(defaultBioData));
+    }
+
+    try {
+        db.exec(`ALTER TABLE kategoriler ADD COLUMN aciklama TEXT;`);
+    } catch {}
+
+    const existingQuickLinks = db.prepare(`SELECT kunci FROM cms_kandungan WHERE kunci = 'admin_quick_links'`).get();
+    if (!existingQuickLinks) {
+        const defaultQuickLinks = {
+            yahooMailUrl: 'https://mail.yahoo.com',
+            easyParcelUrl: 'https://easyparcel.com',
+            toyyibPayUrl: 'https://toyyibpay.com'
+        };
+        db.prepare(`INSERT INTO cms_kandungan (kunci, kandunganJson) VALUES ('admin_quick_links', ?)`).run(JSON.stringify(defaultQuickLinks));
+    }
 }
 
 initDatabase();
@@ -166,6 +332,26 @@ const server = http.createServer(async (req, res) => {
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost:8787'}`);
     const pathname = parsedUrl.pathname;
     const query = Object.fromEntries(parsedUrl.searchParams.entries());
+
+    // Melayan fail muat naik statik sekiranya diminta terus dari backend 8787
+    if (pathname.startsWith('/uploads/') && (req.method === 'GET' || req.method === 'HEAD')) {
+        const filePath = path.join(__dirname, '../client/public', pathname);
+        if (fs.existsSync(filePath)) {
+            const ext = path.extname(filePath).toLowerCase();
+            const mimeTypes = {
+                '.webp': 'image/webp',
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.svg': 'image/svg+xml'
+            };
+            res.writeHead(200, {
+                'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+                'Access-Control-Allow-Origin': '*'
+            });
+            return fs.createReadStream(filePath).pipe(res);
+        }
+    }
 
     try {
         // ==========================================
@@ -437,18 +623,76 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 404, { status: 'failure', errorMessage: 'Pesanan tidak dijumpai.' });
             }
 
-            // Kemas kini status pesanan kepada HAZIRLANIYOR (simulasi bayaran berjaya dalam dev mode)
-            db.prepare(`UPDATE siparisler SET durum = 'HAZIRLANIYOR', guncellenmeTarihi = CURRENT_TIMESTAMP WHERE id = ?`).run(order.id);
-
             const token = order.takipTokeni || order.odemeTokeni || order.id;
-            const paymentUrl = `/payment/success?orderNumber=${order.siparisNumarasi}&trackingToken=${token}`;
+            const secretKey = process.env.TOYYIBPAY_USER_SECRET_KEY;
+            const categoryCode = process.env.TOYYIBPAY_CATEGORY_CODE;
+            const baseUrl = process.env.TOYYIBPAY_BASE_URL || 'https://toyyibpay.com';
+            const clientUrl = process.env.CLIENT_URL || 'http://localhost:8000';
+            const apiReturnUrl = `${clientUrl}/payment/success?orderNumber=${order.siparisNumarasi}&trackingToken=${token}`;
+
+            // Cipta Bil ToyyibPay sebenar sekiranya secretKey dan categoryCode dibekalkan
+            if (secretKey && categoryCode && secretKey !== 'sandbox_secret_key') {
+                try {
+                    const amountInCents = Math.round(Number(order.toplamTutar || 0) * 100);
+                    const formData = new URLSearchParams();
+                    formData.append('userSecretKey', secretKey);
+                    formData.append('categoryCode', categoryCode);
+                    formData.append('billName', `Pesanan #${order.siparisNumarasi}`.slice(0, 30));
+                    formData.append('billDescription', `Pembayaran pesanan #${order.siparisNumarasi} DIN'O EMPIRE`.slice(0, 100));
+                    formData.append('billPriceSetting', '1');
+                    formData.append('billPayorInfo', '1');
+                    formData.append('billAmount', amountInCents.toString());
+                    formData.append('billReturnUrl', apiReturnUrl);
+                    formData.append('billCallbackUrl', apiReturnUrl);
+                    formData.append('billExternalReferenceNo', order.siparisNumarasi);
+                    formData.append('billTo', `${order.ad || ''} ${order.soyad || ''}`.trim() || 'Pelanggan');
+                    formData.append('billEmail', order.eposta || 'customer@dinoempire.my');
+                    formData.append('billPhone', order.telefon || '0100000000');
+                    formData.append('billPaymentChannel', '2'); // FPX
+                    formData.append('billChargeToCustomer', '1');
+
+                    const response = await fetch(`${baseUrl}/index.php/api/createBill`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+
+                    const text = await response.text();
+                    let result;
+                    try { result = JSON.parse(text); } catch { result = text; }
+
+                    if (Array.isArray(result) && result[0]?.BillCode) {
+                        const billCode = result[0].BillCode;
+                        const paymentUrl = `${baseUrl}/${billCode}`;
+                        console.log(`✅ [ToyyibPay] Bil rasmi berjaya dicipta: ${billCode} -> ${paymentUrl}`);
+                        logAudit('CIPTA_BIL_TOYYIBPAY', `Bil #${billCode} dicipta untuk pesanan #${order.siparisNumarasi} bernilai RM${Number(order.toplamTutar || 0).toFixed(2)}`);
+                        return sendJson(res, 200, {
+                            status: 'success',
+                            paymentUrl,
+                            orderId: order.id,
+                            orderNumber: order.siparisNumarasi,
+                            trackingToken: token,
+                            billCode,
+                            ucdHtml: `<script>window.location.href="${paymentUrl}";</script>`
+                        });
+                    } else {
+                        console.warn('⚠️ [ToyyibPay] createBill response:', result);
+                    }
+                } catch (err) {
+                    console.error('⚠️ [ToyyibPay] Ralat sambungan API:', err.message);
+                }
+            }
+
+            // Simulasi lokal sekiranya offline atau dev sandbox
+            db.prepare(`UPDATE siparisler SET durum = 'HAZIRLANIYOR', guncellenmeTarihi = CURRENT_TIMESTAMP WHERE id = ?`).run(order.id);
+            const fallbackUrl = `/payment/success?orderNumber=${order.siparisNumarasi}&trackingToken=${token}`;
             return sendJson(res, 200, {
                 status: 'success',
-                paymentUrl,
+                paymentUrl: fallbackUrl,
                 orderId: order.id,
                 orderNumber: order.siparisNumarasi,
                 trackingToken: token,
-                ucdHtml: `<script>window.location.href="${paymentUrl}";</script>`
+                ucdHtml: `<script>window.location.href="${fallbackUrl}";</script>`
             });
         }
 
@@ -662,8 +906,14 @@ const server = http.createServer(async (req, res) => {
                     items: items.map(it => ({
                         id: it.id,
                         ad: it.urunAdSnapshot,
+                        name: it.urunAdSnapshot,
                         miktar: it.adet,
-                        fiyat: it.fiyat
+                        quantity: it.adet,
+                        fiyat: it.fiyat,
+                        price: it.fiyat,
+                        secilenRenk: it.secilenRenk || 'Standard',
+                        color: it.secilenRenk || 'Standard',
+                        toplamFiyat: it.toplamFiyat || (Number(it.fiyat || 0) * Number(it.adet || 1))
                     })),
                     kalemler: items
                 };
@@ -690,12 +940,13 @@ const server = http.createServer(async (req, res) => {
                 id
             );
 
+            logAudit('KEMAS_KINI_PESANAN', `Pesanan #${id} status dikemas kini kepada ${b.durum || 'kekal'}, tracking: ${b.kargoTakipNo || '-'}`);
             return sendJson(res, 200, { status: 'success', message: 'Pesanan berjaya dikemas kini.' });
         }
 
         // Senarai Kategori Admin
         if (pathname === '/api/v1/admin/categories' && req.method === 'GET') {
-            const cats = db.prepare(`SELECT * FROM kategoriler ORDER BY sira ASC`).all();
+            const cats = db.prepare(`SELECT *, resim as resimUrl FROM kategoriler ORDER BY sira ASC`).all();
             return sendJson(res, 200, { status: 'success', data: cats });
         }
 
@@ -704,11 +955,43 @@ const server = http.createServer(async (req, res) => {
             const b = await parseBody(req);
             const id = 'cat_' + Math.random().toString(36).substring(2, 9);
             const slug = (b.slug || b.ad || 'kategori').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const resim = b.resimUrl || b.resim || null;
             db.prepare(`
-                INSERT INTO kategoriler (id, ad, slug, sira, aktif, olusturulmaTarihi, guncellenmeTarihi)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            `).run(id, b.ad, slug, Number(b.sira || 1), b.aktif !== undefined ? (b.aktif ? 1 : 0) : 1);
-            return sendJson(res, 201, { status: 'success', message: 'Kategori berjaya ditambah.' });
+                INSERT INTO kategoriler (id, ad, slug, resim, aciklama, sira, aktif, olusturulmaTarihi, guncellenmeTarihi)
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `).run(id, b.ad, slug, resim, b.aciklama || null, Number(b.sira || 1), b.aktif !== undefined ? (b.aktif ? 1 : 0) : 1);
+            logAudit('TAMBAH_KATEGORI', `Kategori baru dicipta: ${b.ad}`);
+            return sendJson(res, 201, { status: 'success', message: 'Kategori berjaya ditambah.', data: { id, ad: b.ad, slug } });
+        }
+
+        // Kemas Kini Kategori Admin
+        if (pathname.startsWith('/api/v1/admin/categories/') && req.method === 'PUT') {
+            const id = pathname.replace('/api/v1/admin/categories/', '');
+            const b = await parseBody(req);
+            const slug = b.slug ? b.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined;
+            const resim = b.resimUrl !== undefined ? b.resimUrl : (b.resim !== undefined ? b.resim : null);
+            db.prepare(`
+                UPDATE kategoriler SET
+                    ad = coalesce(?, ad),
+                    slug = coalesce(?, slug),
+                    resim = coalesce(?, resim),
+                    aciklama = coalesce(?, aciklama),
+                    sira = coalesce(?, sira),
+                    aktif = coalesce(?, aktif),
+                    guncellenmeTarihi = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(b.ad, slug, resim, b.aciklama, b.sira !== undefined ? Number(b.sira) : null, b.aktif !== undefined ? (b.aktif ? 1 : 0) : null, id);
+            logAudit('KEMAS_KINI_KATEGORI', `Kategori dikemas kini: ${id}`);
+            return sendJson(res, 200, { status: 'success', message: 'Kategori berjaya dikemas kini.' });
+        }
+
+        // Padam Kategori Admin
+        if (pathname.startsWith('/api/v1/admin/categories/') && req.method === 'DELETE') {
+            const id = pathname.replace('/api/v1/admin/categories/', '');
+            db.prepare(`UPDATE urunler SET kategoriId = NULL WHERE kategoriId = ?`).run(id);
+            db.prepare(`DELETE FROM kategoriler WHERE id = ?`).run(id);
+            logAudit('PADAM_KATEGORI', `Kategori dipadam: ${id}`);
+            return sendJson(res, 200, { status: 'success', message: 'Kategori berjaya dipadam.' });
         }
 
         // Kemas Kini Tetapan Admin
@@ -1004,6 +1287,307 @@ const server = http.createServer(async (req, res) => {
         if (pathname === '/api/v1/admin/audit-logs' && req.method === 'GET') {
             const logs = db.prepare(`SELECT * FROM admin_audit_log ORDER BY tarikh DESC LIMIT 30`).all();
             return sendJson(res, 200, { status: 'success', data: logs });
+        }
+
+        // ==========================================
+        // 11. SISTEM MATA GANJARAN (LOYALTY POINTS)
+        // ==========================================
+        if (pathname === '/api/v1/points/balance' && req.method === 'GET') {
+            const eposta = query.eposta;
+            if (!eposta) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'E-mel diperlukan.' });
+            }
+
+            let pts = db.prepare(`SELECT * FROM points WHERE eposta = ?`).get(eposta);
+            if (!pts) {
+                pts = { eposta, baki: 150, jumlahDiperoleh: 150, jumlahDigunakan: 0 };
+                db.prepare(`INSERT OR IGNORE INTO points (eposta, baki, jumlahDiperoleh, jumlahDigunakan) VALUES (?, 150, 150, 0)`).run(eposta);
+            }
+
+            const logs = db.prepare(`SELECT * FROM points_log WHERE eposta = ? ORDER BY createdAt DESC LIMIT 20`).all(eposta);
+            return sendJson(res, 200, {
+                status: 'success',
+                data: {
+                    eposta: pts.eposta,
+                    baki: pts.baki,
+                    jumlahDiperoleh: pts.jumlahDiperoleh,
+                    jumlahDigunakan: pts.jumlahDigunakan,
+                    log: logs
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/points/earn' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const { eposta, jumlah, nota, rujukan } = body;
+            if (!eposta || !jumlah || Number(jumlah) <= 0) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Data mata ganjaran tidak sah.' });
+            }
+
+            const ptsNum = Number(jumlah);
+            let current = db.prepare(`SELECT * FROM points WHERE eposta = ?`).get(eposta);
+            if (!current) {
+                db.prepare(`INSERT INTO points (eposta, baki, jumlahDiperoleh, jumlahDigunakan) VALUES (?, ?, ?, 0)`).run(eposta, ptsNum, ptsNum);
+            } else {
+                db.prepare(`UPDATE points SET baki = baki + ?, jumlahDiperoleh = jumlahDiperoleh + ?, guncellenmeTarihi = CURRENT_TIMESTAMP WHERE eposta = ?`).run(ptsNum, ptsNum, eposta);
+            }
+
+            const logId = 'plog_' + Math.random().toString(36).substring(2, 9);
+            db.prepare(`INSERT INTO points_log (id, eposta, jumlah, jenis, nota, rujukan) VALUES (?, ?, ?, 'DAPAT', ?, ?)`).run(logId, eposta, ptsNum, nota || 'Ganjaran pesanan', rujukan || null);
+
+            const updated = db.prepare(`SELECT * FROM points WHERE eposta = ?`).get(eposta);
+            return sendJson(res, 200, { status: 'success', data: updated });
+        }
+
+        if (pathname === '/api/v1/points/redeem' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const { eposta, jumlah, nota } = body;
+            if (!eposta || !jumlah || Number(jumlah) <= 0) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Data penebusan mata tidak sah.' });
+            }
+
+            const ptsNum = Number(jumlah);
+            const current = db.prepare(`SELECT * FROM points WHERE eposta = ?`).get(eposta);
+            if (!current || (current.baki || 0) < ptsNum) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Baki mata ganjaran tidak mencukupi.' });
+            }
+
+            db.prepare(`UPDATE points SET baki = baki - ?, jumlahDigunakan = jumlahDigunakan + ?, guncellenmeTarihi = CURRENT_TIMESTAMP WHERE eposta = ?`).run(ptsNum, ptsNum, eposta);
+            const logId = 'plog_' + Math.random().toString(36).substring(2, 9);
+            db.prepare(`INSERT INTO points_log (id, eposta, jumlah, jenis, nota) VALUES (?, ?, ?, 'GUNA', ?)`).run(logId, eposta, ptsNum, nota || 'Tebus semasa pembayaran');
+
+            return sendJson(res, 200, { status: 'success', message: 'Mata berjaya ditebus.' });
+        }
+
+        // ==========================================
+        // 12. SISTEM LANGGANAN KOTAK (BINA BOX / SUBSCRIPTIONS)
+        // ==========================================
+        if (pathname === '/api/v1/subscriptions' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const { eposta, ad, soyad, telefon, alamat, sehir, poskod, frekuensi, items } = body;
+
+            if (!eposta || !ad || !items || !Array.isArray(items) || items.length === 0) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Maklumat langganan tidak lengkap.' });
+            }
+
+            let jumlahAsas = 0;
+            const itemsProcessed = [];
+            for (const item of items) {
+                const prod = db.prepare(`SELECT * FROM urunler WHERE id = ?`).get(item.urunId);
+                const price = prod ? Number(prod.indirimliFiyat || prod.fiyat || 0) : 10;
+                const qty = Math.max(1, Number(item.kuantiti || 1));
+                jumlahAsas += price * qty;
+                itemsProcessed.push({ urunId: item.urunId, kuantiti: qty, harga: price, prod });
+            }
+
+            let diskaunPeratus = 0;
+            if (jumlahAsas >= 150) diskaunPeratus = 15;
+            else if (jumlahAsas >= 100) diskaunPeratus = 10;
+            else if (jumlahAsas >= 50) diskaunPeratus = 5;
+
+            const jumlahAkhir = Number((jumlahAsas * (1 - diskaunPeratus / 100)).toFixed(2));
+            const subId = 'sub_' + Math.random().toString(36).substring(2, 9);
+            const accessToken = 'tok_' + Math.random().toString(36).substring(2, 14);
+
+            const nextDate = new Date();
+            if (frekuensi === '2_MINGGU') {
+                nextDate.setDate(nextDate.getDate() + 14);
+            } else {
+                nextDate.setMonth(nextDate.getMonth() + 1);
+            }
+
+            db.prepare(`
+                INSERT INTO langganan (
+                    id, eposta, ad, soyad, telefon, alamat, sehir, poskod,
+                    frekuensi, status, diskaunPeratus, jumlahAsas, jumlahAkhir,
+                    paymentToken, skipSeterusnya, tarikhSeterusnya, olusturulmaTarihi
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'AKTIF', ?, ?, ?, ?, 0, ?, CURRENT_TIMESTAMP)
+            `).run(
+                subId, eposta, ad, soyad || '', telefon || '', alamat || '', sehir || '', poskod || '',
+                frekuensi || 'BULANAN', diskaunPeratus, jumlahAsas, jumlahAkhir, accessToken, nextDate.toISOString()
+            );
+
+            for (const it of itemsProcessed) {
+                const itId = 'sitem_' + Math.random().toString(36).substring(2, 9);
+                db.prepare(`INSERT INTO langganan_item (id, langgananId, urunId, kuantiti, harga) VALUES (?, ?, ?, ?, ?)`).run(
+                    itId, subId, it.urunId, it.kuantiti, it.harga
+                );
+            }
+
+            logAudit('LANGGANAN_BARU', `Langganan kotak baru dicipta untuk ${eposta} (RM${jumlahAkhir})`);
+
+            return sendJson(res, 200, {
+                status: 'success',
+                data: {
+                    id: subId,
+                    eposta,
+                    accessToken,
+                    jumlahAkhir,
+                    frekuensi: frekuensi || 'BULANAN',
+                    diskaunPeratus
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/subscriptions/me' && req.method === 'GET') {
+            const { eposta, token } = query;
+            if (!eposta || !token) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'E-mel dan token diperlukan.' });
+            }
+
+            const subs = db.prepare(`SELECT * FROM langganan WHERE eposta = ? AND paymentToken = ? AND status != 'DIBATALKAN' ORDER BY olusturulmaTarihi DESC`).all(eposta, token);
+            
+            const detailedSubs = subs.map(s => {
+                const rawItems = db.prepare(`SELECT * FROM langganan_item WHERE langgananId = ?`).all(s.id);
+                const items = rawItems.map(it => {
+                    const prod = db.prepare(`SELECT id, ad, resimUrl, fiyat FROM urunler WHERE id = ?`).get(it.urunId);
+                    return {
+                        ...it,
+                        urun: prod || { id: it.urunId, ad: 'Produk Kilang', fiyat: it.harga }
+                    };
+                });
+                return { ...s, items };
+            });
+
+            return sendJson(res, 200, { status: 'success', data: detailedSubs });
+        }
+
+        if (pathname.startsWith('/api/v1/subscriptions/') && pathname.endsWith('/skip') && req.method === 'POST') {
+            const id = pathname.replace('/api/v1/subscriptions/', '').replace('/skip', '');
+            const body = await parseBody(req);
+            const sub = db.prepare(`SELECT * FROM langganan WHERE id = ? AND paymentToken = ?`).get(id, body.token || '');
+            if (!sub) {
+                return sendJson(res, 403, { status: 'error', errorMessage: 'Langganan atau token tidak sah.' });
+            }
+
+            db.prepare(`UPDATE langganan SET skipSeterusnya = 1 WHERE id = ?`).run(id);
+            return sendJson(res, 200, { status: 'success', message: 'Bulan seterusnya dilangkau.' });
+        }
+
+        if (pathname.startsWith('/api/v1/subscriptions/') && pathname.endsWith('/cancel') && req.method === 'POST') {
+            const id = pathname.replace('/api/v1/subscriptions/', '').replace('/cancel', '');
+            const body = await parseBody(req);
+            const sub = db.prepare(`SELECT * FROM langganan WHERE id = ? AND paymentToken = ?`).get(id, body.token || '');
+            if (!sub) {
+                return sendJson(res, 403, { status: 'error', errorMessage: 'Langganan atau token tidak sah.' });
+            }
+
+            db.prepare(`UPDATE langganan SET status = 'DIBATALKAN' WHERE id = ?`).run(id);
+            logAudit('LANGGANAN_BATAL', `Langganan ${id} dibatalkan oleh pengguna`);
+            return sendJson(res, 200, { status: 'success', message: 'Langganan dibatalkan.' });
+        }
+
+        if (pathname === '/api/v1/subscriptions/admin/list' && req.method === 'GET') {
+            const subs = db.prepare(`SELECT * FROM langganan ORDER BY olusturulmaTarihi DESC`).all();
+            return sendJson(res, 200, { status: 'success', data: subs });
+        }
+
+        // ==========================================
+        // 13. ADMIN ME & NOTIFIKASI & SHIPPING
+        // ==========================================
+        if (pathname === '/api/v1/admin/me' && req.method === 'GET') {
+            return sendJson(res, 200, {
+                status: 'success',
+                data: {
+                    email: 'admin@dinoempire.my',
+                    role: 'SUPER_ADMIN',
+                    permissions: ['all']
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/admin/notifications' && req.method === 'GET') {
+            const notifs = db.prepare(`SELECT * FROM admin_notifications ORDER BY tarikh DESC LIMIT 20`).all();
+            return sendJson(res, 200, { status: 'success', data: notifs });
+        }
+
+        if (pathname === '/api/v1/admin/shipping/quotations' && req.method === 'POST') {
+            return sendJson(res, 200, {
+                status: 'success',
+                data: [
+                    { service_id: 'ep_poslaju', service_name: 'EasyParcel - Pos Laju Malaysia', price: 8.00, delivery: '1-3 hari' },
+                    { service_id: 'ep_jnt', service_name: 'EasyParcel - J&T Express', price: 7.50, delivery: '1-2 hari' },
+                    { service_id: 'ep_ninja', service_name: 'EasyParcel - Ninja Van', price: 7.90, delivery: '2-3 hari' }
+                ]
+            });
+        }
+
+        // ==========================================
+        // 14. PENGURUSAN MUAT NAIK GAMBAR (DIRECT IMAGE UPLOAD)
+        // ==========================================
+        if (pathname === '/api/v1/admin/upload' && req.method === 'POST') {
+            const contentType = req.headers['content-type'] || '';
+            let base64Data = null;
+            let folder = 'products';
+            let ext = 'webp';
+
+            if (contentType.includes('application/json')) {
+                const body = await parseBody(req);
+                base64Data = body.file || body.imageBase64 || body.image;
+                folder = body.folder === 'cms' ? 'cms' : 'products';
+            } else if (contentType.includes('multipart/form-data')) {
+                const rawBuffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    req.on('data', c => chunks.push(c));
+                    req.on('end', () => resolve(Buffer.concat(chunks)));
+                    req.on('error', reject);
+                });
+
+                const boundary = contentType.split('boundary=')[1];
+                if (boundary) {
+                    const parts = rawBuffer.toString('binary').split('--' + boundary);
+                    for (const part of parts) {
+                        if (part.includes('filename="')) {
+                            const headerEnd = part.indexOf('\r\n\r\n');
+                            if (headerEnd !== -1) {
+                                const fileBinary = part.substring(headerEnd + 4, part.lastIndexOf('\r\n'));
+                                base64Data = Buffer.from(fileBinary, 'binary').toString('base64');
+                                if (part.includes('.png')) ext = 'png';
+                                else if (part.includes('.jpg') || part.includes('.jpeg')) ext = 'jpg';
+                                else ext = 'webp';
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!base64Data) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Tiada fail imej dihantar atau format tidak disokong.' });
+            }
+
+            if (typeof base64Data === 'string' && base64Data.startsWith('data:image/')) {
+                const mimeMatch = base64Data.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
+                if (mimeMatch && mimeMatch[1]) {
+                    ext = mimeMatch[1] === 'jpeg' ? 'jpg' : mimeMatch[1];
+                }
+                base64Data = base64Data.replace(/^data:image\/[a-zA-Z0-9+]+;base64,/, '');
+            }
+
+            const buffer = Buffer.from(base64Data, 'base64');
+            if (buffer.length > 10 * 1024 * 1024) {
+                return sendJson(res, 413, { status: 'error', errorMessage: 'Saiz imej melebihi had 10MB.' });
+            }
+
+            const uploadDir = path.join(__dirname, '../client/public/uploads', folder);
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            const fileId = 'dino_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+            const fileName = `${fileId}.${ext}`;
+            const targetPath = path.join(uploadDir, fileName);
+
+            fs.writeFileSync(targetPath, buffer);
+            const publicUrl = `/uploads/${folder}/${fileName}`;
+
+            logAudit('MUAT_NAIK_GAMBAR', `Imej baru dimuat naik: ${publicUrl} (${(buffer.length / 1024).toFixed(1)} KB)`);
+
+            return sendJson(res, 200, {
+                status: 'success',
+                url: publicUrl,
+                key: `uploads/${folder}/${fileName}`,
+                sizeKb: Number((buffer.length / 1024).toFixed(1))
+            });
         }
 
         // Default 404

@@ -19,7 +19,7 @@ CDN_URL = "https://cdn.ecommerceflaredev.web.tr"
 # ── Active Payment Provider ───────────────────────────────────────────────────
 # Options: "toyyibpay" | "iyzico" | "param" | "paytr"
 PAYMENT_PROVIDER = "toyyibpay"
-TOYYIBPAY_BASE_URL = "https://dev.toyyibpay.com"
+TOYYIBPAY_BASE_URL = "https://toyyibpay.com"
 
 # ── iyzico (sandbox) — API keys via: wrangler secret put IYZICO_API_KEY ─────
 IYZICO_BASE_URL = "https://sandbox-api.iyzipay.com"

@@ -26,7 +26,13 @@ import {
     AlertTriangle,
     ShieldCheck,
     DollarSign,
-    ArrowUpRight
+    ArrowUpRight,
+    Mail,
+    ExternalLink,
+    Printer,
+    Download,
+    Link2,
+    CheckCircle2
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
@@ -37,6 +43,9 @@ import { AnalyticsTab } from '../../components/admin/AnalyticsTab';
 import { CmsManagerTab } from '../../components/admin/CmsManagerTab';
 import { InventoryHealthTab } from '../../components/admin/InventoryHealthTab';
 import { AuditLogsTab } from '../../components/admin/AuditLogsTab';
+import { SalesAnalyticsCharts } from '../../components/admin/SalesAnalyticsCharts';
+import { OrderPrintSlipModal } from '../../components/admin/OrderPrintSlipModal';
+import ImageUploader from '../../components/common/ImageUploader';
 
 export function AdminDashboardPage() {
     const navigate = useNavigate();
@@ -75,6 +84,40 @@ export function AdminDashboardPage() {
     const [cmsContent, setCmsContent] = useState(null);
     const [auditLogs, setAuditLogs] = useState([]);
 
+    // 3 Butang Pantas Pentadbir (Boleh diedit URL bila-bila masa)
+    const [quickLinks, setQuickLinks] = useState({
+        yahooMailUrl: 'https://mail.yahoo.com',
+        easyParcelUrl: 'https://easyparcel.com',
+        toyyibPayUrl: 'https://toyyibpay.com'
+    });
+    const [isQuickLinksModalOpen, setIsQuickLinksModalOpen] = useState(false);
+    const [quickLinksForm, setQuickLinksForm] = useState({
+        yahooMailUrl: '',
+        easyParcelUrl: '',
+        toyyibPayUrl: ''
+    });
+    const [isSavingQuickLinks, setIsSavingQuickLinks] = useState(false);
+
+    // State Slip Cetakan EasyParcel
+    const [printingOrder, setPrintingOrder] = useState(null);
+
+    // State Pengurusan Kategori (Add / Edit / Delete)
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
+    const [isSavingCategory, setIsSavingCategory] = useState(false);
+    const [categoryForm, setCategoryForm] = useState({
+        ad: '',
+        slug: '',
+        aciklama: '',
+        resimUrl: '',
+        sira: 1,
+        aktif: true
+    });
+
+    // State Penapis Status Pesanan & Toggle Carta Jualan
+    const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+    const [showSalesChartsInOrders, setShowSalesChartsInOrders] = useState(true);
+
     const showNotif = (msg) => {
         setNotification(msg);
         setTimeout(() => setNotification(''), 3500);
@@ -87,7 +130,7 @@ export function AdminDashboardPage() {
             const [prodRes, orderRes, catRes, setRes, trajRes, analRes, invRes, cmsRes, audRes] = await Promise.all([
                 api.get('/api/v1/admin/products').catch(() => ({ data: { data: [] } })),
                 api.get('/api/v1/admin/orders').catch(() => ({ data: { data: [] } })),
-                api.get('/api/v1/categories').catch(() => ({ data: [] })),
+                api.get('/api/v1/admin/categories').catch(() => api.get('/api/v1/categories')).catch(() => ({ data: [] })),
                 api.get('/api/v1/settings').catch(() => ({ data: {} })),
                 api.get('/api/v1/admin/financial-trajectory').catch(() => ({ data: { data: null } })),
                 api.get('/api/v1/admin/analytics').catch(() => ({ data: { data: null } })),
@@ -133,6 +176,9 @@ export function AdminDashboardPage() {
             }
             if (cmsRes.data?.data) {
                 setCmsContent(cmsRes.data.data);
+                if (cmsRes.data.data.admin_quick_links) {
+                    setQuickLinks(cmsRes.data.data.admin_quick_links);
+                }
             }
             if (audRes.data?.data) {
                 setAuditLogs(audRes.data.data);
@@ -306,6 +352,152 @@ export function AdminDashboardPage() {
         }
     };
 
+    // Pengendali Pengurusan Kategori
+    const openAddCategoryModal = () => {
+        setEditingCategory(null);
+        setCategoryForm({
+            ad: '',
+            slug: '',
+            aciklama: '',
+            resimUrl: '',
+            sira: categories.length + 1,
+            aktif: true
+        });
+        setIsCategoryModalOpen(true);
+    };
+
+    const openEditCategoryModal = (cat) => {
+        setEditingCategory(cat);
+        setCategoryForm({
+            ad: cat.ad || '',
+            slug: cat.slug || '',
+            aciklama: cat.aciklama || '',
+            resimUrl: cat.resimUrl || cat.resim || '',
+            sira: cat.sira !== undefined ? cat.sira : 1,
+            aktif: cat.aktif !== false
+        });
+        setIsCategoryModalOpen(true);
+    };
+
+    const handleSaveCategory = async (e) => {
+        e.preventDefault();
+        setIsSavingCategory(true);
+        try {
+            const payload = {
+                ad: categoryForm.ad,
+                slug: categoryForm.slug || categoryForm.ad.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                aciklama: categoryForm.aciklama,
+                resimUrl: categoryForm.resimUrl,
+                sira: Number(categoryForm.sira || 1),
+                aktif: categoryForm.aktif
+            };
+
+            if (editingCategory) {
+                await api.put(`/api/v1/admin/categories/${editingCategory.id}`, payload);
+                showNotif(`Kategori "${categoryForm.ad}" berjaya dikemas kini!`);
+            } else {
+                await api.post('/api/v1/admin/categories', payload);
+                showNotif(`Kategori baharu "${categoryForm.ad}" berjaya disimpan!`);
+            }
+            setIsCategoryModalOpen(false);
+            loadAllData();
+        } catch (error) {
+            console.error('Ralat simpan kategori:', error);
+            alert(error.response?.data?.errorMessage || 'Ralat menyimpan kategori ke pangkalan data.');
+        } finally {
+            setIsSavingCategory(false);
+        }
+    };
+
+    const handleDeleteCategory = async (cat) => {
+        if (window.confirm(`Adakah anda pasti ingin memadam kategori "${cat.ad}"? Sebarang produk dalam kategori ini tidak akan dipadam tetapi akan dinyahkategorikan.`)) {
+            try {
+                await api.delete(`/api/v1/admin/categories/${cat.id}`);
+                showNotif(`Kategori "${cat.ad}" berjaya dipadam daripada pangkalan data.`);
+                loadAllData();
+            } catch (error) {
+                console.error('Ralat padam kategori:', error);
+                alert(error.response?.data?.errorMessage || 'Gagal memadam kategori daripada pelayan.');
+            }
+        }
+    };
+
+    // Pengendali 3 Pautan Pantas Pentadbir (Yahoo Mail, EasyParcel, ToyyibPay)
+    const openQuickLinksModal = () => {
+        setQuickLinksForm({ ...quickLinks });
+        setIsQuickLinksModalOpen(true);
+    };
+
+    const handleSaveQuickLinks = async (e) => {
+        e.preventDefault();
+        setIsSavingQuickLinks(true);
+        try {
+            await api.put('/api/v1/admin/cms', {
+                admin_quick_links: quickLinksForm
+            });
+            setQuickLinks({ ...quickLinksForm });
+            setIsQuickLinksModalOpen(false);
+            showNotif('Pautan pantas Yahoo Mail, EasyParcel & ToyyibPay berjaya disimpan!');
+        } catch (error) {
+            console.error('Ralat simpan pautan pantas:', error);
+            alert('Gagal mengemas kini pautan pantas ke pangkalan data.');
+        } finally {
+            setIsSavingQuickLinks(false);
+        }
+    };
+
+    // Pengendali Eksport Data Pesanan ke CSV
+    const handleExportOrdersCsv = () => {
+        if (!orders || orders.length === 0) {
+            showNotif('Tiada data pesanan untuk dieksport.');
+            return;
+        }
+        const headers = [
+            'No Pesanan',
+            'Tarikh',
+            'Nama Pelanggan',
+            'Telefon',
+            'Emel',
+            'Alamat',
+            'Daerah',
+            'Negeri',
+            'Poskod',
+            'Jumlah (RM)',
+            'Kos Pos (RM)',
+            'Status',
+            'Kurier',
+            'No Tracking',
+            'Senarai Item'
+        ];
+        const rows = filteredOrders.map(o => {
+            const orderNo = o.siparisNumarasi || o.siparisNo || o.id;
+            const date = o.olusturulmaTarihi || o.createdAt || '';
+            const name = (o.aliciAdSoyad || o.misafirBilgi?.ad || '').replace(/,/g, ' ');
+            const phone = o.aliciTelefon || o.misafirBilgi?.telefon || '';
+            const email = o.aliciEposta || o.misafirBilgi?.email || '';
+            const addr = (o.teslimatAdresi?.adres || o.adres || '').replace(/,/g, ' ');
+            const district = (o.teslimatAdresi?.ilce || o.ilce || '').replace(/,/g, ' ');
+            const state = (o.teslimatAdresi?.sehir || o.sehir || '').replace(/,/g, ' ');
+            const zip = o.teslimatAdresi?.postaKodu || o.postaKodu || '';
+            const total = Number(o.toplamTutar || 0).toFixed(2);
+            const shipping = Number(o.kargoUcreti || 0).toFixed(2);
+            const status = o.durum || '';
+            const courier = o.kargoFirmasi || '';
+            const tracking = o.kargoTakipNo || '';
+            const items = (o.items || []).map(i => `${i.quantity || i.miktar || 1}x ${i.name || i.ad || 'Item'}`).join('; ').replace(/"/g, '""');
+            return [orderNo, date, name, phone, email, addr, district, state, zip, total, shipping, status, courier, tracking, `"${items}"`].join(',');
+        });
+        const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `dino_empire_pesanan_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotif('Fail CSV berjaya dijana & dimuat turun!');
+    };
+
     // Pengiraan Statistik Papan Pemuka
     const totalSales = orders
         .filter(o => o.durum !== 'IPTAL_EDILDI' && o.durum !== 'CANCELLED')
@@ -313,6 +505,9 @@ export function AdminDashboardPage() {
     const totalOrdersCount = orders.length;
     const activeProductsCount = products.filter(p => p.aktif !== false).length;
     const pendingOrdersCount = orders.filter(o => o.durum === 'BEKLEMEDE' || o.durum === 'HAZIRLANIYOR' || o.durum === 'PENDING').length;
+    const validOrdersCount = orders.filter(o => o.durum !== 'IPTAL_EDILDI' && o.durum !== 'CANCELLED').length;
+    const averageOrderValue = validOrdersCount > 0 ? (totalSales / validOrdersCount) : 0;
+    const ordersShippedCount = orders.filter(o => ['KARGOLANDI', 'SHIPPED', 'TESLIM_EDILDI', 'DELIVERED', 'TAMAMLANDI'].includes(o.durum)).length;
 
     const filteredProducts = products.filter(p =>
         (p.ad || '').toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -324,7 +519,16 @@ export function AdminDashboardPage() {
         const name = o.aliciAdSoyad || o.misafirBilgi?.ad || '';
         const phone = o.aliciTelefon || o.misafirBilgi?.telefon || '';
         const term = searchOrder.toLowerCase();
-        return orderNo.toLowerCase().includes(term) || name.toLowerCase().includes(term) || phone.includes(term);
+        const matchTerm = orderNo.toLowerCase().includes(term) || name.toLowerCase().includes(term) || phone.includes(term);
+        if (!matchTerm) return false;
+
+        if (orderStatusFilter === 'ALL') return true;
+        if (orderStatusFilter === 'PENDING') return ['BEKLEMEDE', 'PENDING'].includes(o.durum);
+        if (orderStatusFilter === 'PREPARING') return ['HAZIRLANIYOR', 'PREPARING'].includes(o.durum);
+        if (orderStatusFilter === 'SHIPPED') return ['KARGOLANDI', 'SHIPPED'].includes(o.durum);
+        if (orderStatusFilter === 'DELIVERED') return ['TESLIM_EDILDI', 'DELIVERED', 'TAMAMLANDI'].includes(o.durum);
+        if (orderStatusFilter === 'CANCELLED') return ['IPTAL_EDILDI', 'CANCELLED'].includes(o.durum);
+        return true;
     });
 
     const getStatusBadge = (durum) => {
@@ -454,6 +658,73 @@ export function AdminDashboardPage() {
                     </div>
                 ) : null}
 
+                {/* Executive Topbar: Status + 3 Butang Pintasan (Yahoo Mail, EasyParcel, ToyyibPay) + Edit Links */}
+                <header className="mb-8 pb-6 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                        <div>
+                            <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                                <span>Pusat Kawalan Operasi DIN'O EMPIRE</span>
+                                <span className="text-[10px] bg-amber-500/10 text-amber-400 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
+                                    Kuala Ketil Hub
+                                </span>
+                            </h2>
+                            <p className="text-xs text-slate-400">
+                                Pangkalan Data SQLite Aktif • Port 8787 • FPX ToyyibPay & Integrasi Pos EasyParcel
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 3 Butang Pintasan Boleh Disunting: Yahoo Mail, EasyParcel, ToyyibPay */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <a
+                            href={quickLinks.yahooMailUrl || 'https://mail.yahoo.com'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 hover:text-purple-200 border border-purple-500/30 rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+                            title="Buka Yahoo Mail Rasmi"
+                        >
+                            <Mail size={15} className="text-purple-400" />
+                            <span>Yahoo Mail</span>
+                            <ExternalLink size={12} className="opacity-60" />
+                        </a>
+
+                        <a
+                            href={quickLinks.easyParcelUrl || 'https://easyparcel.com'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-600/15 hover:bg-orange-600/25 text-orange-300 hover:text-orange-200 border border-orange-500/30 rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+                            title="Buka Dashboard Tempahan EasyParcel"
+                        >
+                            <Truck size={15} className="text-orange-400" />
+                            <span>EasyParcel</span>
+                            <ExternalLink size={12} className="opacity-60" />
+                        </a>
+
+                        <a
+                            href={quickLinks.toyyibPayUrl || 'https://toyyibpay.com'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+                            title="Buka Portal ToyyibPay Gateway"
+                        >
+                            <DollarSign size={15} className="text-emerald-400" />
+                            <span>ToyyibPay</span>
+                            <ExternalLink size={12} className="opacity-60" />
+                        </a>
+
+                        <button
+                            type="button"
+                            onClick={openQuickLinksModal}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                            title="Sunting pautan URL Yahoo Mail, EasyParcel, ToyyibPay"
+                        >
+                            <Settings size={14} />
+                            <span>Edit Link</span>
+                        </button>
+                    </div>
+                </header>
+
                 {/* Tab Papan Pemuka */}
                 {activeTab === 'dashboard' && (
                     <div className="space-y-8 animate-in fade-in duration-300">
@@ -557,6 +828,34 @@ export function AdminDashboardPage() {
                                     <Globe size={20} />
                                 </div>
                             </button>
+                        </div>
+
+                        {/* Suite Visual Carta Chart.js Maksimum */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                                <div>
+                                    <h2 className="text-xl font-black text-white flex items-center gap-2.5">
+                                        <BarChart3 className="text-amber-500" size={22} />
+                                        Analisis Prestasi Jualan & Metrik Kilang (Chart.js)
+                                    </h2>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        Visualisasi langsung halaju jualan harian, produk terlaris, status pesanan, dan pecahan zon EasyParcel.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setActiveTab('orders')}
+                                    className="text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                                >
+                                    <span>Semak Semua Pesanan</span>
+                                    <ArrowUpRight size={14} />
+                                </button>
+                            </div>
+
+                            <SalesAnalyticsCharts
+                                analyticsData={analyticsData}
+                                trajectoryData={trajectoryData}
+                                orders={orders}
+                            />
                         </div>
 
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
@@ -786,34 +1085,164 @@ export function AdminDashboardPage() {
                     </div>
                 )}
 
-                {/* Tab Pengurusan Pesanan */}
+                {/* Tab Pengurusan Pesanan & Hab Jualan */}
                 {activeTab === 'orders' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-white">Pengurusan Pesanan Pelanggan</h1>
-                            <p className="text-sm text-slate-400 mt-1">Semak pesanan, masukkan nombor tracking pos dan kemas kini status serahan ke database.</p>
+                        {/* Header & Butang Tindakan */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5">
+                                    <ShoppingBag size={28} className="text-amber-500" />
+                                    <span>Pengurusan Pesanan & Hab Jualan</span>
+                                </h1>
+                                <p className="text-sm text-slate-400 mt-1">
+                                    Semak rekod jualan penuh, cetak slip pembungkusan EasyParcel, eksport data dan kemas kini tracking pos ke database.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowSalesChartsInOrders(!showSalesChartsInOrders)}
+                                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                                        showSalesChartsInOrders
+                                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                            : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                                    }`}
+                                >
+                                    <BarChart3 size={16} />
+                                    <span>{showSalesChartsInOrders ? 'Sorok Carta Analitik' : 'Pamer Carta Analitik'}</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleExportOrdersCsv}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer active:scale-95"
+                                    title="Muat turun senarai pesanan dalam format CSV/Excel"
+                                >
+                                    <Download size={16} />
+                                    <span>Eksport CSV / Excel</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="relative">
-                            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input
-                                type="text"
-                                value={searchOrder}
-                                onChange={(e) => setSearchOrder(e.target.value)}
-                                placeholder="Cari nombor pesanan (#DINO...), nama pembeli, atau telefon..."
-                                className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500"
-                            />
+                        {/* Metrik Rumusan Jualan (KPI Summary Cards) */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Hasil Jualan Bersih</div>
+                                <div className="text-2xl font-black text-amber-400 font-mono mt-1">
+                                    RM {totalSales.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div className="text-[10px] text-emerald-400 mt-1 font-semibold">
+                                    ✓ FPX & Pembayaran Sah
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Purata Nilai Pesanan (AOV)</div>
+                                <div className="text-2xl font-black text-white font-mono mt-1">
+                                    RM {averageOrderValue.toFixed(2)}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-1">
+                                    Daripada {validOrdersCount} pesanan aktif
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Perlu Dipos (EasyParcel)</div>
+                                <div className="text-2xl font-black text-amber-500 font-mono mt-1">
+                                    {pendingOrdersCount}
+                                </div>
+                                <div className="text-[10px] text-amber-400 mt-1 font-semibold">
+                                    ⏳ Menunggu cetak slip / bungkusan
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Telah Dipos / Selesai</div>
+                                <div className="text-2xl font-black text-emerald-400 font-mono mt-1">
+                                    {ordersShippedCount}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-1">
+                                    {orders.length > 0 ? `${Math.round((ordersShippedCount / orders.length) * 100)}% kadar penyempurnaan` : '0%'}
+                                </div>
+                            </div>
                         </div>
 
+                        {/* Carta Visual Interaktif Chart.js jika dibuka */}
+                        {showSalesChartsInOrders && (
+                            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                        <TrendingUp size={18} className="text-amber-500" />
+                                        Visualisasi Analitik Jualan Langsung (Chart.js)
+                                    </h3>
+                                    <span className="text-[11px] text-slate-400 font-mono">
+                                        Halaju harian & taburan kurier
+                                    </span>
+                                </div>
+                                <SalesAnalyticsCharts
+                                    analyticsData={analyticsData}
+                                    trajectoryData={trajectoryData}
+                                    orders={orders}
+                                />
+                            </div>
+                        )}
+
+                        {/* Bar Carian & Penapis Tab Status */}
+                        <div className="space-y-3">
+                            <div className="relative">
+                                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <input
+                                    type="text"
+                                    value={searchOrder}
+                                    onChange={(e) => setSearchOrder(e.target.value)}
+                                    placeholder="Cari nombor pesanan (#DINO...), nama pembeli, no telefon..."
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500"
+                                />
+                            </div>
+
+                            {/* Penapis Cepat Status */}
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                                {[
+                                    { id: 'ALL', label: 'Semua Pesanan', count: orders.length },
+                                    { id: 'PENDING', label: 'Menunggu Bayaran', count: orders.filter(o => ['BEKLEMEDE', 'PENDING'].includes(o.durum)).length },
+                                    { id: 'PREPARING', label: 'Sedang Dibungkus', count: orders.filter(o => ['HAZIRLANIYOR', 'PREPARING'].includes(o.durum)).length },
+                                    { id: 'SHIPPED', label: 'Telah Dipos', count: orders.filter(o => ['KARGOLANDI', 'SHIPPED'].includes(o.durum)).length },
+                                    { id: 'DELIVERED', label: 'Selesai Dihantar', count: orders.filter(o => ['TESLIM_EDILDI', 'DELIVERED', 'TAMAMLANDI'].includes(o.durum)).length },
+                                    { id: 'CANCELLED', label: 'Dibatalkan', count: orders.filter(o => ['IPTAL_EDILDI', 'CANCELLED'].includes(o.durum)).length }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setOrderStatusFilter(tab.id)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                                            orderStatusFilter === tab.id
+                                                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                                                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                                        }`}
+                                    >
+                                        <span>{tab.label}</span>
+                                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                                            orderStatusFilter === tab.id ? 'bg-slate-950 text-amber-400' : 'bg-slate-800 text-slate-300'
+                                        }`}>
+                                            {tab.count}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Jadual Utama Pesanan dengan Butang Cetak Slip EasyParcel & Urus */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                     <thead>
                                         <tr className="border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-950/40">
-                                            <th className="p-4">No. Pesanan</th>
-                                            <th className="p-4">Tarikh</th>
+                                            <th className="p-4">No. Pesanan & Tarikh</th>
                                             <th className="p-4">Pelanggan</th>
                                             <th className="p-4">Alamat Penghantaran</th>
+                                            <th className="p-4">Item Tempahan</th>
                                             <th className="p-4">Jumlah (RM)</th>
                                             <th className="p-4">Tracking Pos</th>
                                             <th className="p-4">Status</th>
@@ -824,63 +1253,95 @@ export function AdminDashboardPage() {
                                         {filteredOrders.length === 0 ? (
                                             <tr>
                                                 <td colSpan="8" className="p-8 text-center text-slate-500 text-xs">
-                                                    Tiada pesanan pelanggan dijumpai dalam rekod.
+                                                    Tiada rekod pesanan dijumpai untuk kriteria carian/penapis ini.
                                                 </td>
                                             </tr>
                                         ) : filteredOrders.map(order => {
                                             const status = getStatusBadge(order.durum);
-                                            const buyerName = order.aliciAdSoyad || order.misafirBilgi?.ad || 'Pelanggan';
-                                            const buyerPhone = order.aliciTelefon || order.misafirBilgi?.telefon || '-';
-                                            const address = order.teslimatAdresi?.adres || order.teslimatAdresi?.address || '-';
-                                            const state = order.teslimatAdresi?.sehir || order.teslimatAdresi?.city || '-';
-                                            const district = order.teslimatAdresi?.ilce || order.teslimatAdresi?.district || '-';
+                                            const buyerName = order.aliciAdSoyad || order.misafirBilgi?.ad || `${order.ad || ''} ${order.soyad || ''}`.trim() || 'Pelanggan';
+                                            const buyerPhone = order.aliciTelefon || order.misafirBilgi?.telefon || order.telefon || '-';
+                                            const address = order.teslimatAdresi?.adres || order.adres || '-';
+                                            const state = order.teslimatAdresi?.sehir || order.sehir || 'Kedah';
+                                            const district = order.teslimatAdresi?.ilce || order.ilce || '-';
                                             const orderNum = order.siparisNumarasi || order.siparisNo;
+                                            const items = order.items || order.kalemler || [];
 
                                             return (
                                                 <tr key={order.id} className="hover:bg-slate-800/30 transition-colors">
-                                                    <td className="p-4 font-bold text-white font-mono">#{orderNum}</td>
-                                                    <td className="p-4 text-xs text-slate-400">
-                                                        {order.olusturulmaTarihi ? new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY', {
-                                                            day: 'numeric',
-                                                            month: 'short',
-                                                            year: 'numeric'
-                                                        }) : '-'}
+                                                    <td className="p-4">
+                                                        <div className="font-bold text-white font-mono leading-none">#{orderNum}</div>
+                                                        <div className="text-[11px] text-slate-400 mt-1">
+                                                            {order.olusturulmaTarihi ? new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY', {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                                year: 'numeric'
+                                                            }) : '-'}
+                                                        </div>
                                                     </td>
                                                     <td className="p-4">
-                                                        <div className="font-bold text-white">{buyerName}</div>
-                                                        <div className="text-xs text-slate-400">{buyerPhone}</div>
+                                                        <div className="font-bold text-white leading-tight">{buyerName}</div>
+                                                        <div className="text-xs text-slate-400 mt-0.5">{buyerPhone}</div>
                                                     </td>
                                                     <td className="p-4 text-xs text-slate-300 max-w-xs">
                                                         <div className="truncate">{address}</div>
                                                         <div className="font-bold text-slate-400">{district}, {state}</div>
                                                     </td>
+                                                    <td className="p-4 text-xs">
+                                                        {items.length > 0 ? (
+                                                            <div className="space-y-0.5">
+                                                                <span className="font-bold text-amber-400">
+                                                                    {items[0].quantity || items[0].miktar || 1}x {items[0].name || items[0].ad || 'Item'}
+                                                                </span>
+                                                                {items.length > 1 && (
+                                                                    <div className="text-[10px] text-slate-400">
+                                                                        +{items.length - 1} lagi item lain
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-slate-500 italic">1 Pakej Pesanan</span>
+                                                        )}
+                                                    </td>
                                                     <td className="p-4 font-black text-amber-400 text-base">RM {Number(order.toplamTutar || 0).toFixed(2)}</td>
                                                     <td className="p-4 text-xs">
                                                         {order.kargoTakipNo ? (
-                                                            <span className="font-mono bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded font-bold border border-blue-500/20">
+                                                            <span className="font-mono bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded font-bold border border-blue-500/20 inline-block">
                                                                 {order.kargoTakipNo} ({order.kargoFirmasi || 'Kurier'})
                                                             </span>
                                                         ) : (
-                                                            <span className="text-slate-500 italic">Belum dimasukkan</span>
+                                                            <span className="text-slate-500 italic">Belum pos</span>
                                                         )}
                                                     </td>
                                                     <td className="p-4">
-                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${status.cls}`}>
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-block ${status.cls}`}>
                                                             {status.label}
                                                         </span>
                                                     </td>
                                                     <td className="p-4 text-right">
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedOrder(order);
-                                                                setOrderStatus(order.durum || 'BEKLEMEDE');
-                                                                setTrackingNumber(order.kargoTakipNo || '');
-                                                                setCourierName(order.kargoFirmasi || 'J&T Express');
-                                                            }}
-                                                            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs transition-colors cursor-pointer"
-                                                        >
-                                                            Kemas Kini
-                                                        </button>
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setPrintingOrder(order)}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                                title="Cetak Slip Pembungkusan Format EasyParcel"
+                                                            >
+                                                                <Printer size={14} />
+                                                                <span>Slip Pos</span>
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setSelectedOrder(order);
+                                                                    setOrderStatus(order.durum || 'BEKLEMEDE');
+                                                                    setTrackingNumber(order.kargoTakipNo || '');
+                                                                    setCourierName(order.kargoFirmasi || 'J&T Express');
+                                                                }}
+                                                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer"
+                                                            >
+                                                                Urus
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
@@ -895,24 +1356,111 @@ export function AdminDashboardPage() {
                 {/* Tab Kategori */}
                 {activeTab === 'categories' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-white">Pengurusan Kategori</h1>
-                            <p className="text-sm text-slate-400 mt-1">Senarai kategori barangan dalam kedai DIN'O EMPIRE daripada pangkalan data.</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5">
+                                    <Layers size={28} className="text-amber-500" />
+                                    <span>Pengurusan Kategori Barangan</span>
+                                </h1>
+                                <p className="text-sm text-slate-400 mt-1">
+                                    Tambah kategori baharu, sunting nama, gambar & susunan, atau padam kategori terus daripada pangkalan data SQLite.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={openAddCategoryModal}
+                                className="px-5 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 text-sm transition-all cursor-pointer active:scale-95"
+                            >
+                                <Plus size={18} />
+                                <span>Tambah Kategori Baharu</span>
+                            </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {categories.map((cat, idx) => (
-                                <div key={cat.id || idx} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
-                                    <div>
-                                        <h3 className="font-bold text-white text-base">{cat.ad}</h3>
-                                        <span className="text-xs text-slate-500">/{cat.slug || cat.ad.toLowerCase()}</span>
-                                    </div>
-                                    <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-full">
-                                        Aktif
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+                        {categories.length === 0 ? (
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center text-slate-500">
+                                <Layers size={36} className="mx-auto text-slate-600 mb-3" />
+                                <p className="text-sm font-bold text-slate-300">Belum ada sebarang kategori dicipta.</p>
+                                <p className="text-xs text-slate-500 mt-1">Klik "+ Tambah Kategori Baharu" untuk mula menyusun produk anda.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {categories.map((cat, idx) => {
+                                    const productCount = products.filter(p => p.kategoriId === cat.id).length;
+                                    const imgSrc = cat.resimUrl || cat.resim;
+
+                                    return (
+                                        <div
+                                            key={cat.id || idx}
+                                            className="bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 flex flex-col justify-between group shadow-sm"
+                                        >
+                                            <div>
+                                                <div className="flex items-start justify-between gap-3 mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        {imgSrc ? (
+                                                            <img
+                                                                src={imgSrc}
+                                                                alt={cat.ad}
+                                                                className="w-12 h-12 object-cover rounded-xl bg-slate-800 border border-slate-700 shrink-0"
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                                            />
+                                                        ) : (
+                                                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-black text-lg shrink-0">
+                                                                {cat.ad ? cat.ad.charAt(0).toUpperCase() : 'K'}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <h3 className="font-bold text-white text-base group-hover:text-amber-400 transition-colors">
+                                                                {cat.ad}
+                                                            </h3>
+                                                            <span className="text-xs text-slate-500 font-mono">
+                                                                /{cat.slug || cat.ad.toLowerCase()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                                        cat.aktif !== false ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500'
+                                                    }`}>
+                                                        {cat.aktif !== false ? 'Aktif' : 'Nyahaktif'}
+                                                    </span>
+                                                </div>
+
+                                                {cat.aciklama && (
+                                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">
+                                                        {cat.aciklama}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/80 mb-4">
+                                                    <span>Jumlah Produk: <strong className="text-white">{productCount} item</strong></span>
+                                                    <span>Susunan: #{cat.sira || 1}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-end gap-2 pt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openEditCategoryModal(cat)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                    title="Sunting Kategori"
+                                                >
+                                                    <Edit2 size={14} />
+                                                    <span>Sunting</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteCategory(cat)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                    title="Padam Kategori"
+                                                >
+                                                    <Trash2 size={14} />
+                                                    <span>Padam</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -1127,16 +1675,14 @@ export function AdminDashboardPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">URL Gambar Produk</label>
-                                <input
-                                    type="url"
-                                    required
-                                    value={productForm.resimUrl}
-                                    onChange={(e) => setProductForm({ ...productForm, resimUrl: e.target.value })}
-                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                                />
-                            </div>
+                            <ImageUploader
+                                label="Gambar Produk"
+                                value={productForm.resimUrl}
+                                onChange={(url) => setProductForm({ ...productForm, resimUrl: url })}
+                                folder="products"
+                                placeholder="https://..."
+                                required
+                            />
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Penerangan Ringkas</label>
@@ -1273,6 +1819,216 @@ export function AdminDashboardPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Modal Sunting 3 Pautan Pantas Pentadbir */}
+            {isQuickLinksModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+                            <div>
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <Link2 size={18} className="text-amber-400" />
+                                    <span>Konfigurasi 3 Pautan Pantas</span>
+                                </h3>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    Masukkan pautan URL terus ke Yahoo Mail, EasyParcel dan ToyyibPay anda.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsQuickLinksModalOpen(false)}
+                                className="text-slate-400 hover:text-white cursor-pointer"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveQuickLinks} className="space-y-4 text-sm">
+                            <div>
+                                <label className="block text-xs font-bold text-purple-300 mb-1 flex items-center gap-1.5">
+                                    <Mail size={14} /> URL Yahoo Mail
+                                </label>
+                                <input
+                                    type="url"
+                                    required
+                                    value={quickLinksForm.yahooMailUrl}
+                                    onChange={(e) => setQuickLinksForm({ ...quickLinksForm, yahooMailUrl: e.target.value })}
+                                    placeholder="https://mail.yahoo.com"
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-purple-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-orange-300 mb-1 flex items-center gap-1.5">
+                                    <Truck size={14} /> URL EasyParcel
+                                </label>
+                                <input
+                                    type="url"
+                                    required
+                                    value={quickLinksForm.easyParcelUrl}
+                                    onChange={(e) => setQuickLinksForm({ ...quickLinksForm, easyParcelUrl: e.target.value })}
+                                    placeholder="https://easyparcel.com"
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-orange-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-emerald-300 mb-1 flex items-center gap-1.5">
+                                    <DollarSign size={14} /> URL ToyyibPay
+                                </label>
+                                <input
+                                    type="url"
+                                    required
+                                    value={quickLinksForm.toyyibPayUrl}
+                                    onChange={(e) => setQuickLinksForm({ ...quickLinksForm, toyyibPayUrl: e.target.value })}
+                                    placeholder="https://toyyibpay.com"
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsQuickLinksModalOpen(false)}
+                                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold cursor-pointer text-xs"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingQuickLinks}
+                                    className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black shadow-lg cursor-pointer flex items-center gap-2 text-xs"
+                                >
+                                    {isSavingQuickLinks && <Loader2 size={14} className="animate-spin" />}
+                                    <span>Simpan Pautan</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Tambah/Sunting Kategori */}
+            {isCategoryModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 md:p-8 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                            <div>
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Layers size={20} className="text-amber-400" />
+                                    <span>{editingCategory ? 'Sunting Kategori' : 'Tambah Kategori Baharu'}</span>
+                                </h3>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    Simpan kategori terus ke dalam jadual kategoriler pangkalan data SQLite.
+                                </p>
+                            </div>
+                            <button onClick={() => setIsCategoryModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveCategory} className="space-y-4 text-sm">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Nama Kategori</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={categoryForm.ad}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setCategoryForm({
+                                            ...categoryForm,
+                                            ad: val,
+                                            slug: editingCategory ? categoryForm.slug : val.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                                        });
+                                    }}
+                                    placeholder="Cth: Jersi Kilang, Barangan Rumah, Box Hadiah..."
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-bold"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Slug URL</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={categoryForm.slug}
+                                        onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
+                                        placeholder="cth: jersi-kilang"
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Susunan (Urutan)</label>
+                                    <input
+                                        type="number"
+                                        value={categoryForm.sira}
+                                        onChange={(e) => setCategoryForm({ ...categoryForm, sira: Number(e.target.value) })}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-bold"
+                                    />
+                                </div>
+                            </div>
+
+                            <ImageUploader
+                                label="Gambar Ikon / Visual Kategori"
+                                value={categoryForm.resimUrl}
+                                onChange={(url) => setCategoryForm({ ...categoryForm, resimUrl: url })}
+                                folder="categories"
+                                placeholder="https://..."
+                            />
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Penerangan Kategori</label>
+                                <textarea
+                                    rows="3"
+                                    value={categoryForm.aciklama}
+                                    onChange={(e) => setCategoryForm({ ...categoryForm, aciklama: e.target.value })}
+                                    placeholder="Penerangan ringkas mengenai barangan dalam kategori ini..."
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
+                                />
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={categoryForm.aktif}
+                                        onChange={(e) => setCategoryForm({ ...categoryForm, aktif: e.target.checked })}
+                                        className="rounded text-amber-500"
+                                    />
+                                    <span className="text-xs font-bold text-slate-300">Aktif & Dipaparkan pada Laman Web</span>
+                                </label>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCategoryModalOpen(false)}
+                                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold cursor-pointer"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingCategory}
+                                    className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black shadow-lg cursor-pointer flex items-center gap-2"
+                                >
+                                    {isSavingCategory && <Loader2 size={16} className="animate-spin" />}
+                                    <span>{editingCategory ? 'Kemas Kini Kategori' : 'Simpan Kategori'}</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Cetakan Slip Pembungkusan / Airway Bill Format EasyParcel */}
+            {printingOrder && (
+                <OrderPrintSlipModal
+                    order={printingOrder}
+                    onClose={() => setPrintingOrder(null)}
+                />
             )}
         </div>
     );
