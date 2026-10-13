@@ -117,6 +117,7 @@ model Siparis {
   teslimTarihi      DateTime?
   langgananId       String?
   langganan         Langganan?      @relation(fields: [langgananId], references: [id])
+  pointsEarned      Int             @default(0)
   kalemler          SiparisKalemi[]
   gecmis            IslemGecmisi[]
   iadeTalebi        IadeTalebi?
@@ -203,7 +204,6 @@ model SistemAyarlari {
   @@map("sistem_ayarlari")
 }
 
-// === Langganan (Subscription) ===
 model Langganan {
   id                String   @id @default(uuid())
   eposta            String
@@ -213,25 +213,19 @@ model Langganan {
   alamat            String
   sehir             String
   poskod            String
-
-  frekuensi         String   @default("BULANAN") // BULANAN, 2_MINGGU
-  status            String   @default("AKTIF")   // AKTIF, DITANGGUH, DIBATALKAN
+  frekuensi         String   @default("BULANAN")
+  status            String   @default("AKTIF")
   tarikhSeterusnya  DateTime
   skipSeterusnya    Boolean  @default(false)
-
   diskaunPeratus    Float    @default(0)
   jumlahAsas        Float
   jumlahAkhir       Float
-
-  paymentToken      String?  // ToyyibPay / gateway token for recurring
+  paymentToken      String?
   nota              String?
-
   items             LanggananItem[]
   pesanan           Siparis[]
-
   olusturulmaTarihi DateTime @default(now())
   guncellenmeTarihi DateTime @updatedAt
-
   @@index([eposta])
   @@index([status])
   @@index([tarikhSeterusnya])
@@ -242,13 +236,33 @@ model LanggananItem {
   id          String    @id @default(uuid())
   langgananId String
   langganan   Langganan @relation(fields: [langgananId], references: [id], onDelete: Cascade)
-
   urunId      String
   urun        Urun      @relation(fields: [urunId], references: [id])
-
   kuantiti    Int       @default(1)
   harga       Float
-
   @@index([langgananId])
   @@map("langganan_items")
+}
+
+// === Points / Loyalty ===
+model Points {
+  id          String   @id @default(uuid())
+  eposta      String   @unique
+  baki        Int      @default(0)
+  jumlahDiperoleh Int  @default(0)
+  jumlahDigunakan Int  @default(0)
+  updatedAt   DateTime @updatedAt
+  @@map("points")
+}
+
+model PointsLog {
+  id        String   @id @default(uuid())
+  eposta    String
+  jumlah    Int
+  jenis     String   // DAPAT, GUNA, TUKAR
+  nota      String?
+  rujukan   String?
+  createdAt DateTime @default(now())
+  @@index([eposta])
+  @@map("points_log")
 }
