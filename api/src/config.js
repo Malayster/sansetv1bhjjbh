@@ -39,7 +39,7 @@ export const config = {
   },
   clientUrl: 'http://localhost:8000',
   orderNotificationEmail: 'dinoempire.my@gmail.com',
-  cdnUrl: 'https://cdn.ecommerceflaredev.web.tr',
+  cdnUrl: 'https://cdn.dinoempire.my',
   googleMerchantToken: ''
 };
 
@@ -55,13 +55,12 @@ export function initConfig(env) {
   config.port = env.PORT || 8787;
   config.corsOrigin = env.CORS_ORIGIN || '*';
   config.nodeEnv = env.NODE_ENV || 'development';
-  config.clientUrl = env.CLIENT_URL || 'http://localhost:3000';
-  config.orderNotificationEmail = env.ORDER_NOTIFICATION_EMAIL || 'siparis@ecommerceflaredev.web.tr';
-  config.cdnUrl = env.CDN_URL || 'https://cdn.ecommerceflaredev.web.tr';
+  config.clientUrl = env.CLIENT_URL || 'https://dinoempire.my';
+  config.orderNotificationEmail = env.ORDER_NOTIFICATION_EMAIL || 'dinoempire.my@gmail.com';
+  config.cdnUrl = env.CDN_URL || 'https://cdn.dinoempire.my';
   config.googleMerchantToken = env.GOOGLE_MERCHANT_TOKEN || '';
   config.paymentProvider = env.PAYMENT_PROVIDER || 'toyyibpay';
 
-  // In-place update for Param POS parameters to preserve references
   Object.assign(config.param, {
     clientCode: env.PARAM_CLIENT_CODE || '',
     clientUsername: env.PARAM_CLIENT_USERNAME || '',
@@ -71,7 +70,6 @@ export function initConfig(env) {
     callbackUrl: env.API_URL || 'http://localhost:8787'
   });
 
-  // In-place update for iyzico parameters
   Object.assign(config.iyzico, {
     apiKey: env.IYZICO_API_KEY || '',
     secretKey: env.IYZICO_SECRET_KEY || '',
@@ -79,7 +77,6 @@ export function initConfig(env) {
     callbackUrl: env.API_URL || 'http://localhost:8787'
   });
 
-  // In-place update for PayTR parameters
   Object.assign(config.paytr, {
     merchantId: env.PAYTR_MERCHANT_ID || '',
     merchantKey: env.PAYTR_MERCHANT_KEY || '',
@@ -88,17 +85,15 @@ export function initConfig(env) {
     callbackUrl: env.API_URL || 'http://localhost:8787'
   });
 
-  // In-place update for ToyyibPay parameters
   Object.assign(config.toyyibpay, {
     userSecretKey: env.TOYYIBPAY_USER_SECRET_KEY || '',
     categoryCode: env.TOYYIBPAY_CATEGORY_CODE || '',
     baseUrl: env.TOYYIBPAY_BASE_URL || 'https://toyyibpay.com'
   });
-  config.apiUrl = env.API_URL || 'http://localhost:8787';
+  config.apiUrl = env.API_URL || 'https://api.dinoempire.my';
 
-  // In-place update for email sender/replyTo (from env or defaults)
   Object.assign(config.email, {
-    sender: env.SMTP_SENDER || 'E-Market <siparis@ecommerceflaredev.web.tr>',
-    replyTo: env.SMTP_REPLY_TO || 'siparis@ecommerceflaredev.web.tr',
+    sender: env.SMTP_SENDER || "DIN'O EMPIRE <dinoempire.my@gmail.com>",
+    replyTo: env.SMTP_REPLY_TO || 'dinoempire.my@gmail.com',
   });
 }
