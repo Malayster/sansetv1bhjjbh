@@ -9,8 +9,15 @@ export function FinalCTA() {
           from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+          50% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+        }
         .animate-fade-up {
           animation: fadeUp 0.7s ease-out both;
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
         }
       `}</style>
 
@@ -23,7 +30,7 @@ export function FinalCTA() {
         </p>
         <Link
           to="/bina-box"
-          className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 hover:scale-105 text-white font-black px-10 py-4 rounded-full text-lg transition-all duration-300 shadow-lg"
+          className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 hover:scale-105 text-white font-black px-10 py-4 rounded-full text-lg transition-all duration-300 shadow-lg animate-pulse-glow"
         >
           Mula Sekarang
           <ArrowRight size={20} />
