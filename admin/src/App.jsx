@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Package, Layers, Tag, ShoppingBag,
-  CornerDownLeft, Settings as SettingsIcon, LogOut, Sun, Moon, Repeat, ScrollText
+  CornerDownLeft, Settings as SettingsIcon, LogOut, Sun, Moon, Repeat, ScrollText, Shield
 } from 'lucide-react';
 
 import DashboardTab from './components/DashboardTab';
@@ -17,6 +17,7 @@ import ProductModal from './components/ProductModal';
 import AdminMobileHeader from './components/AdminMobileHeader';
 import RoleBadge from './components/RoleBadge';
 import AuditTrailTab from './components/AuditTrailTab';
+import RolesTab from './components/RolesTab';
 import { useAdminRole } from './hooks/useAdminRole';
 
 const isLocalhost = typeof window !== 'undefined' &&
@@ -204,6 +205,7 @@ export default function App() {
           {can('returns') && <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}><button onClick={() => nav('returns')}><CornerDownLeft size={18} /> Permohonan Pemulangan</button></li>}
           {can('subscriptions') && <li className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}><button onClick={() => nav('subscriptions')}><Repeat size={18} /> Langganan</button></li>}
           {can('settings') && <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}><button onClick={() => nav('settings')}><SettingsIcon size={18} /> Tetapan Sistem</button></li>}
+          {can('settings') && <li className={`nav-item ${activeTab === 'roles' ? 'active' : ''}`}><button onClick={() => nav('roles')}><Shield size={18} /> Role & Kebenaran</button></li>}
           {can('settings') && <li className={`nav-item ${activeTab === 'audit' ? 'active' : ''}`}><button onClick={() => nav('audit')}><ScrollText size={18} /> Audit Trail</button></li>}
         </nav>
         <div className="sidebar-footer">
@@ -224,6 +226,7 @@ export default function App() {
           {activeTab === 'returns' && can('returns') && <ReturnsTab returns={returns} returnSearch={returnSearch} setReturnSearch={setReturnSearch} returnFilterStatus={returnFilterStatus} setReturnFilterStatus={setReturnFilterStatus} returnSort={returnSort} setReturnSort={setReturnSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedReturn={setSelectedReturn} setReturnStatusForm={setReturnStatusForm} setShowReturnModal={setShowReturnModal} />}
           {activeTab === 'subscriptions' && can('subscriptions') && <SubscriptionsTab adminRequest={adminRequest} ADMIN_API_URL={ADMIN_API_URL} />}
           {activeTab === 'settings' && can('settings') && <SettingsTab settings={settings} setSettings={setSettings} saveSettings={saveSettings} loading={loading} />}
+          {activeTab === 'roles' && can('settings') && <RolesTab />}
           {activeTab === 'audit' && can('settings') && <AuditTrailTab />}
         </main>
       </div>
