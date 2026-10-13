@@ -19,6 +19,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import metricsRoutes from './routes/metricsRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import pointsRoutes from './routes/pointsRoutes.js';
+import easyParcelCallback from './routes/easyParcelCallback.js';
 import { feedController } from './container.js';
 import { adapt } from './utils/honoAdapter.js';
 import { processDueSubscriptions } from './services/subscriptionBillingService.js';
@@ -70,6 +71,7 @@ app.route('/api/v1', seoRoutes);
 
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/metrics', metricsRoutes);
+app.route('/api/v1/easyparcel', easyParcelCallback);
 
 app.get('/api/v1/catalog/google-feed', adapt(feedController.getGoogleShoppingFeed));
 
