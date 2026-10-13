@@ -14,6 +14,7 @@ import {
     notificationController,
     auditController
 } from '../container.js';
+import { ShippingController } from '../controllers/shippingController.js';
 
 const router = new Hono();
 
@@ -59,5 +60,15 @@ router.post('/notifications/:id/read', adapt(notificationController.markRead));
 router.post('/notifications/read-all', adapt(notificationController.markAllRead));
 
 router.get('/audit', requirePermission('settings'), adapt(auditController.list));
+
+// Shipping (EasyParcel)
+router.post('/shipping/quotations', requirePermission('orders'), async (c) => {
+  const ctrl = new ShippingController(c.env);
+  return adapt(ctrl.getQuotations)(c);
+});
+router.get('/shipping/tracking', requirePermission('orders'), async (c) => {
+  const ctrl = new ShippingController(c.env);
+  return adapt(ctrl.getTracking)(c);
+});
 
 export default router;
