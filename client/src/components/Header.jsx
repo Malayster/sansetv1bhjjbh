@@ -1,28 +1,22 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, ChevronDown, ChevronRight, Phone, Truck, Lock, User, Sparkles } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, ChevronDown, ChevronRight, Phone, Truck, Lock, Sparkles, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useCategories } from '../hooks/useCategories';
 import { useSettings } from '../context/SettingsContext';
 
 /**
  * Enhanced Header component with mobile hamburger menu, mega menu dropdown for categories.
- * Refactored to use custom hooks for data fetching (follows DIP)
  */
 export function Header() {
     const { toggleSidebar, cartCount } = useCart();
-    const { settings, cms, loading } = useSettings();
+    const { settings, cms } = useSettings();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
 
-    // Fetch all categories and build hierarchy
-    const { categories: allCategories } = useCategories(false); // Get ALL categories
-
-    // Build parent-child hierarchy
-    // Backend now returns hierarchical data (Parents with altKategoriler included)
-    // So we don't need to manually build hierarchy from a flat list.
+    const { categories: allCategories } = useCategories(false);
     const categories = allCategories.sort((a, b) => (a.sira || 0) - (b.sira || 0));
 
     const handleSearch = (e) => {
@@ -44,7 +38,6 @@ export function Header() {
     return (
         <>
             <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
-                {/* 1. Bar Pengumuman Dinamik CMS */}
                 {cms?.announcement_bar?.active && cms?.announcement_bar?.text && (
                     <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-white text-xs font-bold py-2 px-4 text-center tracking-wide flex items-center justify-center gap-2 shadow-inner">
                         <Sparkles size={14} className="shrink-0 animate-pulse text-amber-200" />
@@ -58,7 +51,6 @@ export function Header() {
                     </div>
                 )}
 
-                {/* 2. Secondary Utility Bar */}
                 <div className="bg-white border-b border-gray-100 hidden md:block">
                     <div className="container mx-auto px-4 h-10 flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
                         <div className="flex items-center gap-4">
@@ -83,10 +75,8 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* 3. Main Header Bar */}
                 <nav className="bg-white border-b border-gray-100">
                     <div className="container mx-auto px-4 h-20 md:h-24 flex items-center justify-between gap-4">
-                        {/* Mobile Menu Toggle */}
                         <button
                             className="md:hidden p-2 text-corporate-black hover:bg-slate-100 rounded-lg transition-colors"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -94,12 +84,10 @@ export function Header() {
                             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                         </button>
 
-                        {/* Logo (Left) */}
                         <Link to="/" className="shrink-0 flex items-center gap-2">
                             <span className="text-2xl md:text-3xl font-black text-amber-600 tracking-wider">DIN'O EMPIRE</span>
                         </Link>
 
-                        {/* Search Bar (Center) */}
                         <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:block relative group">
                             <input
                                 type="text"
@@ -113,8 +101,15 @@ export function Header() {
                             </button>
                         </form>
 
-                        {/* Right Actions (Desktop) */}
                         <div className="flex items-center gap-3">
+                            <Link
+                                to="/bina-box"
+                                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-400 transition-all shadow-xs"
+                            >
+                                <Package size={15} />
+                                <span>Bina Box</span>
+                            </Link>
+
                             <Link
                                 to="/login"
                                 className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg border border-gray-200 hover:border-amber-300 transition-all shadow-xs"
@@ -137,23 +132,28 @@ export function Header() {
                             </button>
                         </div>
 
-                        {/* Mobile Search Icon Only */}
                         <button className="md:hidden p-2 text-corporate-black" onClick={() => navigate('/search')}>
                             <Search size={24} />
                         </button>
                     </div>
                 </nav>
 
-                {/* 4. Category Navbar (Desktop) */}
                 <div className="hidden md:block bg-corporate-black py-0 border-t border-white/5">
                     <div className="container mx-auto px-4 relative">
                         <div className="flex items-center justify-between gap-1 h-14 whitespace-nowrap text-[13px] font-black uppercase tracking-tight text-white/90">
-                            {/* "TÜM ÜRÜNLER" Button Added Here */}
                             <button
                                 className="px-4 h-full cursor-pointer hover:bg-white/10 transition-all flex items-center gap-1.5"
                                 onClick={() => navigate('/magaza')}
                             >
                                 <span>SEMUA BARANGAN</span>
+                            </button>
+
+                            <button
+                                className="px-4 h-full cursor-pointer hover:bg-amber-500/20 text-amber-300 transition-all flex items-center gap-1.5"
+                                onClick={() => navigate('/bina-box')}
+                            >
+                                <Package size={14} />
+                                <span>BINA BOX</span>
                             </button>
 
                             {categories.map((cat) => (
@@ -173,7 +173,6 @@ export function Header() {
                                         )}
                                     </button>
 
-                                    {/* Dropdown Menu (Full Width Mega Menu Style) */}
                                     {cat.altKategoriler && cat.altKategoriler.length > 0 && activeDropdown === cat.id && (
                                         <div className="absolute top-full left-0 bg-white text-corporate-black shadow-2xl rounded-b-xl p-10 w-full border-t-4 border-indigo-600 animate-in fade-in slide-in-from-top-4 duration-500 z-50">
                                             <div className="grid grid-cols-4 gap-8">
@@ -205,18 +204,13 @@ export function Header() {
                 </div>
             </header>
 
-            {/* Mobile Menu Overlay */}
             {mobileMenuOpen && (
                 <div className="fixed inset-0 z-40 md:hidden">
-                    {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black/50 backdrop-blur-xs"
                         onClick={() => setMobileMenuOpen(false)}
                     />
-
-                    {/* Menu Panel */}
                     <div className="absolute top-20 left-0 right-0 bg-white shadow-xl max-h-[calc(100vh-80px)] overflow-y-auto animate-in slide-in-from-top duration-300">
-                        {/* Mobile Search */}
                         <form onSubmit={handleSearch} className="p-4 border-b">
                             <div className="relative">
                                 <input
@@ -232,7 +226,16 @@ export function Header() {
                             </div>
                         </form>
 
-                        {/* Mobile Categories */}
+                        <div className="p-4 border-b">
+                            <Link
+                                to="/bina-box"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="w-full py-3 px-4 bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                            >
+                                <Package size={18} /> Bina Box Anda
+                            </Link>
+                        </div>
+
                         <div className="py-2">
                             {categories.map((cat) => (
                                 <div key={cat.id} className="border-b border-gray-100">
@@ -246,7 +249,6 @@ export function Header() {
                                         )}
                                     </button>
 
-                                    {/* Subcategories */}
                                     {activeDropdown === cat.id && cat.altKategoriler && cat.altKategoriler.length > 0 && (
                                         <div className="bg-gray-50 px-4 py-2">
                                             {cat.altKategoriler.map((sub) => (
@@ -271,7 +273,6 @@ export function Header() {
                             ))}
                         </div>
 
-                        {/* Mobile Admin Link */}
                         <div className="p-4 border-t border-gray-100 bg-slate-50 space-y-2">
                             <Link
                                 to="/login"
