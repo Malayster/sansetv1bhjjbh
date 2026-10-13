@@ -161,7 +161,8 @@ export function CheckoutPage() {
                 invoiceInfo: {
                     isCorporate: formData.isCorporate, companyName: formData.companyName,
                     taxOffice: formData.taxOffice, taxNumber: formData.taxNumber
-                }
+                },
+                pointsToRedeem: appliedPoints
             });
 
             if (orderResponse.data.status !== 'pending_payment') {
@@ -310,7 +311,6 @@ export function CheckoutPage() {
                         </div>
                     </div>
 
-                    {/* Summary Sidebar */}
                     <div>
                         <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
                             <h3 className="font-black text-lg mb-4">Ringkasan Pesanan</h3>
