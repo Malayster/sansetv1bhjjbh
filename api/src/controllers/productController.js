@@ -8,16 +8,44 @@ import { asyncHandler } from '../utils/asyncHandler.js';
  */
 export function validateProductNumbers(data) {
     if ('fiyat' in data && !(Number.isFinite(data.fiyat) && data.fiyat > 0)) {
-        return 'Fiyat sıfırdan büyük bir sayı olmalıdır.';
+        return 'Harga mestilah nombor yang lebih besar daripada 0.';
     }
     if ('indirimliFiyat' in data && data.indirimliFiyat !== null && !(Number.isFinite(data.indirimliFiyat) && data.indirimliFiyat > 0)) {
-        return 'İndirimli fiyat sıfırdan büyük bir sayı olmalıdır.';
+        return 'Harga diskaun mestilah nombor yang lebih besar daripada 0.';
     }
     if ('stokAdedi' in data && !(Number.isInteger(data.stokAdedi) && data.stokAdedi >= 0)) {
-        return 'Stok adedi sıfır veya pozitif bir tam sayı olmalıdır.';
+        return 'Stok mestilah nombor bulat sifar atau positif.';
     }
     if ('agirlik' in data && !(Number.isFinite(data.agirlik) && data.agirlik > 0)) {
-        return 'Ağırlık sıfırdan büyük bir sayı olmalıdır.';
+        return 'Berat mestilah nombor yang lebih besar daripada 0.';
+    }
+    return null;
+}
+
+/**
+ * Validates that a product has at least 2 images.
+ * Accepts resimUrl (main) + resimler array, or body.images / body.resimler.
+ * @param {Object} body - Request body
+ * @returns {string|null} Error message or null if valid
+ */
+export function validateMinimumImages(body) {
+    const main = body.resimUrl ? 1 : 0;
+    let extra = 0;
+
+    if (Array.isArray(body.resimler)) {
+        extra = body.resimler.filter(img => img && (img.url || typeof img === 'string')).length;
+    } else if (Array.isArray(body.images)) {
+        extra = body.images.filter(img => img && (img.url || typeof img === 'string')).length;
+    } else if (typeof body.resimler === 'string') {
+        try {
+            const parsed = JSON.parse(body.resimler);
+            if (Array.isArray(parsed)) extra = parsed.filter(Boolean).length;
+        } catch (e) { /* ignore */ }
+    }
+
+    const total = main + extra;
+    if (total < 2) {
+        return 'Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar.';
     }
     return null;
 }
@@ -35,19 +63,12 @@ export class ProductController {
         this.productService = productService;
     }
 
-    /**
-     * Tüm ürünleri getiren isteği işler.
-     *
-     * @param {import('express').Request} req - Express istek nesnesi.
-     * @param {import('express').Response} res - Express yanıt nesnesi.
-     * @param {import('express').NextFunction} next - Express next fonksiyonu.
-     */
     getProducts = asyncHandler(async (req, res, next) => {
         const { markaId, kategoriId, kategori, kategoriSlug, oneCikan, firsatUrunu, yeniUrun, cokSatanlar } = req.query;
         const products = await this.productService.getAllProducts({
             markaId,
             kategoriId,
-            kategoriSlug: kategoriSlug || kategori, // Support both 'kategoriSlug' (from frontend) and 'kategori' (legacy)
+            kategoriSlug: kategoriSlug || kategori,
             oneCikan: oneCikan === 'true',
             firsatUrunu: firsatUrunu === 'true',
             yeniUrun: yeniUrun === 'true',
@@ -56,23 +77,14 @@ export class ProductController {
         res.json(products);
     });
 
-    /**
-     * ID'ye göre ürün detayını getirir ve görüntülenme sayısını artırır.
-     *
-     * @param {import('express').Request} req - Express istek nesnesi.
-     * @param {import('express').Response} res - Express yanıt nesnesi.
-     * @param {import('express').NextFunction} next - Express next fonksiyonu.
-     */
     getProduct = asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         const product = await this.productService.getProductById(id);
 
-        // Inactive products are drafts or withdrawn; only the admin API shows them.
         if (!product || product.aktif === false) {
-            return res.status(404).json({ error: 'Ürün bulunamadı' });
+            return res.status(404).json({ error: 'Produk tidak dijumpai' });
         }
 
-        // Increment view count asynchronously (fire and forget)
         this.productService.incrementViewCount(id).catch(err =>
             console.error('Failed to increment view count:', err)
         );
@@ -80,22 +92,14 @@ export class ProductController {
         res.json(product);
     });
 
-    /**
-     * Slug'a göre ürün detayını getirir.
-     *
-     * @param {import('express').Request} req - Express istek nesnesi.
-     * @param {import('express').Response} res - Express yanıt nesnesi.
-     * @param {import('express').NextFunction} next - Express next fonksiyonu.
-     */
     getProductBySlug = asyncHandler(async (req, res, next) => {
         const { slug } = req.params;
         const product = await this.productService.getProductBySlug(slug);
 
         if (!product || product.aktif === false) {
-            return res.status(404).json({ error: 'Ürün bulunamadı' });
+            return res.status(404).json({ error: 'Produk tidak dijumpai' });
         }
 
-        // Increment view count asynchronously (fire and forget)
         if (product.id) {
             this.productService.incrementViewCount(product.id).catch(err =>
                 console.error('Failed to increment view count:', err)
@@ -105,22 +109,22 @@ export class ProductController {
         res.json(product);
     });
 
-    /**
-     * Admin panel product listing.
-     */
     adminGetProducts = asyncHandler(async (req, res, next) => {
         const products = await this.productService.getAllProductsForAdmin();
         res.json({ status: 'success', data: products });
     });
 
-    /**
-     * Admin panel product creation.
-     */
     adminCreateProduct = asyncHandler(async (req, res, next) => {
         const body = req.body;
+
+        const imageError = validateMinimumImages(body);
+        if (imageError) {
+            return res.status(400).json({ status: 'error', errorMessage: imageError });
+        }
+
         const slug = body.ad.toLowerCase()
-            .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-            .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+            .replace(/\u011f/g, 'g').replace(/\u00fc/g, 'u').replace(/\u015f/g, 's')
+            .replace(/\u0131/g, 'i').replace(/\u00f6/g, 'o').replace(/\u00e7/g, 'c')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
 
@@ -156,19 +160,24 @@ export class ProductController {
         res.json({ status: 'success', data: product });
     });
 
-    /**
-     * Admin panel product update.
-     */
     adminUpdateProduct = asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         const body = req.body;
+
+        // Only validate images if image fields are being updated or on full update
+        if (body.resimUrl !== undefined || body.resimler !== undefined || body.images !== undefined) {
+            const imageError = validateMinimumImages(body);
+            if (imageError) {
+                return res.status(400).json({ status: 'error', errorMessage: imageError });
+            }
+        }
 
         const data = {};
         if (body.ad !== undefined) {
             data.ad = body.ad;
             data.slug = body.ad.toLowerCase()
-                .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-                .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/\u011f/g, 'g').replace(/\u00fc/g, 'u').replace(/\u015f/g, 's')
+                .replace(/\u0131/g, 'i').replace(/\u00f6/g, 'o').replace(/\u00e7/g, 'c')
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '');
         }
@@ -200,12 +209,9 @@ export class ProductController {
         res.json({ status: 'success', data: product });
     });
 
-    /**
-     * Admin panel product delete.
-     */
     adminDeleteProduct = asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         await this.productService.deleteProduct(id);
-        res.json({ status: 'success', message: 'Ürün silindi.' });
+        res.json({ status: 'success', message: 'Produk dipadam.' });
     });
 }
