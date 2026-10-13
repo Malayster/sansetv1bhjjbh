@@ -1,16 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard,
-  Package,
-  Layers,
-  Tag,
-  ShoppingBag,
-  CornerDownLeft,
-  Settings as SettingsIcon,
-  LogOut,
-  Sun,
-  Moon,
-  Repeat
+  LayoutDashboard, Package, Layers, Tag, ShoppingBag,
+  CornerDownLeft, Settings as SettingsIcon, LogOut, Sun, Moon, Repeat
 } from 'lucide-react';
 
 import DashboardTab from './components/DashboardTab';
@@ -41,6 +32,7 @@ export default function App() {
   const [returns, setReturns] = useState([]);
   const [settings, setSettings] = useState({});
   const [stats, setStats] = useState({ totalSales: 0, totalOrders: 0, activeProducts: 0, pendingReturns: 0 });
+  const [analytics, setAnalytics] = useState(null);
 
   const [productSearch, setProductSearch] = useState('');
   const [productFilterCategory, setProductFilterCategory] = useState('');
@@ -108,13 +100,14 @@ export default function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes, brandRes, orderRes, returnRes, settingsRes] = await Promise.all([
+      const [prodRes, catRes, brandRes, orderRes, returnRes, settingsRes, analyticsRes] = await Promise.all([
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/products`),
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories`),
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands`),
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/orders`),
         adminRequest(`${ADMIN_API_URL}/api/v1/admin/returns`),
-        adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`)
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`),
+        adminRequest(`${ADMIN_API_URL}/api/v1/admin/analytics`)
       ]);
 
       const prods = await prodRes.json();
@@ -123,6 +116,7 @@ export default function App() {
       const ords = await orderRes.json();
       const rets = await returnRes.json();
       const setts = await settingsRes.json();
+      const anals = await analyticsRes.json();
 
       if (prods.status === 'success') setProducts(prods.data || []);
       if (cats.status === 'success') setCategories(cats.data || []);
@@ -142,6 +136,7 @@ export default function App() {
       }
       if (rets.status === 'success') setReturns(rets.data || []);
       if (setts.status === 'success') setSettings(setts.data || {});
+      if (anals.status === 'success') setAnalytics(anals.data);
     } catch (e) {
       if (e.message !== 'UNAUTHORIZED') console.error('Fetch error:', e);
     } finally {
@@ -186,14 +181,12 @@ export default function App() {
       alert('Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar.');
       return;
     }
-
     setLoading(true);
     try {
       const url = editingProduct
         ? `${ADMIN_API_URL}/api/v1/admin/products/${editingProduct.id}`
         : `${ADMIN_API_URL}/api/v1/admin/products`;
       const method = editingProduct ? 'PUT' : 'POST';
-
       const res = await adminRequest(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -218,10 +211,7 @@ export default function App() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/upload`, { method: 'POST', body: formData });
       const data = await res.json();
       if (data.status === 'success') return data.key;
       alert(data.errorMessage || 'Gagal muat naik');
@@ -253,27 +243,21 @@ export default function App() {
 
   const bulkDeleteProducts = async (ids) => {
     if (!confirm(`Padam ${ids.length} produk?`)) return;
-    for (const id of ids) {
-      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' });
-    }
+    for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' });
     setSelectedProductIds([]);
     fetchData();
   };
 
   const bulkDeleteCategories = async (ids) => {
     if (!confirm(`Padam ${ids.length} kategori?`)) return;
-    for (const id of ids) {
-      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' });
-    }
+    for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' });
     setSelectedCategoryIds([]);
     fetchData();
   };
 
   const bulkDeleteBrands = async (ids) => {
     if (!confirm(`Padam ${ids.length} jenama?`)) return;
-    for (const id of ids) {
-      await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' });
-    }
+    for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' });
     setSelectedBrandIds([]);
     fetchData();
   };
@@ -345,55 +329,34 @@ export default function App() {
       <main className="main-content">
         {loading && <div style={{ padding: 20 }}>Memuatkan...</div>}
 
-        {activeTab === 'dashboard' && <DashboardTab stats={stats} />}
+        {activeTab === 'dashboard' && <DashboardTab stats={stats} analytics={analytics} />}
 
         {activeTab === 'products' && (
           <ProductsTab
-            products={products}
-            categories={categories}
-            brands={brands}
-            productSearch={productSearch}
-            setProductSearch={setProductSearch}
-            productFilterCategory={productFilterCategory}
-            setProductFilterCategory={setProductFilterCategory}
-            productFilterBrand={productFilterBrand}
-            setProductFilterBrand={setProductFilterBrand}
-            productFilterStatus={productFilterStatus}
-            setProductFilterStatus={setProductFilterStatus}
-            productSort={productSort}
-            setProductSort={setProductSort}
-            selectedProductIds={selectedProductIds}
-            setSelectedProductIds={setSelectedProductIds}
-            handleSort={handleSort}
-            getSortedData={getSortedData}
-            renderSortIndicator={renderSortIndicator}
+            products={products} categories={categories} brands={brands}
+            productSearch={productSearch} setProductSearch={setProductSearch}
+            productFilterCategory={productFilterCategory} setProductFilterCategory={setProductFilterCategory}
+            productFilterBrand={productFilterBrand} setProductFilterBrand={setProductFilterBrand}
+            productFilterStatus={productFilterStatus} setProductFilterStatus={setProductFilterStatus}
+            productSort={productSort} setProductSort={setProductSort}
+            selectedProductIds={selectedProductIds} setSelectedProductIds={setSelectedProductIds}
+            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
             bulkDeleteProducts={bulkDeleteProducts}
-            setEditingProduct={setEditingProduct}
-            setProductForm={setProductForm}
-            setShowProductModal={setShowProductModal}
-            config={config}
-            deleteProduct={deleteProduct}
+            setEditingProduct={setEditingProduct} setProductForm={setProductForm} setShowProductModal={setShowProductModal}
+            config={config} deleteProduct={deleteProduct}
           />
         )}
 
         {activeTab === 'categories' && (
           <CategoriesTab
             categories={categories}
-            categorySearch={categorySearch}
-            setCategorySearch={setCategorySearch}
-            categoryFilterStatus={categoryFilterStatus}
-            setCategoryFilterStatus={setCategoryFilterStatus}
-            categorySort={categorySort}
-            setCategorySort={setCategorySort}
-            selectedCategoryIds={selectedCategoryIds}
-            setSelectedCategoryIds={setSelectedCategoryIds}
-            handleSort={handleSort}
-            getSortedData={getSortedData}
-            renderSortIndicator={renderSortIndicator}
+            categorySearch={categorySearch} setCategorySearch={setCategorySearch}
+            categoryFilterStatus={categoryFilterStatus} setCategoryFilterStatus={setCategoryFilterStatus}
+            categorySort={categorySort} setCategorySort={setCategorySort}
+            selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds}
+            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
             bulkDeleteCategories={bulkDeleteCategories}
-            setEditingCategory={() => {}}
-            setCategoryForm={() => {}}
-            setShowCategoryModal={() => {}}
+            setEditingCategory={() => {}} setCategoryForm={() => {}} setShowCategoryModal={() => {}}
             deleteCategory={deleteCategory}
           />
         )}
@@ -401,21 +364,13 @@ export default function App() {
         {activeTab === 'brands' && (
           <BrandsTab
             brands={brands}
-            brandSearch={brandSearch}
-            setBrandSearch={setBrandSearch}
-            brandFilterStatus={brandFilterStatus}
-            setBrandFilterStatus={setBrandFilterStatus}
-            brandSort={brandSort}
-            setBrandSort={setBrandSort}
-            selectedBrandIds={selectedBrandIds}
-            setSelectedBrandIds={setSelectedBrandIds}
-            handleSort={handleSort}
-            getSortedData={getSortedData}
-            renderSortIndicator={renderSortIndicator}
+            brandSearch={brandSearch} setBrandSearch={setBrandSearch}
+            brandFilterStatus={brandFilterStatus} setBrandFilterStatus={setBrandFilterStatus}
+            brandSort={brandSort} setBrandSort={setBrandSort}
+            selectedBrandIds={selectedBrandIds} setSelectedBrandIds={setSelectedBrandIds}
+            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
             bulkDeleteBrands={bulkDeleteBrands}
-            setEditingBrand={() => {}}
-            setBrandForm={() => {}}
-            setShowBrandModal={() => {}}
+            setEditingBrand={() => {}} setBrandForm={() => {}} setShowBrandModal={() => {}}
             deleteBrand={deleteBrand}
           />
         )}
@@ -423,38 +378,23 @@ export default function App() {
         {activeTab === 'orders' && (
           <OrdersTab
             orders={orders}
-            orderSearch={orderSearch}
-            setOrderSearch={setOrderSearch}
-            orderFilterStatus={orderFilterStatus}
-            setOrderFilterStatus={setOrderFilterStatus}
-            orderFilterFatura={orderFilterFatura}
-            setOrderFilterFatura={setOrderFilterFatura}
-            orderSort={orderSort}
-            setOrderSort={setOrderSort}
-            handleSort={handleSort}
-            getSortedData={getSortedData}
-            renderSortIndicator={renderSortIndicator}
-            setSelectedOrder={setSelectedOrder}
-            setOrderStatusForm={setOrderStatusForm}
-            setShowOrderModal={setShowOrderModal}
+            orderSearch={orderSearch} setOrderSearch={setOrderSearch}
+            orderFilterStatus={orderFilterStatus} setOrderFilterStatus={setOrderFilterStatus}
+            orderFilterFatura={orderFilterFatura} setOrderFilterFatura={setOrderFilterFatura}
+            orderSort={orderSort} setOrderSort={setOrderSort}
+            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
+            setSelectedOrder={setSelectedOrder} setOrderStatusForm={setOrderStatusForm} setShowOrderModal={setShowOrderModal}
           />
         )}
 
         {activeTab === 'returns' && (
           <ReturnsTab
             returns={returns}
-            returnSearch={returnSearch}
-            setReturnSearch={setReturnSearch}
-            returnFilterStatus={returnFilterStatus}
-            setReturnFilterStatus={setReturnFilterStatus}
-            returnSort={returnSort}
-            setReturnSort={setReturnSort}
-            handleSort={handleSort}
-            getSortedData={getSortedData}
-            renderSortIndicator={renderSortIndicator}
-            setSelectedReturn={setSelectedReturn}
-            setReturnStatusForm={setReturnStatusForm}
-            setShowReturnModal={setShowReturnModal}
+            returnSearch={returnSearch} setReturnSearch={setReturnSearch}
+            returnFilterStatus={returnFilterStatus} setReturnFilterStatus={setReturnFilterStatus}
+            returnSort={returnSort} setReturnSort={setReturnSort}
+            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
+            setSelectedReturn={setSelectedReturn} setReturnStatusForm={setReturnStatusForm} setShowReturnModal={setShowReturnModal}
           />
         )}
 
@@ -463,12 +403,7 @@ export default function App() {
         )}
 
         {activeTab === 'settings' && (
-          <SettingsTab
-            settings={settings}
-            setSettings={setSettings}
-            saveSettings={saveSettings}
-            loading={loading}
-          />
+          <SettingsTab settings={settings} setSettings={setSettings} saveSettings={saveSettings} loading={loading} />
         )}
       </main>
 
@@ -480,7 +415,7 @@ export default function App() {
         setProductForm={setProductForm}
         categories={categories}
         brands={brands}
-        onSave={saveProduct}
+        saveProduct={saveProduct}
         onImageUpload={onImageUpload}
         loading={loading}
         config={config}
