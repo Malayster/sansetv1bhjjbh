@@ -2,18 +2,12 @@ import { config } from '../config.js';
 import prisma from '../prisma.js';
 import { PaymentService } from './paymentService.js';
 
-/** An error caused by the request (bad cart, stock), reported as 400 by the error handler. */
 function clientError(message) {
     const error = new Error(message);
     error.statusCode = 400;
     return error;
 }
 
-/**
- * Ten-digit order number, first digit non-zero, from crypto.getRandomValues.
- * Each random byte gives two uniformly distributed hex digits; keeping only the decimal ones
- * (1-9 for the first) leaves every digit equally likely, with no modulo or division bias.
- */
 export function generateOrderNumber() {
     let value = '';
     while (value.length < 10) {
@@ -28,18 +22,45 @@ export function generateOrderNumber() {
     return value;
 }
 
-/**
- * Service for managing order processing and checkout operations.
- * Houses business rules including validations, shipping cost calculations, payment integration, and email triggers.
- */
+async function awardPoints(eposta, amount, orderNumber) {
+    if (!eposta || amount <= 0) return;
+    const points = Math.floor(amount);
+    if (points <= 0) return;
+
+    try {
+        await prisma.points.upsert({
+            where: { eposta },
+            update: {
+                baki: { increment: points },
+                jumlahDiperoleh: { increment: points }
+            },
+            create: {
+                eposta,
+                baki: points,
+                jumlahDiperoleh: points
+            }
+        });
+
+        await prisma.pointsLog.create({
+            data: {
+                eposta,
+                jumlah: points,
+                jenis: 'DAPAT',
+                nota: `Order ${orderNumber}`,
+                rujukan: orderNumber
+            }
+        });
+
+        await prisma.siparis.updateMany({
+            where: { siparisNumarasi: orderNumber },
+            data: { pointsEarned: points }
+        });
+    } catch (err) {
+        console.error('[Points] Failed to award points:', err.message);
+    }
+}
+
 export class OrderService {
-    /**
-     * Creates an instance of OrderService.
-     * @param {import('../repositories/orderRepository.js').OrderRepository} orderRepository - Order repository.
-     * @param {import('./productService.js').ProductService} productService - Product service.
-     * @param {import('./paymentService.js').PaymentService} paymentService - Unified payment service.
-     * @param {import('./emailService.js').EmailService} emailService - Email service.
-     */
     constructor(orderRepository, productService, paymentService, emailService) {
         this.orderRepository = orderRepository;
         this.productService = productService;
@@ -47,22 +68,13 @@ export class OrderService {
         this.emailService = emailService;
     }
 
-    /**
-     * Initiates checkout session, calculates total pricing/shipping, and records a PENDING order.
-     * @param {Object} checkoutData - Items list and shipping/invoice billing details.
-     * @returns {Promise<Object>} Checkout result with payment page URL.
-     */
     async processCheckout(checkoutData) {
         const { items, guestInfo: customerInfo } = checkoutData;
 
-        // 1. Total Price Calculation and Validations
         let subTotal = 0;
-        let totalDesi = 0;
         let totalWeight = 0;
-        const indexItems = []; // Array to map line items for Prisma schema
+        const indexItems = [];
 
-        // Validate products and calculate total weight/prices. Every line must be a product that is
-        // on sale and in stock; a cart line that does not resolve is an error, not a skipped line.
         const quantityByProduct = new Map();
         for (const item of items) {
             const product = await this.productService.getProductById(item.id);
@@ -90,13 +102,11 @@ export class OrderService {
                 throw clientError(`Selected color for ${product.ad} is invalid.`);
             }
 
-            // Use the selected color name directly
             const finalColorName = selectedColor;
 
             subTotal += unitPrice * item.quantity;
             totalWeight += Number(product.agirlik || 1) * item.quantity;
 
-            // Build database snapshot record representation
             indexItems.push({
                 urunId: product.id,
                 secilenRenk: finalColorName,
@@ -109,12 +119,10 @@ export class OrderService {
             });
         }
 
-        // Safeguard: Block orders exceeding 100kg limits
         if (totalWeight > 100) {
             throw clientError('Order total weight exceeds 100kg limit. Please contact satis@ecommerceflaredev.web.tr or our WhatsApp line for bulk cargo shipping pricing.');
         }
 
-        // Shipping Fee Logic (DIN'O EMPIRE Malaysia State Matrix)
         let settings = await prisma.sistemAyarlari.findUnique({ where: { id: 'global-settings' } }).catch(() => null);
         const state = (customerInfo.city || '').toLowerCase().trim();
         const isKedah = state.includes('kedah');
@@ -127,29 +135,22 @@ export class OrderService {
             shippingFee = 15.00;
         }
 
-        // Kelayakan pos percuma atas RM 100 untuk Semenanjung & Kedah
         const freeShippingLimit = Number(settings?.ucretsizKargoAltLimit ?? 100.00);
         if (subTotal >= freeShippingLimit && !isBorneo) {
             shippingFee = 0.00;
         }
 
-        // Round shipping fee to avoid float precision errors
         shippingFee = Number(shippingFee.toFixed(2));
         const toplamTutar = subTotal + shippingFee;
 
-        // 2. Generate and Insert Pending Order Record
         const { isCorporate, companyName, taxOffice, taxNumber } = checkoutData.invoiceInfo || {};
 
-        // The order number identifies the order to payment gateways and customers, so it must be
-        // unique and not guessable: 10 digits from a CSPRNG.
         const siparisNumarasi = generateOrderNumber();
 
-        // Split Full Name into First and Last names
         const fullNameParts = customerInfo.name.trim().split(' ');
         const soyad = fullNameParts.length > 1 ? fullNameParts.pop() : '';
         const ad = fullNameParts.join(' ');
 
-        // Format Malaysian phone numbers into standard format
         let rawPhone = customerInfo.phone.replace(/\s/g, '').replace(/-/g, '');
         if (rawPhone.startsWith('0')) {
             rawPhone = '+60' + rawPhone.substring(1);
@@ -158,7 +159,7 @@ export class OrderService {
         }
 
         const ulke = 'Malaysia';
-        const takipTokeni = crypto.randomUUID(); // Secure unique tracking token
+        const takipTokeni = crypto.randomUUID();
 
         const orderData = {
             toplamTutar,
@@ -195,18 +196,6 @@ export class OrderService {
         };
     }
 
-    /**
-     * Initiates a payment gateway session using the active provider strategy.
-     *
-     * Retrieves the pending order, validates its state, builds the buyer payload,
-     * and delegates to PaymentService (which dispatches to ToyyibPay / iyzico / Param / PayTR).
-     * Stores the provider's transaction reference token on the order record.
-     *
-     * @param {string} orderId     - UUID of the pending order.
-     * @param {Object} [cardInfo]  - Optional card details for card gateways.
-     * @param {Object} [buyerInfo] - Supplementary buyer data.
-     * @returns {Promise<Object>}
-     */
     async initiatePayment(orderId, cardInfo = {}, buyerInfo = {}) {
         const siparis = await this.orderRepository.getOrderById(orderId);
 
@@ -233,7 +222,6 @@ export class OrderService {
 
             const paymentResult = await this.paymentService.startPaymentProcess(siparis, siparis.kalemler || [], buyer);
 
-            // Store verification code/token
             const tokenValue = paymentResult.dekontId || paymentResult.paymentId;
             if (tokenValue) {
                 await this.orderRepository.updatePaymentToken(siparis.id, tokenValue);
@@ -252,29 +240,10 @@ export class OrderService {
         }
     }
 
-    /**
-     * Backward-compatible alias for initiatePayment.
-     */
     async initiateParamPayment(orderId, cardInfo, buyerInfo) {
         return this.initiatePayment(orderId, cardInfo, buyerInfo);
     }
 
-    /**
-     * Completes and finalises a payment after a gateway callback.
-     *
-     * The provider verifies the callback and reports which order was paid and how much, from data
-     * the gateway vouches for. The order then moves from 'BEKLEMEDE' to 'HAZIRLANIYOR' in one
-     * conditional update, so a replayed or concurrent callback cannot finalize it twice or revive
-     * a cancelled order. A verified payment that cannot be applied (order no longer pending,
-     * already paid by another payment, or underpaid) is refunded.
-     *
-     * @param {Object} callbackData - Raw callback payload from the payment gateway.
-     * @param {'iyzico'|'param'|'paytr'} provider - Provider whose callback endpoint was called.
-     * @returns {Promise<Object>}   { status: 'success', orderId, orderNumber, trackingToken } when the
-     *                              order is paid (also for a repeated callback of the same payment);
-     *                              { status: 'failure', errorMessage, orderNumber, final? } otherwise.
-     *                              `final` marks a verified callback that was handled and must not be retried.
-     */
     async completePayment(callbackData, provider) {
         const result = await this.paymentService.verifyCallback(callbackData, provider);
 
@@ -299,8 +268,6 @@ export class OrderService {
             trackingToken: siparis.takipTokeni
         };
 
-        // Gateways retry notifications (PayTR until it gets "OK"); a payment already recorded on the
-        // order is acknowledged again without side effects (no second e-mail, no second refund).
         const alreadyRecorded = (order) => (order.odemeDurumu === 'SUCCESS'
             ? paid
             : { status: 'failure', errorMessage: 'Order was cancelled.', orderNumber: siparis.siparisNumarasi, final: true });
@@ -327,7 +294,6 @@ export class OrderService {
 
         const claimed = await this.orderRepository.markOrderPaid(siparis.id, odemeId);
         if (!claimed) {
-            // Another request changed the order between the read and the update.
             const current = await this.orderRepository.getOrderById(siparis.id);
             if (current?.odemeId === odemeId) {
                 return alreadyRecorded(current);
@@ -336,6 +302,9 @@ export class OrderService {
         }
 
         await this.orderRepository.adjustStock(siparis.kalemler, -1);
+
+        // Award points (1 point per RM1 of order total)
+        await awardPoints(siparis.eposta, Number(siparis.toplamTutar), siparis.siparisNumarasi);
 
         const freshOrder = await this.orderRepository.getOrderById(siparis.id);
         if (freshOrder) {
@@ -352,15 +321,6 @@ export class OrderService {
         return paid;
     }
 
-    /**
-     * Refunds a verified payment that could not be applied to its order. A failed refund is
-     * logged for manual follow-up; it must not turn the callback into a retry loop.
-     *
-     * @param {string} odemeId - Provider-prefixed payment reference.
-     * @param {number} amount  - Charged amount in TRY.
-     * @param {string} reason  - Why the payment was not applied.
-     * @private
-     */
     async _refundUnappliedPayment(odemeId, amount, reason) {
         try {
             await this.paymentService.cancelPayment(odemeId, reason, Number(amount));
@@ -369,12 +329,6 @@ export class OrderService {
         }
     }
 
-    /**
-     * Cancels an order, releases hold slots, and refunds payment if applicable.
-     * @param {string} token - Secure tracking token.
-     * @param {string} reason - Cancellation reason statement.
-     * @returns {Promise<Object>} Result message with status.
-     */
     async cancelOrder(token, reason) {
         const order = await this.orderRepository.getOrderByTrackingToken(token);
 
@@ -401,8 +355,6 @@ export class OrderService {
 
         let refundStatus = 'NONE';
 
-        // A paid order is cancelled only after the gateway confirms the refund; otherwise the
-        // customer would lose the money and the order would no longer show it.
         if (order.odemeDurumu === 'SUCCESS') {
             if (!order.odemeId) {
                 throw new Error('Payment reference is missing; please contact customer support to cancel this order.');
@@ -419,11 +371,9 @@ export class OrderService {
 
         await this.orderRepository.cancelOrder(order.id, { refunded: refundStatus === 'SUCCESS' });
         if (refundStatus === 'SUCCESS') {
-            // Stock was taken out when the payment arrived; an unpaid order never held any.
             await this.orderRepository.adjustStock(order.kalemler, 1);
         }
 
-        // Send cancellation email to customer
         if (order.eposta) {
             await this.emailService.sendCancellationNotification(order.eposta, order.ad, {
                 orderNumber: order.siparisNumarasi,
@@ -435,88 +385,11 @@ export class OrderService {
         return { status: 'success', message: 'Order successfully canceled and refund process initiated.' };
     }
 
-    /**
-     * Retrieves an order by its secure tracking token.
-     * @param {string} token - Order tracking token (UUID).
-     * @returns {Promise<Object>} Order object with all details.
-     */
     async getOrderByTrackingToken(token) {
         return this.orderRepository.getOrderByTrackingToken(token);
     }
 
-    /**
-     * Retrieves an order by ID with optional email verification.
-     * @param {string} id - Order UUID.
-     * @param {string} [email] - Email address for verification.
-     * @returns {Promise<Object|null>} Order object or null if not found.
-     * @throws {Error} If email is provided but doesn't match.
-     */
-    async getOrderById(id, email) {
-        const siparis = await this.orderRepository.getOrderById(id);
-        if (!siparis) return null;
-
-        if (email && siparis.eposta !== email) {
-            throw new Error('Access denied: Email address does not match.');
-        }
-
-        return siparis;
-    }
-
-    /**
-     * Gets installment options for a card BIN.
-     * @param {string} bin - First 6 digits of card number.
-     * @param {number} amount - Transaction amount.
-     * @returns {Promise<Array>} Available installment options.
-     */
     async getInstallmentOptions(bin, amount) {
         return this.paymentService.getInstallmentOptions(bin, amount);
-    }
-
-    /**
-     * Retrieves all orders for admin panel.
-     */
-    async getAllOrdersForAdmin() {
-        return this.orderRepository.findAllForAdmin();
-    }
-
-    /**
-     * Retrieves order details with logs.
-     */
-    async getOrderByIdWithDetails(id) {
-        return this.orderRepository.getOrderByIdWithDetails(id);
-    }
-
-    /**
-     * Updates an order by admin, logging status change histories.
-     */
-    async updateOrder(id, body) {
-        const currentOrder = await this.orderRepository.getOrderById(id);
-        if (!currentOrder) {
-            throw new Error('Sipariş bulunamadı.');
-        }
-
-        const data = {};
-        if (body.durum) data.durum = body.durum;
-        if (body.kargoTakipNo !== undefined) data.kargoTakipNo = body.kargoTakipNo;
-        if (body.kargoFirmasi !== undefined) data.kargoFirmasi = body.kargoFirmasi;
-        if (body.faturaNo !== undefined) data.faturaNo = body.faturaNo;
-        if (body.faturaDurumu !== undefined) data.faturaDurumu = body.faturaDurumu;
-        if (body.durum === 'TESLIM_EDILDI' && !currentOrder.teslimTarihi) {
-            data.teslimTarihi = new Date();
-        }
-
-        const updatedOrder = await this.orderRepository.update(id, data);
-
-        if (body.durum && body.durum !== currentOrder.durum) {
-            await this.orderRepository.createOrderHistory({
-                siparisId: id,
-                eskiDurum: currentOrder.durum,
-                yeniDurum: body.durum,
-                not: body.not || `Sipariş durumu ${body.durum} olarak güncellendi.`,
-                islemYapan: 'ADMIN'
-            });
-        }
-
-        return updatedOrder;
     }
 }
