@@ -1,19 +1,10 @@
 /**
  * Dependency Injection Container.
- *
- * This module allows for:
- * 1. Centralized configuration of all services and repositories.
- * 2. Easy testing by swapping dependencies.
- * 3. Adherence to Dependency Inversion Principle (DIP).
  */
 
-// === IMPORTS ===
-
-// Core
 import prisma from './prisma.js';
 import { config } from './config.js';
 
-// Repositories
 import { ProductRepository } from './repositories/productRepository.js';
 import { CategoryRepository } from './repositories/categoryRepository.js';
 import { OrderRepository } from './repositories/orderRepository.js';
@@ -21,7 +12,6 @@ import { BrandRepository } from './repositories/brandRepository.js';
 import { SettingsRepository } from './repositories/settingsRepository.js';
 import { ReturnRepository } from './repositories/returnRepository.js';
 
-// Services
 import { ProductService } from './services/productService.js';
 import { CategoryService } from './services/categoryService.js';
 import { OrderService } from './services/orderService.js';
@@ -35,7 +25,6 @@ import { BrandService } from './services/brandService.js';
 import { SettingsService } from './services/settingsService.js';
 import { ReturnService } from './services/returnService.js';
 
-// Controllers
 import { ProductController } from './controllers/productController.js';
 import { CategoryController } from './controllers/categoryController.js';
 import { OrderController } from './controllers/orderController.js';
@@ -46,10 +35,8 @@ import { ReturnController } from './controllers/returnController.js';
 import { SeoController } from './controllers/seoController.js';
 import { FeedController } from './controllers/feedController.js';
 import { UploadController } from './controllers/uploadController.js';
+import { AnalyticsController } from './controllers/analyticsController.js';
 
-// === INSTANTIATION ===
-
-// Repositories
 const productRepository = new ProductRepository(prisma);
 const categoryRepository = new CategoryRepository(prisma);
 const orderRepository = new OrderRepository(prisma);
@@ -57,7 +44,6 @@ const brandRepository = new BrandRepository(prisma);
 const settingsRepository = new SettingsRepository(prisma);
 const returnRepository = new ReturnRepository(prisma);
 
-// Infrastructure Services
 const paramService = new ParamService(config.param);
 const iyzicoService = new IyzicoService(config.iyzico);
 const paytrService = new PaytrService(config.paytr);
@@ -65,7 +51,6 @@ const toyyibpayService = new ToyyibPayService(config);
 const paymentService = new PaymentService(paramService, iyzicoService, paytrService, toyyibpayService, config);
 const emailService = new EmailService(config.email);
 
-// Domain Services
 const productService = new ProductService(productRepository, categoryRepository);
 const categoryService = new CategoryService(categoryRepository);
 const settingsService = new SettingsService(settingsRepository);
@@ -73,7 +58,6 @@ const returnService = new ReturnService(returnRepository, orderRepository);
 const orderService = new OrderService(orderRepository, productService, paymentService, emailService);
 const brandService = new BrandService(brandRepository);
 
-// Controllers
 const productController = new ProductController(productService);
 const categoryController = new CategoryController(categoryService);
 const orderController = new OrderController(orderService);
@@ -84,8 +68,7 @@ const returnController = new ReturnController(returnService);
 const seoController = new SeoController(productRepository);
 const feedController = new FeedController(productRepository, settingsRepository);
 const uploadController = new UploadController();
-
-// === EXPORTS ===
+const analyticsController = new AnalyticsController(prisma);
 
 export {
     productController,
@@ -97,5 +80,6 @@ export {
     returnController,
     seoController,
     feedController,
-    uploadController
+    uploadController,
+    analyticsController
 };
