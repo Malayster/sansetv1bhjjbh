@@ -3,11 +3,6 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
-/**
- * Identifies WebP, JPEG and PNG by their magic bytes.
- * @param {Uint8Array} head - First bytes of the file.
- * @returns {{extension: string, contentType: string}|null}
- */
 export function detectImageType(head) {
     const ascii = (start, end) => String.fromCharCode(...head.subarray(start, end));
     if (head.length >= 12 && ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') {
@@ -22,18 +17,36 @@ export function detectImageType(head) {
     return null;
 }
 
-/**
- * Controller for handling direct image uploads to Cloudflare R2 bucket.
- */
-export class UploadController {
-    /**
-     * Upload image file to R2 bucket.
-     */
-    uploadImage = asyncHandler(async (req, res, next) => {
-        const file = req.body.file;
+function extractFile(body) {
+    if (!body) return null;
+    const candidates = [body.file, body.image, body.upload, body.File];
+    for (const c of candidates) {
+        if (c && (typeof c.arrayBuffer === 'function' || c instanceof Blob || c instanceof File)) {
+            return c;
+        }
+        if (Array.isArray(c) && c[0] && typeof c[0].arrayBuffer === 'function') {
+            return c[0];
+        }
+    }
+    for (const key of Object.keys(body)) {
+        const val = body[key];
+        if (val && typeof val.arrayBuffer === 'function') return val;
+        if (Array.isArray(val) && val[0] && typeof val[0].arrayBuffer === 'function') return val[0];
+    }
+    return null;
+}
 
-        if (!file || typeof file.arrayBuffer !== 'function') {
-            return res.status(400).json({ status: 'error', errorMessage: 'Fail tidak dimuat naik atau tidak sah.' });
+export class UploadController {
+    uploadImage = asyncHandler(async (req, res, next) => {
+        const file = extractFile(req.body);
+
+        if (!file) {
+            const keys = req.body ? Object.keys(req.body) : [];
+            const types = keys.map(k => `${k}:${typeof req.body[k]}`).join(', ');
+            return res.status(400).json({
+                status: 'error',
+                errorMessage: `Fail tidak dimuat naik. Medan diterima: ${types || 'tiada'}`
+            });
         }
 
         const env = currentEnv;
@@ -41,13 +54,18 @@ export class UploadController {
             return res.status(500).json({ status: 'error', errorMessage: 'Perkhidmatan storan imej tidak dikonfigurasi.' });
         }
 
-        if (file.size > MAX_UPLOAD_BYTES) {
+        const size = file.size || 0;
+        if (size > MAX_UPLOAD_BYTES) {
             return res.status(413).json({ status: 'error', errorMessage: 'Imej maksimum 5 MB.' });
         }
 
-        // Type and extension come from the file's bytes, not from the client-supplied name or
-        // MIME type, so an SVG or HTML file cannot be stored and served as active content.
-        const buffer = await file.arrayBuffer();
+        let buffer;
+        try {
+            buffer = await file.arrayBuffer();
+        } catch (e) {
+            return res.status(400).json({ status: 'error', errorMessage: 'Tidak dapat baca fail.' });
+        }
+
         const detected = detectImageType(new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 16)));
         if (!detected) {
             return res.status(415).json({ status: 'error', errorMessage: 'Hanya imej WebP, JPEG atau PNG dibenarkan.' });
