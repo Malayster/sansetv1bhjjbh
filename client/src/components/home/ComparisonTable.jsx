@@ -22,7 +22,8 @@ export function ComparisonTable() {
           <p className="text-gray-500">Kenapa pilih DIN'O EMPIRE?</p>
         </div>
 
-        <div className="max-w-3xl mx-auto overflow-x-auto">
+        {/* Desktop */}
+        <div className="hidden md:block max-w-3xl mx-auto overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b-2 border-gray-200">
@@ -35,31 +36,35 @@ export function ComparisonTable() {
               {rows.map((row, i) => (
                 <tr key={i} className="border-b border-gray-100">
                   <td className="py-3 px-4 text-sm text-gray-800">{row.feature}</td>
-                  <td className="py-3 px-4 text-center">
-                    {row.us ? (
-                      <Check size={20} className="inline text-green-500" />
-                    ) : (
-                      <X size={20} className="inline text-red-400" />
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {row.others ? (
-                      <Check size={20} className="inline text-green-500" />
-                    ) : (
-                      <X size={20} className="inline text-red-400" />
-                    )}
-                  </td>
+                  <td className="py-3 px-4 text-center">{row.us ? <Check size={20} className="inline text-green-500" /> : <X size={20} className="inline text-red-400" />}</td>
+                  <td className="py-3 px-4 text-center">{row.others ? <Check size={20} className="inline text-green-500" /> : <X size={20} className="inline text-red-400" />}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
+        {/* Mobile cards */}
+        <div className="md:hidden space-y-3">
+          {rows.map((row, i) => (
+            <div key={i} className="border border-gray-200 rounded-xl p-4">
+              <div className="font-medium text-sm mb-3">{row.feature}</div>
+              <div className="flex justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-600 font-bold">Kami</span>
+                  {row.us ? <Check size={18} className="text-green-500" /> : <X size={18} className="text-red-400" />}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">Lain</span>
+                  {row.others ? <Check size={18} className="text-green-500" /> : <X size={18} className="text-red-400" />}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="text-center mt-8">
-          <a
-            href="/bina-box"
-            className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-black px-8 py-3 rounded-full transition"
-          >
+          <a href="/bina-box" className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-black px-8 py-3 rounded-full transition">
             Bina Box Anda Sekarang
           </a>
         </div>
