@@ -36,7 +36,7 @@ export function HomePage() {
                 title={seoTitle}
                 description={seoDescription}
                 structuredData={structuredData}
-                canonical="https://ecommerceflaredev.web.tr/"
+                canonical="https://dinoempire.my/"
             />
 
             <HeroSection />

@@ -11,7 +11,7 @@ export const getApiUrl = () => {
     }
     if (import.meta.env.DEV) return '';
 
-    return 'https://api.ecommerceflaredev.web.tr';
+    return 'https://api.dinoempire.my';
 };
 
 const API_BASE_URL = getApiUrl();

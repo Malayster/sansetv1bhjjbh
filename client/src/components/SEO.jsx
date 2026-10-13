@@ -27,16 +27,16 @@ export const SEO = ({
     noindex = false
 }) => {
     const { settings } = useSettings();
-    const siteTitle = settings.siteAdi || 'E-Market';
+    const siteTitle = settings.siteAdi || "DIN'O EMPIRE";
     const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
-    const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ecommerceflaredev.web.tr';
-    const defaultDescription = settings.hakkindaMetni || 'E-Market - En uygun fiyatlarla binlerce ürün kapınızda. Hızlı kargo ve güvenli ödeme.';
-    const defaultKeywords = 'e-ticaret, online alışveriş, uygun fiyatlı ürünler, hızlı teslimat, güvenli ödeme';
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dinoempire.my';
+    const defaultDescription = settings.hakkindaMetni || "DIN'O EMPIRE - Portaj, Kilang Kuala Ketil & Barangan Terpilih Malaysia.";
+    const defaultKeywords = "dino empire, kilang kuala ketil, tepung goreng, sos char koey teow, toyyibpay, malaysia";
 
     const resolveImageUrl = (img) => {
         if (!img) return `${siteUrl}/images/og-image.png`;
         if (img.startsWith('http')) return img;
-        return `${settings.cdnUrl || 'https://cdn.ecommerceflaredev.web.tr'}/${img}`;
+        return `${settings.cdnUrl || 'https://dino-empire-assets.r2.cloudflarestorage.com'}/${img}`;
     };
 
     const metaDescription = description || defaultDescription;

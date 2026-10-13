@@ -5,8 +5,8 @@
 
 import DOMPurify from 'dompurify';
 
-const SITE_URL = 'https://ecommerceflaredev.web.tr';
-const SITE_NAME = 'E-Market';
+const SITE_URL = 'https://dinoempire.my';
+const SITE_NAME = "DIN'O EMPIRE";
 const LOGO_URL = `${SITE_URL}/images/logo-light.svg`;
 
 /**
