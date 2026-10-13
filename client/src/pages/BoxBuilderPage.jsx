@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useProducts } from '../hooks/useProducts';
-import { Plus, Minus, Package, ShoppingBag, AlertCircle } from 'lucide-react';
+import { Plus, Minus, Package, ShoppingBag, AlertCircle, Repeat } from 'lucide-react';
 import SEO from '../components/SEO';
 
 const TIERS = [
@@ -10,6 +10,8 @@ const TIERS = [
   { min: 100, discount: 10, label: '10% off' },
   { min: 150, discount: 15, label: '15% off' },
 ];
+
+const API = import.meta.env.VITE_API_URL || '';
 
 function getCurrentTier(total) {
   let current = null;
@@ -29,7 +31,12 @@ export function BoxBuilderPage() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { products, loading } = useProducts({});
-  const [boxItems, setBoxItems] = useState({}); // { productId: quantity }
+  const [boxItems, setBoxItems] = useState({});
+  const [showSubForm, setShowSubForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [subForm, setSubForm] = useState({
+    eposta: '', ad: '', soyad: '', telefon: '', alamat: '', sehir: '', poskod: '', frekuensi: 'BULANAN'
+  });
 
   const updateQty = (productId, delta) => {
     setBoxItems(prev => {
@@ -79,6 +86,33 @@ export function BoxBuilderPage() {
     navigate('/checkout');
   };
 
+  const createSubscription = async (e) => {
+    e.preventDefault();
+    if (boxProducts.length === 0) return;
+    setSubmitting(true);
+    try {
+      const items = boxProducts.map(p => ({ urunId: p.id, kuantiti: p.quantity }));
+      const res = await fetch(`${API}/api/v1/subscriptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...subForm, items })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert('Langganan berjaya dicipta!');
+        setBoxItems({});
+        setShowSubForm(false);
+        navigate(`/langganan?email=${encodeURIComponent(subForm.eposta)}`);
+      } else {
+        alert(data.errorMessage || 'Ralat mencipta langganan');
+      }
+    } catch (err) {
+      alert('Ralat sambungan');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-white min-h-screen pb-20">
       <SEO
@@ -92,14 +126,11 @@ export function BoxBuilderPage() {
           <p className="text-gray-500">Campur produk, kumpul nilai, dapatkan diskaun automatik.</p>
         </div>
 
-        {/* Motivator Bar */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="text-sm font-bold text-amber-800 mb-1">
-                {current
-                  ? `Anda dapat ${current.label}!`
-                  : 'Bina box anda untuk diskaun'}
+                {current ? `Anda dapat ${current.label}!` : 'Bina box anda untuk diskaun'}
               </div>
               {next && (
                 <div className="text-sm text-amber-700">
@@ -118,26 +149,18 @@ export function BoxBuilderPage() {
             </div>
           </div>
           <div className="mt-4 h-2 bg-amber-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-500 transition-all duration-300"
-              style={{ width: `${progressToNext}%` }}
-            />
+            <div className="h-full bg-amber-500 transition-all duration-300" style={{ width: `${progressToNext}%` }} />
           </div>
           <div className="flex justify-between text-xs text-amber-700 mt-2">
-            {TIERS.map(t => (
-              <span key={t.min}>RM{t.min}</span>
-            ))}
+            {TIERS.map(t => <span key={t.min}>RM{t.min}</span>)}
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Product Grid */}
           <div className="lg:col-span-2">
             {loading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-gray-100 rounded-xl h-48 animate-pulse" />
-                ))}
+                {[...Array(6)].map((_, i) => <div key={i} className="bg-gray-100 rounded-xl h-48 animate-pulse" />)}
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -147,27 +170,16 @@ export function BoxBuilderPage() {
                   return (
                     <div key={product.id} className="border border-gray-200 rounded-xl p-3 bg-white">
                       {product.resimUrl && (
-                        <img
-                          src={product.resimUrl}
-                          alt={product.ad}
-                          className="w-full h-28 object-cover rounded-lg mb-2"
-                        />
+                        <img src={product.resimUrl} alt={product.ad} className="w-full h-28 object-cover rounded-lg mb-2" />
                       )}
                       <div className="font-bold text-sm line-clamp-2 mb-1">{product.ad}</div>
                       <div className="text-amber-600 font-black text-sm mb-2">RM {price.toFixed(2)}</div>
                       <div className="flex items-center justify-between">
-                        <button
-                          onClick={() => updateQty(product.id, -1)}
-                          disabled={qty === 0}
-                          className="w-8 h-8 rounded-full border flex items-center justify-center disabled:opacity-30"
-                        >
+                        <button onClick={() => updateQty(product.id, -1)} disabled={qty === 0} className="w-8 h-8 rounded-full border flex items-center justify-center disabled:opacity-30">
                           <Minus size={14} />
                         </button>
                         <span className="font-bold">{qty}</span>
-                        <button
-                          onClick={() => updateQty(product.id, 1)}
-                          className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center"
-                        >
+                        <button onClick={() => updateQty(product.id, 1)} className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center">
                           <Plus size={14} />
                         </button>
                       </div>
@@ -178,7 +190,6 @@ export function BoxBuilderPage() {
             )}
           </div>
 
-          {/* Box Summary */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
               <h2 className="font-black text-lg mb-4 flex items-center gap-2">
@@ -202,10 +213,7 @@ export function BoxBuilderPage() {
               )}
 
               <div className="border-t pt-3 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>RM {subtotal.toFixed(2)}</span>
-                </div>
+                <div className="flex justify-between"><span>Subtotal</span><span>RM {subtotal.toFixed(2)}</span></div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Diskaun ({current.label})</span>
@@ -223,12 +231,50 @@ export function BoxBuilderPage() {
                 disabled={boxProducts.length === 0}
                 className="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition"
               >
-                <ShoppingBag size={18} />
-                Tambah ke Troli & Checkout
+                <ShoppingBag size={18} /> Tambah ke Troli & Checkout
+              </button>
+
+              <button
+                onClick={() => setShowSubForm(true)}
+                disabled={boxProducts.length === 0}
+                className="mt-2 w-full border-2 border-amber-500 text-amber-700 hover:bg-amber-50 disabled:opacity-50 font-black py-3 rounded-xl flex items-center justify-center gap-2 transition"
+              >
+                <Repeat size={18} /> Jadikan Langganan
               </button>
             </div>
           </div>
         </div>
+
+        {showSubForm && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSubForm(false)}>
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+              <h3 className="font-black text-lg mb-4">Jadikan Langganan</h3>
+              <form onSubmit={createSubscription} className="space-y-3">
+                <input required className="w-full border rounded-xl px-3 py-2" placeholder="E-mel" type="email" value={subForm.eposta} onChange={e => setSubForm({ ...subForm, eposta: e.target.value })} />
+                <div className="grid grid-cols-2 gap-2">
+                  <input required className="border rounded-xl px-3 py-2" placeholder="Nama" value={subForm.ad} onChange={e => setSubForm({ ...subForm, ad: e.target.value })} />
+                  <input className="border rounded-xl px-3 py-2" placeholder="Nama Akhir" value={subForm.soyad} onChange={e => setSubForm({ ...subForm, soyad: e.target.value })} />
+                </div>
+                <input className="w-full border rounded-xl px-3 py-2" placeholder="Telefon" value={subForm.telefon} onChange={e => setSubForm({ ...subForm, telefon: e.target.value })} />
+                <input className="w-full border rounded-xl px-3 py-2" placeholder="Alamat" value={subForm.alamat} onChange={e => setSubForm({ ...subForm, alamat: e.target.value })} />
+                <div className="grid grid-cols-2 gap-2">
+                  <input className="border rounded-xl px-3 py-2" placeholder="Bandar" value={subForm.sehir} onChange={e => setSubForm({ ...subForm, sehir: e.target.value })} />
+                  <input className="border rounded-xl px-3 py-2" placeholder="Poskod" value={subForm.poskod} onChange={e => setSubForm({ ...subForm, poskod: e.target.value })} />
+                </div>
+                <select className="w-full border rounded-xl px-3 py-2" value={subForm.frekuensi} onChange={e => setSubForm({ ...subForm, frekuensi: e.target.value })}>
+                  <option value="BULANAN">Bulanan</option>
+                  <option value="2_MINGGU">Setiap 2 Minggu</option>
+                </select>
+                <div className="flex gap-2 pt-2">
+                  <button type="button" onClick={() => setShowSubForm(false)} className="flex-1 border py-2 rounded-xl">Batal</button>
+                  <button type="submit" disabled={submitting} className="flex-1 bg-amber-500 text-white font-bold py-2 rounded-xl">
+                    {submitting ? 'Menyimpan...' : 'Cipta Langganan'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
