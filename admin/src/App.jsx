@@ -14,6 +14,7 @@ import SettingsTab from './components/SettingsTab';
 import SubscriptionsTab from './components/SubscriptionsTab';
 import ImageCropper from './components/ImageCropper';
 import ProductModal from './components/ProductModal';
+import AdminMobileHeader from './components/AdminMobileHeader';
 
 const isLocalhost = typeof window !== 'undefined' &&
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -24,6 +25,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('admin_theme') || 'dark');
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -174,37 +176,22 @@ export default function App() {
       : <span className="sort-indicator" style={{ color: 'var(--color-primary)' }}>▼</span>;
   };
 
+  const nav = (tab) => { setActiveTab(tab); setSidebarOpen(false); };
+
   const saveProduct = async (e) => {
     e.preventDefault();
     const imageCount = (productForm.resimUrl ? 1 : 0) + (productForm.resimler?.length || 0);
-    if (imageCount < 2) {
-      alert('Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar.');
-      return;
-    }
+    if (imageCount < 2) { alert('Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar.'); return; }
     setLoading(true);
     try {
-      const url = editingProduct
-        ? `${ADMIN_API_URL}/api/v1/admin/products/${editingProduct.id}`
-        : `${ADMIN_API_URL}/api/v1/admin/products`;
+      const url = editingProduct ? `${ADMIN_API_URL}/api/v1/admin/products/${editingProduct.id}` : `${ADMIN_API_URL}/api/v1/admin/products`;
       const method = editingProduct ? 'PUT' : 'POST';
-      const res = await adminRequest(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productForm)
-      });
+      const res = await adminRequest(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(productForm) });
       const data = await res.json();
-      if (data.status === 'success') {
-        setShowProductModal(false);
-        setEditingProduct(null);
-        fetchData();
-      } else {
-        alert(data.errorMessage || 'Ralat menyimpan produk');
-      }
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') alert('Ralat menyimpan');
-    } finally {
-      setLoading(false);
-    }
+      if (data.status === 'success') { setShowProductModal(false); setEditingProduct(null); fetchData(); }
+      else alert(data.errorMessage || 'Ralat menyimpan produk');
+    } catch (err) { if (err.message !== 'UNAUTHORIZED') alert('Ralat menyimpan'); }
+    finally { setLoading(false); }
   };
 
   const onImageUpload = async (file) => {
@@ -216,104 +203,45 @@ export default function App() {
       if (data.status === 'success') return data.key;
       alert(data.errorMessage || 'Gagal muat naik');
       return null;
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') alert('Ralat muat naik');
-      return null;
-    }
+    } catch (err) { if (err.message !== 'UNAUTHORIZED') alert('Ralat muat naik'); return null; }
   };
 
   const saveSettings = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      });
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
       const data = await res.json();
       if (data.status === 'success') alert('Tetapan disimpan');
       else alert(data.errorMessage || 'Ralat');
-    } catch (err) {
-      if (err.message !== 'UNAUTHORIZED') alert('Ralat menyimpan tetapan');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { if (err.message !== 'UNAUTHORIZED') alert('Ralat menyimpan tetapan'); }
+    finally { setLoading(false); }
   };
 
-  const bulkDeleteProducts = async (ids) => {
-    if (!confirm(`Padam ${ids.length} produk?`)) return;
-    for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' });
-    setSelectedProductIds([]);
-    fetchData();
-  };
-
-  const bulkDeleteCategories = async (ids) => {
-    if (!confirm(`Padam ${ids.length} kategori?`)) return;
-    for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' });
-    setSelectedCategoryIds([]);
-    fetchData();
-  };
-
-  const bulkDeleteBrands = async (ids) => {
-    if (!confirm(`Padam ${ids.length} jenama?`)) return;
-    for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' });
-    setSelectedBrandIds([]);
-    fetchData();
-  };
-
-  const deleteProduct = async (id) => {
-    if (!confirm('Padam produk ini?')) return;
-    await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' });
-    fetchData();
-  };
-
-  const deleteCategory = async (id) => {
-    if (!confirm('Padam kategori ini?')) return;
-    await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' });
-    fetchData();
-  };
-
-  const deleteBrand = async (id) => {
-    if (!confirm('Padam jenama ini?')) return;
-    await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' });
-    fetchData();
-  };
-
+  const bulkDeleteProducts = async (ids) => { if (!confirm(`Padam ${ids.length} produk?`)) return; for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' }); setSelectedProductIds([]); fetchData(); };
+  const bulkDeleteCategories = async (ids) => { if (!confirm(`Padam ${ids.length} kategori?`)) return; for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' }); setSelectedCategoryIds([]); fetchData(); };
+  const bulkDeleteBrands = async (ids) => { if (!confirm(`Padam ${ids.length} jenama?`)) return; for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' }); setSelectedBrandIds([]); fetchData(); };
+  const deleteProduct = async (id) => { if (!confirm('Padam produk ini?')) return; await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' }); fetchData(); };
+  const deleteCategory = async (id) => { if (!confirm('Padam kategori ini?')) return; await adminRequest(`${ADMIN_API_URL}/api/v1/admin/categories/${id}`, { method: 'DELETE' }); fetchData(); };
+  const deleteBrand = async (id) => { if (!confirm('Padam jenama ini?')) return; await adminRequest(`${ADMIN_API_URL}/api/v1/admin/brands/${id}`, { method: 'DELETE' }); fetchData(); };
   const executeCropAndUpload = () => {};
 
   return (
     <div className="admin-layout">
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <div className="sidebar-logo">E</div>
           <span className="sidebar-title">E-Market Admin</span>
         </div>
         <nav className="nav-menu">
-          <li className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('dashboard')}><LayoutDashboard size={18} /> Papan Pemuka</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('products')}><Package size={18} /> Pengurusan Produk</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('categories')}><Layers size={18} /> Kategori</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'brands' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('brands')}><Tag size={18} /> Jenama</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('orders')}><ShoppingBag size={18} /> Pesanan</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('returns')}><CornerDownLeft size={18} /> Permohonan Pemulangan</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('subscriptions')}><Repeat size={18} /> Langganan</button>
-          </li>
-          <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}>
-            <button onClick={() => setActiveTab('settings')}><SettingsIcon size={18} /> Tetapan Sistem</button>
-          </li>
+          <li className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}><button onClick={() => nav('dashboard')}><LayoutDashboard size={18} /> Papan Pemuka</button></li>
+          <li className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}><button onClick={() => nav('products')}><Package size={18} /> Pengurusan Produk</button></li>
+          <li className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`}><button onClick={() => nav('categories')}><Layers size={18} /> Kategori</button></li>
+          <li className={`nav-item ${activeTab === 'brands' ? 'active' : ''}`}><button onClick={() => nav('brands')}><Tag size={18} /> Jenama</button></li>
+          <li className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}><button onClick={() => nav('orders')}><ShoppingBag size={18} /> Pesanan</button></li>
+          <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}><button onClick={() => nav('returns')}><CornerDownLeft size={18} /> Permohonan Pemulangan</button></li>
+          <li className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}><button onClick={() => nav('subscriptions')}><Repeat size={18} /> Langganan</button></li>
+          <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}><button onClick={() => nav('settings')}><SettingsIcon size={18} /> Tetapan Sistem</button></li>
         </nav>
         <div className="sidebar-footer">
           <button className="btn btn-secondary" onClick={toggleTheme} style={{ width: '100%', marginBottom: 12 }}>
@@ -326,115 +254,33 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="main-content">
-        {loading && <div style={{ padding: 20 }}>Memuatkan...</div>}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <AdminMobileHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} title="E-Market" />
+        <main className="main-content">
+          {loading && <div style={{ padding: 20 }}>Memuatkan...</div>}
+          {activeTab === 'dashboard' && <DashboardTab stats={stats} analytics={analytics} />}
+          {activeTab === 'products' && (
+            <ProductsTab products={products} categories={categories} brands={brands} productSearch={productSearch} setProductSearch={setProductSearch} productFilterCategory={productFilterCategory} setProductFilterCategory={setProductFilterCategory} productFilterBrand={productFilterBrand} setProductFilterBrand={setProductFilterBrand} productFilterStatus={productFilterStatus} setProductFilterStatus={setProductFilterStatus} productSort={productSort} setProductSort={setProductSort} selectedProductIds={selectedProductIds} setSelectedProductIds={setSelectedProductIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteProducts={bulkDeleteProducts} setEditingProduct={setEditingProduct} setProductForm={setProductForm} setShowProductModal={setShowProductModal} config={config} deleteProduct={deleteProduct} />
+          )}
+          {activeTab === 'categories' && (
+            <CategoriesTab categories={categories} categorySearch={categorySearch} setCategorySearch={setCategorySearch} categoryFilterStatus={categoryFilterStatus} setCategoryFilterStatus={setCategoryFilterStatus} categorySort={categorySort} setCategorySort={setCategorySort} selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteCategories={bulkDeleteCategories} setEditingCategory={() => {}} setCategoryForm={() => {}} setShowCategoryModal={() => {}} deleteCategory={deleteCategory} />
+          )}
+          {activeTab === 'brands' && (
+            <BrandsTab brands={brands} brandSearch={brandSearch} setBrandSearch={setBrandSearch} brandFilterStatus={brandFilterStatus} setBrandFilterStatus={setBrandFilterStatus} brandSort={brandSort} setBrandSort={setBrandSort} selectedBrandIds={selectedBrandIds} setSelectedBrandIds={setSelectedBrandIds} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} bulkDeleteBrands={bulkDeleteBrands} setEditingBrand={() => {}} setBrandForm={() => {}} setShowBrandModal={() => {}} deleteBrand={deleteBrand} />
+          )}
+          {activeTab === 'orders' && (
+            <OrdersTab orders={orders} orderSearch={orderSearch} setOrderSearch={setOrderSearch} orderFilterStatus={orderFilterStatus} setOrderFilterStatus={setOrderFilterStatus} orderFilterFatura={orderFilterFatura} setOrderFilterFatura={setOrderFilterFatura} orderSort={orderSort} setOrderSort={setOrderSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedOrder={setSelectedOrder} setOrderStatusForm={setOrderStatusForm} setShowOrderModal={setShowOrderModal} />
+          )}
+          {activeTab === 'returns' && (
+            <ReturnsTab returns={returns} returnSearch={returnSearch} setReturnSearch={setReturnSearch} returnFilterStatus={returnFilterStatus} setReturnFilterStatus={setReturnFilterStatus} returnSort={returnSort} setReturnSort={setReturnSort} handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator} setSelectedReturn={setSelectedReturn} setReturnStatusForm={setReturnStatusForm} setShowReturnModal={setShowReturnModal} />
+          )}
+          {activeTab === 'subscriptions' && <SubscriptionsTab adminRequest={adminRequest} ADMIN_API_URL={ADMIN_API_URL} />}
+          {activeTab === 'settings' && <SettingsTab settings={settings} setSettings={setSettings} saveSettings={saveSettings} loading={loading} />}
+        </main>
+      </div>
 
-        {activeTab === 'dashboard' && <DashboardTab stats={stats} analytics={analytics} />}
-
-        {activeTab === 'products' && (
-          <ProductsTab
-            products={products} categories={categories} brands={brands}
-            productSearch={productSearch} setProductSearch={setProductSearch}
-            productFilterCategory={productFilterCategory} setProductFilterCategory={setProductFilterCategory}
-            productFilterBrand={productFilterBrand} setProductFilterBrand={setProductFilterBrand}
-            productFilterStatus={productFilterStatus} setProductFilterStatus={setProductFilterStatus}
-            productSort={productSort} setProductSort={setProductSort}
-            selectedProductIds={selectedProductIds} setSelectedProductIds={setSelectedProductIds}
-            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
-            bulkDeleteProducts={bulkDeleteProducts}
-            setEditingProduct={setEditingProduct} setProductForm={setProductForm} setShowProductModal={setShowProductModal}
-            config={config} deleteProduct={deleteProduct}
-          />
-        )}
-
-        {activeTab === 'categories' && (
-          <CategoriesTab
-            categories={categories}
-            categorySearch={categorySearch} setCategorySearch={setCategorySearch}
-            categoryFilterStatus={categoryFilterStatus} setCategoryFilterStatus={setCategoryFilterStatus}
-            categorySort={categorySort} setCategorySort={setCategorySort}
-            selectedCategoryIds={selectedCategoryIds} setSelectedCategoryIds={setSelectedCategoryIds}
-            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
-            bulkDeleteCategories={bulkDeleteCategories}
-            setEditingCategory={() => {}} setCategoryForm={() => {}} setShowCategoryModal={() => {}}
-            deleteCategory={deleteCategory}
-          />
-        )}
-
-        {activeTab === 'brands' && (
-          <BrandsTab
-            brands={brands}
-            brandSearch={brandSearch} setBrandSearch={setBrandSearch}
-            brandFilterStatus={brandFilterStatus} setBrandFilterStatus={setBrandFilterStatus}
-            brandSort={brandSort} setBrandSort={setBrandSort}
-            selectedBrandIds={selectedBrandIds} setSelectedBrandIds={setSelectedBrandIds}
-            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
-            bulkDeleteBrands={bulkDeleteBrands}
-            setEditingBrand={() => {}} setBrandForm={() => {}} setShowBrandModal={() => {}}
-            deleteBrand={deleteBrand}
-          />
-        )}
-
-        {activeTab === 'orders' && (
-          <OrdersTab
-            orders={orders}
-            orderSearch={orderSearch} setOrderSearch={setOrderSearch}
-            orderFilterStatus={orderFilterStatus} setOrderFilterStatus={setOrderFilterStatus}
-            orderFilterFatura={orderFilterFatura} setOrderFilterFatura={setOrderFilterFatura}
-            orderSort={orderSort} setOrderSort={setOrderSort}
-            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
-            setSelectedOrder={setSelectedOrder} setOrderStatusForm={setOrderStatusForm} setShowOrderModal={setShowOrderModal}
-          />
-        )}
-
-        {activeTab === 'returns' && (
-          <ReturnsTab
-            returns={returns}
-            returnSearch={returnSearch} setReturnSearch={setReturnSearch}
-            returnFilterStatus={returnFilterStatus} setReturnFilterStatus={setReturnFilterStatus}
-            returnSort={returnSort} setReturnSort={setReturnSort}
-            handleSort={handleSort} getSortedData={getSortedData} renderSortIndicator={renderSortIndicator}
-            setSelectedReturn={setSelectedReturn} setReturnStatusForm={setReturnStatusForm} setShowReturnModal={setShowReturnModal}
-          />
-        )}
-
-        {activeTab === 'subscriptions' && (
-          <SubscriptionsTab adminRequest={adminRequest} ADMIN_API_URL={ADMIN_API_URL} />
-        )}
-
-        {activeTab === 'settings' && (
-          <SettingsTab settings={settings} setSettings={setSettings} saveSettings={saveSettings} loading={loading} />
-        )}
-      </main>
-
-      <ProductModal
-        show={showProductModal}
-        onClose={() => setShowProductModal(false)}
-        editingProduct={editingProduct}
-        productForm={productForm}
-        setProductForm={setProductForm}
-        categories={categories}
-        brands={brands}
-        saveProduct={saveProduct}
-        onImageUpload={onImageUpload}
-        loading={loading}
-        config={config}
-      />
-
-      <ImageCropper
-        cropState={cropState}
-        setCropState={setCropState}
-        zoom={zoom}
-        setZoom={setZoom}
-        offset={offset}
-        setOffset={setOffset}
-        isDragging={isDragging}
-        setIsDragging={setIsDragging}
-        dragStart={dragStart}
-        setDragStart={setDragStart}
-        executeCropAndUpload={executeCropAndUpload}
-        loading={loading}
-      />
+      <ProductModal show={showProductModal} onClose={() => setShowProductModal(false)} editingProduct={editingProduct} productForm={productForm} setProductForm={setProductForm} categories={categories} brands={brands} saveProduct={saveProduct} onImageUpload={onImageUpload} loading={loading} config={config} />
+      <ImageCropper cropState={cropState} setCropState={setCropState} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} isDragging={isDragging} setIsDragging={setIsDragging} dragStart={dragStart} setDragStart={setDragStart} executeCropAndUpload={executeCropAndUpload} loading={loading} />
     </div>
   );
 }
