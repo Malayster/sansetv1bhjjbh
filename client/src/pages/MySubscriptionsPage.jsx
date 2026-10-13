@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, SkipForward, XCircle, RefreshCw } from 'lucide-react';
+import { Package, SkipForward, XCircle, RefreshCw, Star } from 'lucide-react';
 import SEO from '../components/SEO';
 
 const API = import.meta.env.VITE_API_URL || '';
@@ -9,6 +9,7 @@ export function MySubscriptionsPage() {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [subs, setSubs] = useState([]);
+  const [points, setPoints] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -18,16 +19,22 @@ export function MySubscriptionsPage() {
     setLoading(true);
     setMessage('');
     try {
-      const res = await fetch(`${API}/api/v1/subscriptions/me?eposta=${encodeURIComponent(email)}`);
-      const data = await res.json();
-      if (data.status === 'success') {
-        setSubs(data.data || []);
-        if ((data.data || []).length === 0) setMessage('Tiada langganan aktif untuk e-mel ini.');
-      } else {
-        setMessage(data.errorMessage || 'Ralat');
+      const [subRes, ptsRes] = await Promise.all([
+        fetch(`${API}/api/v1/subscriptions/me?eposta=${encodeURIComponent(email)}`),
+        fetch(`${API}/api/v1/points/balance?eposta=${encodeURIComponent(email)}`)
+      ]);
+      const subData = await subRes.json();
+      const ptsData = await ptsRes.json();
+
+      if (subData.status === 'success') {
+        setSubs(subData.data || []);
+        if ((subData.data || []).length === 0) setMessage('Tiada langganan aktif untuk e-mel ini.');
+      }
+      if (ptsData.status === 'success') {
+        setPoints(ptsData.data);
       }
     } catch (err) {
-      setMessage('Gagal memuatkan langganan.');
+      setMessage('Gagal memuatkan data.');
     } finally {
       setLoading(false);
     }
@@ -53,10 +60,10 @@ export function MySubscriptionsPage() {
 
   return (
     <div className="bg-white min-h-screen pb-20">
-      <SEO title="Langganan Saya - DIN'O EMPIRE" description="Urus langganan box anda." />
+      <SEO title="Akaun Saya - DIN'O EMPIRE" description="Urus langganan dan points anda." />
       <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
-        <h1 className="text-2xl md:text-3xl font-black mb-2">Langganan Saya</h1>
-        <p className="text-gray-500 mb-6">Masukkan e-mel untuk lihat dan urus langganan box anda.</p>
+        <h1 className="text-2xl md:text-3xl font-black mb-2">Akaun Saya</h1>
+        <p className="text-gray-500 mb-6">Masukkan e-mel untuk lihat langganan dan points.</p>
 
         <form onSubmit={load} className="flex gap-2 mb-8">
           <input
@@ -73,8 +80,26 @@ export function MySubscriptionsPage() {
           </button>
         </form>
 
+        {points && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Star className="text-amber-500" size={28} />
+              <div>
+                <div className="text-sm text-amber-800">Points Anda</div>
+                <div className="text-2xl font-black text-amber-900">{points.baki || 0}</div>
+              </div>
+            </div>
+            <div className="text-right text-xs text-amber-700">
+              <div>Diperoleh: {points.jumlahDiperoleh || 0}</div>
+              <div>Digunakan: {points.jumlahDigunakan || 0}</div>
+              <div className="mt-1">1 point = RM1</div>
+            </div>
+          </div>
+        )}
+
         {message && <div className="mb-4 text-sm text-amber-800 bg-amber-50 p-3 rounded-xl">{message}</div>}
 
+        <h2 className="font-black text-lg mb-3">Langganan</h2>
         <div className="space-y-4">
           {subs.map(sub => (
             <div key={sub.id} className="border border-gray-200 rounded-2xl p-5">
