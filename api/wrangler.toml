@@ -16,7 +16,7 @@ CDN_URL = "https://cdn.ecommerceflaredev.web.tr"
 # Admin access is handled by Cloudflare Access (see middlewares/adminAuth.js).
 # Admin routes return 503 until ACCESS_TEAM_DOMAIN and ACCESS_AUD are set.
 
-# ── Active Payment Provider ─────────────────────────────────────────────────
+# ── Active Payment Provider ───────────────────────────────────────────────────
 # Options: "toyyibpay" | "iyzico" | "param" | "paytr"
 PAYMENT_PROVIDER = "toyyibpay"
 TOYYIBPAY_BASE_URL = "https://dev.toyyibpay.com"
@@ -24,7 +24,7 @@ TOYYIBPAY_BASE_URL = "https://dev.toyyibpay.com"
 # ── iyzico (sandbox) — API keys via: wrangler secret put IYZICO_API_KEY ─────
 IYZICO_BASE_URL = "https://sandbox-api.iyzipay.com"
 
-# ── E-posta (SMTP) ───────────────────────────────────────────────────────────
+# ── E-posta (SMTP) ───────────────────────────────────────────────────
 SMTP_SENDER = "DIN'O EMPIRE <dinoempire.my@gmail.com>"
 SMTP_REPLY_TO = "dinoempire.my@gmail.com"
 # E-mail provider: "cloudflare" (send_email binding) or "resend" (secret: RESEND_API_KEY)
@@ -112,8 +112,8 @@ CLIENT_URL = "https://ecommerceflaredev.web.tr"
 API_URL = "https://api.ecommerceflaredev.web.tr"
 ORDER_NOTIFICATION_EMAIL = "siparis@ecommerceflaredev.web.tr"
 CDN_URL = "https://cdn.ecommerceflaredev.web.tr"
-PAYMENT_PROVIDER = "iyzico"
-IYZICO_BASE_URL = "https://sandbox-api.iyzipay.com"
+PAYMENT_PROVIDER = "toyyibpay"
+TOYYIBPAY_BASE_URL = "https://toyyibpay.com"
 SMTP_SENDER = "E-Market <siparis@ecommerceflaredev.web.tr>"
 SMTP_REPLY_TO = "siparis@ecommerceflaredev.web.tr"
 # E-mail provider: "cloudflare" (send_email binding) or "resend" (secret: RESEND_API_KEY)
