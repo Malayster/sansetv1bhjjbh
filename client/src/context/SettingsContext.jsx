@@ -64,6 +64,19 @@ export function SettingsProvider({ children }) {
         refreshSettingsAndCMS();
     }, []);
 
+    // Kemas kini dinamik Favicon Browser
+    useEffect(() => {
+        if (settings?.faviconUrl) {
+            let link = document.querySelector("link[rel*='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
+            link.href = settings.faviconUrl;
+        }
+    }, [settings?.faviconUrl]);
+
     if (!loading && settings.maintenanceMode) {
         return <MaintenancePage />;
     }

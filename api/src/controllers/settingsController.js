@@ -70,6 +70,16 @@ export class SettingsController {
         if (body.gtmContainerId !== undefined) data.gtmContainerId = body.gtmContainerId || null;
         if (body.ga4MeasurementId !== undefined) data.ga4MeasurementId = body.ga4MeasurementId || null;
 
+        // Identiti Jenama & Visual
+        if (body.logoUrl !== undefined) data.logoUrl = body.logoUrl || null;
+        if (body.logoMode !== undefined) data.logoMode = body.logoMode || 'image';
+        if (body.faviconUrl !== undefined) data.faviconUrl = body.faviconUrl || null;
+
+        // Kadar Pos Wilayah Malaysia
+        if (body.posKedah !== undefined) data.posKedah = parseFloat(body.posKedah);
+        if (body.posSemenanjung !== undefined) data.posSemenanjung = parseFloat(body.posSemenanjung);
+        if (body.posBorneo !== undefined) data.posBorneo = parseFloat(body.posBorneo);
+
         // İçerik
         if (body.hakkindaMetni !== undefined) data.hakkindaMetni = body.hakkindaMetni || null;
 

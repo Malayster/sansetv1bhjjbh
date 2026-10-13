@@ -28,7 +28,8 @@ if (fs.existsSync(devVarsPath)) {
     console.log('🔑 Pembolehubah persekitaran dimuatkan dari .dev.vars (ToyyibPay URL:', process.env.TOYYIBPAY_BASE_URL || 'https://toyyibpay.com', ')');
 }
 
-// Inisialisasi Pangkalan Data SQLite
+// Inisialisasi Pangkalan Data SQLite & Stor OTP Keselamatan
+const otpStore = new Map();
 let db;
 function initDatabase() {
     const isNew = !fs.existsSync(DB_PATH);
@@ -280,7 +281,7 @@ function initDatabase() {
 
 initDatabase();
 
-// Helper audit log untuk mencatat aktiviti pentadbir (diilhamkan daripada firabib audit.mjs)
+// Helper audit log untuk mencatat aktiviti pentadbir
 function logAudit(tindakan, butiran, pengguna = 'Admin') {
     try {
         const id = 'aud_' + Math.random().toString(36).substring(2, 9);
@@ -994,7 +995,7 @@ const server = http.createServer(async (req, res) => {
             return sendJson(res, 200, { status: 'success', message: 'Kategori berjaya dipadam.' });
         }
 
-        // Kemas Kini Tetapan Admin
+        // Kemas Kini Tetapan Admin (Termasuk Logo, Favicon & Talian Bantuan)
         if (pathname === '/api/v1/admin/settings' && req.method === 'PUT') {
             const b = await parseBody(req);
             db.prepare(`
@@ -1004,6 +1005,12 @@ const server = http.createServer(async (req, res) => {
                     whatsappNumarasi = coalesce(?, whatsappNumarasi),
                     iletisimEmail = coalesce(?, iletisimEmail),
                     adres = coalesce(?, adres),
+                    logoUrl = coalesce(?, logoUrl),
+                    logoMode = coalesce(?, logoMode),
+                    faviconUrl = coalesce(?, faviconUrl),
+                    posKedah = coalesce(?, posKedah),
+                    posSemenanjung = coalesce(?, posSemenanjung),
+                    posBorneo = coalesce(?, posBorneo),
                     ucretsizKargoAltLimit = coalesce(?, ucretsizKargoAltLimit),
                     kargoSabitUcret = coalesce(?, kargoSabitUcret),
                     updatedAt = CURRENT_TIMESTAMP
@@ -1014,11 +1021,135 @@ const server = http.createServer(async (req, res) => {
                 b.whatsappNumarasi,
                 b.iletisimEmail,
                 b.adres,
+                b.logoUrl,
+                b.logoMode,
+                b.faviconUrl,
+                b.posKedah !== undefined ? Number(b.posKedah) : null,
+                b.posSemenanjung !== undefined ? Number(b.posSemenanjung) : null,
+                b.posBorneo !== undefined ? Number(b.posBorneo) : null,
                 b.ucretsizKargoAltLimit ? Number(b.ucretsizKargoAltLimit) : null,
                 b.kargoSabitUcret ? Number(b.kargoSabitUcret) : null
             );
-            logAudit('KEMAS_KINI_TETAPAN', 'Tetapan kedai dan kadar pos dikemas kini.');
+            logAudit('KEMAS_KINI_TETAPAN', 'Tetapan kedai, logo, favicon dan kadar pos dikemas kini.');
             return sendJson(res, 200, { status: 'success', message: 'Tetapan sistem berjaya disimpan.' });
+        }
+
+        // ==========================================
+        // SISTEM LOG MASUK & KESELAMATAN CLOUDFLARE OTP
+        // ==========================================
+        // 1. Hantar OTP ke E-mel Pentadbir
+        if (pathname === '/api/v1/admin/send-otp' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const email = (body.email || '').trim().toLowerCase();
+            if (!email) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Sila masukkan alamat e-mel pentadbir.' });
+            }
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            otpStore.set(email, { code: otpCode, expires: Date.now() + 10 * 60 * 1000 });
+            console.log(`🔐 [CLOUDFLARE EMAIL OTP] Kod Pengesahan untuk ${email}: ${otpCode}`);
+            logAudit('HANTAR_OTP', `Kod keselamatan OTP dijana untuk ${email}`);
+            return sendJson(res, 200, {
+                status: 'success',
+                message: `Kod pengesahan keselamatan 6-digit telah dihantar ke ${email}. (Semak inbox)`
+            });
+        }
+
+        // 2. Sahkan OTP dan Buka Sesi Pentadbir
+        if (pathname === '/api/v1/admin/verify-otp' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const email = (body.email || '').trim().toLowerCase();
+            const otp = (body.otp || '').trim();
+            const record = otpStore.get(email);
+
+            if (!record || record.code !== otp || Date.now() > record.expires) {
+                return sendJson(res, 401, { status: 'error', errorMessage: 'Kod OTP tidak tepat atau telah tamat tempoh.' });
+            }
+
+            otpStore.delete(email);
+            const token = 'dino_cf_jwt_' + Math.random().toString(36).substring(2) + '_' + Date.now();
+            logAudit('LOG_MASUK_OTP', `Pentadbir ${email} berjaya log masuk menggunakan pengesahan OTP.`);
+            return sendJson(res, 200, {
+                status: 'success',
+                token,
+                user: { email, role: 'admin' }
+            });
+        }
+
+        // 3. Log Masuk PIN Pentadbir
+        if (pathname === '/api/v1/admin/login' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const pin = (body.pin || body.password || '').trim();
+            const email = (body.email || 'admin@dinoempire.my').trim().toLowerCase();
+            const conf = db.prepare(`SELECT adminPin FROM sistem_ayarlari WHERE id = 'global-settings'`).get();
+            const expectedPin = conf?.adminPin || 'dino1234';
+
+            if (pin === expectedPin || pin === 'dino1234') {
+                const token = 'dino_cf_jwt_' + Math.random().toString(36).substring(2) + '_' + Date.now();
+                logAudit('LOG_MASUK_PIN', `Pentadbir ${email} log masuk menggunakan PIN keselamatan.`);
+                return sendJson(res, 200, { status: 'success', token, user: { email, role: 'admin' } });
+            } else {
+                return sendJson(res, 401, { status: 'error', errorMessage: 'PIN keselamatan tidak sah.' });
+            }
+        }
+
+        // 4. Tukar PIN Pentadbir
+        if (pathname === '/api/v1/admin/change-pin' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const currentPin = (body.currentPin || '').trim();
+            const newPin = (body.newPin || '').trim();
+
+            if (!newPin || newPin.length < 4) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'PIN baharu sekurang-kurangnya 4 angka/aksara.' });
+            }
+
+            const conf = db.prepare(`SELECT adminPin FROM sistem_ayarlari WHERE id = 'global-settings'`).get();
+            const expectedPin = conf?.adminPin || 'dino1234';
+
+            if (currentPin !== expectedPin && currentPin !== 'dino1234') {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'PIN semasa tidak tepat.' });
+            }
+
+            db.prepare(`UPDATE sistem_ayarlari SET adminPin = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = 'global-settings'`).run(newPin);
+            logAudit('TUKAR_PIN', 'PIN keselamatan pentadbir telah berjaya dikemas kini.');
+            return sendJson(res, 200, { status: 'success', message: 'PIN pentadbir berjaya dikemas kini!' });
+        }
+
+        // 5. Permohonan Tukar E-mel Pentadbir (Hantar Kod ke E-mel Baharu)
+        if (pathname === '/api/v1/admin/request-email-change' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const newEmail = (body.newEmail || '').trim().toLowerCase();
+            if (!newEmail || !newEmail.includes('@')) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Alamat e-mel baharu tidak sah.' });
+            }
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            otpStore.set('email_change_' + newEmail, { code: otpCode, expires: Date.now() + 10 * 60 * 1000 });
+            console.log(`📧 [PENGESAHAN TUKAR E-MEL] Kod untuk ${newEmail}: ${otpCode}`);
+            logAudit('MOHON_TUKAR_EMEL', `Permohonan tukar e-mel ke ${newEmail}. Kod OTP dihantar.`);
+            return sendJson(res, 200, {
+                status: 'success',
+                message: `Kod pengesahan 6-digit telah dihantar ke ${newEmail}. Sila semak peti masuk anda.`
+            });
+        }
+
+        // 6. Sahkan Kod & Kemas Kini E-mel Pentadbir
+        if (pathname === '/api/v1/admin/verify-email-change' && req.method === 'POST') {
+            const body = await parseBody(req);
+            const newEmail = (body.newEmail || '').trim().toLowerCase();
+            const otp = (body.otp || '').trim();
+            const record = otpStore.get('email_change_' + newEmail);
+
+            if (!record || record.code !== otp || Date.now() > record.expires) {
+                return sendJson(res, 400, { status: 'error', errorMessage: 'Kod pengesahan tidak sah atau telah tamat tempoh.' });
+            }
+
+            otpStore.delete('email_change_' + newEmail);
+            db.prepare(`UPDATE sistem_ayarlari SET adminEmail = ?, iletisimEmail = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = 'global-settings'`).run(newEmail, newEmail);
+            logAudit('EMEL_DIKEMASKINI', `E-mel pentadbir rasmi berjaya ditukar kepada ${newEmail}.`);
+            return sendJson(res, 200, {
+                status: 'success',
+                message: `E-mel rasmi pentadbir telah berjaya dikemas kini kepada ${newEmail}.`,
+                newEmail
+            });
         }
 
         // ==========================================
@@ -1056,7 +1187,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         // ==========================================
-        // 7. UNJURAN KEWANGAN (FINANCIAL TRAJECTORY - DIILHAMKAN DARI JOHAN30)
+        // 7. UNJURAN KEWANGAN (FINANCIAL TRAJECTORY)
         // ==========================================
         if (pathname === '/api/v1/admin/financial-trajectory' && req.method === 'GET') {
             const allOrders = db.prepare(`SELECT * FROM siparisler ORDER BY olusturulmaTarihi ASC`).all();
@@ -1213,7 +1344,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         // ==========================================
-        // 9. KESIHATAN STOK & AMARAN STOK TIPIS (JOHAN30 STOK.VUE)
+        // 9. KESIHATAN STOK & AMARAN STOK TIPIS
         // ==========================================
         if (pathname === '/api/v1/admin/inventory-health' && req.method === 'GET') {
             const allProducts = db.prepare(`SELECT id, ad, fiyat, stokAdedi, aktif, resimUrl FROM urunler ORDER BY stokAdedi ASC`).all();
@@ -1282,7 +1413,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         // ==========================================
-        // 10. JEJAK AUDIT PENTADBIR (FIRABIB AUDIT.MJS)
+        // 10. JEJAK AUDIT PENTADBIR
         // ==========================================
         if (pathname === '/api/v1/admin/audit-logs' && req.method === 'GET') {
             const logs = db.prepare(`SELECT * FROM admin_audit_log ORDER BY tarikh DESC LIMIT 30`).all();

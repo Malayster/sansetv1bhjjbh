@@ -67,7 +67,15 @@ export function Footer() {
                     {/* 1. Column: DIN'O EMPIRE Identity */}
                     <div className="space-y-6">
                         <Link to="/" className="inline-block group">
-                            <span className="text-3xl font-black text-amber-500 tracking-wider">DIN'O EMPIRE</span>
+                            {settings?.logoUrl && settings?.logoMode !== 'text' ? (
+                                <img
+                                    src={settings.logoUrl}
+                                    alt={siteTitle}
+                                    className="h-10 md:h-12 w-auto max-w-[220px] object-contain"
+                                />
+                            ) : (
+                                <span className="text-3xl font-black text-amber-500 tracking-wider">{siteTitle}</span>
+                            )}
                         </Link>
                         <p className="text-gray-400 leading-relaxed text-sm">
                             Kilang Kuala Ketil & Barangan Terpilih Malaysia. Portaj pantas dan kualiti dijamin Halal.

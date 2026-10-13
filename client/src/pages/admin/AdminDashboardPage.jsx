@@ -32,12 +32,18 @@ import {
     Printer,
     Download,
     Link2,
-    CheckCircle2
+    CheckCircle2,
+    Key,
+    Lock,
+    Image as ImageIcon,
+    Phone,
+    Send,
+    Check
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
 
-// Komponen Modul Tambahan Pentadbir (Johan30 & Firabib inspired)
+// Komponen Modul Tambahan Pentadbir DIN'O EMPIRE
 import { FinancialTrajectoryTab } from '../../components/admin/FinancialTrajectoryTab';
 import { AnalyticsTab } from '../../components/admin/AnalyticsTab';
 import { CmsManagerTab } from '../../components/admin/CmsManagerTab';
@@ -74,8 +80,24 @@ export function AdminDashboardPage() {
         posKedah: 6.00,
         posSemenanjung: 8.00,
         posBorneo: 15.00,
-        freeShippingMin: 100.00
+        freeShippingMin: 100.00,
+        logoUrl: '',
+        logoMode: 'image',
+        faviconUrl: ''
     });
+
+    // State Keselamatan Pentadbir: Tukar PIN
+    const [pinForm, setPinForm] = useState({ currentPin: '', newPin: '', confirmPin: '' });
+    const [isChangingPin, setIsChangingPin] = useState(false);
+    const [pinFeedback, setPinFeedback] = useState({ type: '', message: '' });
+
+    // State Keselamatan Pentadbir: Tukar E-mel dengan Verifikasi OTP
+    const [emailStep, setEmailStep] = useState(1);
+    const [newEmailInput, setNewEmailInput] = useState('');
+    const [emailOtpInput, setEmailOtpInput] = useState('');
+    const [isRequestingOtp, setIsRequestingOtp] = useState(false);
+    const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+    const [emailFeedback, setEmailFeedback] = useState({ type: '', message: '' });
 
     // State Modul Lanjutan Baharu
     const [trajectoryData, setTrajectoryData] = useState(null);
@@ -156,12 +178,15 @@ export function AdminDashboardPage() {
                     siteAdi: s.siteAdi || "DIN'O EMPIRE",
                     telefon: s.telefon || '016-6911020',
                     whatsapp: s.whatsappNumarasi || s.whatsapp || '013-2359647',
-                    email: s.iletisimEmail || s.email || 'dinoempireenterprise@gmail.com',
+                    email: s.adminEmail || s.iletisimEmail || s.email || 'dinoempireenterprise@gmail.com',
                     alamat: s.adres || s.alamat || 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah',
                     posKedah: Number(s.posKedah ?? 6.00),
                     posSemenanjung: Number(s.posSemenanjung ?? s.kargoSabitUcret ?? 8.00),
                     posBorneo: Number(s.posBorneo ?? 15.00),
-                    freeShippingMin: Number(s.freeShippingMin ?? s.ucretsizKargoAltLimit ?? 100.00)
+                    freeShippingMin: Number(s.freeShippingMin ?? s.ucretsizKargoAltLimit ?? 100.00),
+                    logoUrl: s.logoUrl || '',
+                    logoMode: s.logoMode || 'image',
+                    faviconUrl: s.faviconUrl || ''
                 });
             }
 
@@ -338,17 +363,96 @@ export function AdminDashboardPage() {
                 whatsappNumarasi: settings.whatsapp,
                 iletisimEmail: settings.email,
                 adres: settings.alamat,
+                logoUrl: settings.logoUrl,
+                logoMode: settings.logoMode,
+                faviconUrl: settings.faviconUrl,
                 ucretsizKargoAltLimit: Number(settings.freeShippingMin),
                 kargoSabitUcret: Number(settings.posSemenanjung),
                 posKedah: Number(settings.posKedah),
                 posSemenanjung: Number(settings.posSemenanjung),
                 posBorneo: Number(settings.posBorneo)
             });
-            showNotif('Tetapan kedai & kadar pos berjaya disimpan ke database!');
+            showNotif('Tetapan jenama, telefon & kadar pos berjaya disimpan ke database!');
             loadAllData();
         } catch (error) {
             console.error('Ralat simpan tetapan:', error);
             alert(error.response?.data?.errorMessage || 'Gagal menyimpan tetapan kedai.');
+        }
+    };
+
+    // Pengendali Tukar PIN Pentadbir
+    const handleChangePin = async (e) => {
+        e.preventDefault();
+        setPinFeedback({ type: '', message: '' });
+        if (!pinForm.newPin || pinForm.newPin.length < 4) {
+            setPinFeedback({ type: 'error', message: 'PIN baharu mesti sekurang-kurangnya 4 angka/aksara.' });
+            return;
+        }
+        if (pinForm.newPin !== pinForm.confirmPin) {
+            setPinFeedback({ type: 'error', message: 'Sahkan PIN tidak sepadan dengan PIN baharu.' });
+            return;
+        }
+        try {
+            setIsChangingPin(true);
+            const res = await api.post('/api/v1/admin/change-pin', {
+                currentPin: pinForm.currentPin,
+                newPin: pinForm.newPin
+            });
+            setPinFeedback({ type: 'success', message: res.data.message || 'PIN keselamatan berjaya dikemas kini!' });
+            setPinForm({ currentPin: '', newPin: '', confirmPin: '' });
+            showNotif('PIN keselamatan pentadbir berjaya dikemas kini!');
+        } catch (err) {
+            setPinFeedback({ type: 'error', message: err.response?.data?.errorMessage || 'Gagal mengemas kini PIN. Sila semak PIN semasa.' });
+        } finally {
+            setIsChangingPin(false);
+        }
+    };
+
+    // Pengendali Permohonan Tukar E-mel Pentadbir (OTP)
+    const handleRequestEmailOtp = async (e) => {
+        e?.preventDefault();
+        setEmailFeedback({ type: '', message: '' });
+        if (!newEmailInput || !newEmailInput.includes('@')) {
+            setEmailFeedback({ type: 'error', message: 'Sila masukkan format alamat e-mel yang sah.' });
+            return;
+        }
+        try {
+            setIsRequestingOtp(true);
+            const res = await api.post('/api/v1/admin/request-email-change', { newEmail: newEmailInput });
+            setEmailFeedback({ type: 'success', message: res.data.message || `Kod OTP 6-digit dihantar ke ${newEmailInput}.` });
+            setEmailStep(2);
+        } catch (err) {
+            setEmailFeedback({ type: 'error', message: err.response?.data?.errorMessage || 'Gagal menghantar kod pengesahan e-mel.' });
+        } finally {
+            setIsRequestingOtp(false);
+        }
+    };
+
+    // Pengendali Sahkan & Selesai Tukar E-mel Pentadbir
+    const handleVerifyEmailChange = async (e) => {
+        e?.preventDefault();
+        setEmailFeedback({ type: '', message: '' });
+        if (!emailOtpInput || emailOtpInput.length !== 6) {
+            setEmailFeedback({ type: 'error', message: 'Sila masukkan kod OTP 6-digit yang lengkap.' });
+            return;
+        }
+        try {
+            setIsVerifyingEmail(true);
+            const res = await api.post('/api/v1/admin/verify-email-change', {
+                newEmail: newEmailInput,
+                otp: emailOtpInput
+            });
+            setEmailFeedback({ type: 'success', message: res.data.message || 'E-mel rasmi pentadbir berjaya disahkan & dikemas kini!' });
+            setSettings(prev => ({ ...prev, email: newEmailInput }));
+            showNotif(`E-mel rasmi pentadbir berjaya ditukar ke ${newEmailInput}!`);
+            setEmailStep(1);
+            setNewEmailInput('');
+            setEmailOtpInput('');
+            loadAllData();
+        } catch (err) {
+            setEmailFeedback({ type: 'error', message: err.response?.data?.errorMessage || 'Kod OTP salah atau telah tamat tempoh.' });
+        } finally {
+            setIsVerifyingEmail(false);
         }
     };
 
@@ -779,7 +883,7 @@ export function AdminDashboardPage() {
                             </div>
                         </div>
 
-                        {/* Pintasan Modul Utama & Rumusan Cepat (Inspirasi Johan30) */}
+                        {/* Pintasan Modul Utama & Rumusan Cepat Eksekutif */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <button
                                 onClick={() => setActiveTab('trajectory')}
@@ -830,13 +934,13 @@ export function AdminDashboardPage() {
                             </button>
                         </div>
 
-                        {/* Suite Visual Carta Chart.js Maksimum */}
+                        {/* Suite Visual Carta Analitik Eksekutif */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                                 <div>
                                     <h2 className="text-xl font-black text-white flex items-center gap-2.5">
                                         <BarChart3 className="text-amber-500" size={22} />
-                                        Analisis Prestasi Jualan & Metrik Kilang (Chart.js)
+                                        Analisis Prestasi Jualan & Metrik Kilang
                                     </h2>
                                     <p className="text-xs text-slate-400 mt-1">
                                         Visualisasi langsung halaju jualan harian, produk terlaris, status pesanan, dan pecahan zon EasyParcel.
@@ -1175,7 +1279,7 @@ export function AdminDashboardPage() {
                                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                                         <TrendingUp size={18} className="text-amber-500" />
-                                        Visualisasi Analitik Jualan Langsung (Chart.js)
+                                        Visualisasi Analitik Jualan Langsung
                                     </h3>
                                     <span className="text-[11px] text-slate-400 font-mono">
                                         Halaju harian & taburan kurier
@@ -1482,16 +1586,364 @@ export function AdminDashboardPage() {
 
                 {/* Tab Tetapan */}
                 {activeTab === 'settings' && (
-                    <div className="space-y-6 animate-in fade-in duration-300 max-w-4xl">
+                    <div className="space-y-8 animate-in fade-in duration-300 max-w-5xl">
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-white">Tetapan Kedai DIN'O EMPIRE</h1>
-                            <p className="text-sm text-slate-400 mt-1">Konfigurasi kadar pos dan perhubungan operasi dalam pangkalan data.</p>
+                            <h1 className="text-2xl md:text-3xl font-black text-white">Tetapan Kedai & Keselamatan DIN'O EMPIRE</h1>
+                            <p className="text-sm text-slate-400 mt-1">Urus identiti jenama, keselamatan akses pentadbir, talian bantuan pelanggan dan kos penghantaran.</p>
                         </div>
 
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6">
-                            <h2 className="text-lg font-bold text-amber-400 flex items-center gap-2">
-                                <Truck size={20} /> Kadar Kos Penghantaran Pos (Malaysia)
-                            </h2>
+                        {/* 1. SEKSYEN KESELAMATAN & LOG MASUK PENTADBIR */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+                            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+                                        <ShieldCheck size={22} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-white">Keselamatan Pentadbir (Cloudflare Ecosystem)</h2>
+                                        <p className="text-xs text-slate-400">Pengurusan PIN sulit dan pengesahan e-mel pentadbir dengan verifikasi OTP.</p>
+                                    </div>
+                                </div>
+                                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-full">
+                                    <Check size={12} /> Dilindungi Cloudflare Turnstile
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* A. Tukar PIN Keselamatan Pentadbir */}
+                                <form onSubmit={handleChangePin} className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-4">
+                                    <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                                        <Key size={16} /> Tukar PIN Keselamatan Pentadbir
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        PIN ini digunakan sebagai laluan keselamatan sulit sekiranya anda tidak mengakses e-mel OTP.
+                                    </p>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-300 mb-1.5">PIN Semasa</label>
+                                        <input
+                                            type="password"
+                                            required
+                                            placeholder="••••"
+                                            value={pinForm.currentPin}
+                                            onChange={(e) => setPinForm({ ...pinForm, currentPin: e.target.value })}
+                                            className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:border-amber-500 focus:outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">PIN Baharu</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                placeholder="Minima 4 angka"
+                                                value={pinForm.newPin}
+                                                onChange={(e) => setPinForm({ ...pinForm, newPin: e.target.value })}
+                                                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:border-amber-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Sahkan PIN</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                placeholder="Ulang PIN"
+                                                value={pinForm.confirmPin}
+                                                onChange={(e) => setPinForm({ ...pinForm, confirmPin: e.target.value })}
+                                                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:border-amber-500 focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {pinFeedback.message && (
+                                        <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${pinFeedback.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                                            {pinFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                                            <span>{pinFeedback.message}</span>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={isChangingPin}
+                                        className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition shadow-md"
+                                    >
+                                        {isChangingPin ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
+                                        <span>Kemas Kini PIN Pentadbir</span>
+                                    </button>
+                                </form>
+
+                                {/* B. Tukar E-mel Pentadbir dengan Verifikasi E-mel */}
+                                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-4">
+                                    <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                                        <Mail size={16} /> Tukar E-mel Pentadbir (Dengan OTP)
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        E-mel ini digunakan untuk menerima kod log masuk OTP tanpa kata laluan.
+                                    </p>
+
+                                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">E-mel Pentadbir Semasa:</span>
+                                        <span className="text-sm font-black text-amber-400 font-mono break-all">{settings.email}</span>
+                                    </div>
+
+                                    {emailStep === 1 ? (
+                                        <form onSubmit={handleRequestEmailOtp} className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-300 mb-1.5">Alamat E-mel Baharu</label>
+                                                <input
+                                                    type="email"
+                                                    required
+                                                    placeholder="contoh@gmail.com"
+                                                    value={newEmailInput}
+                                                    onChange={(e) => setNewEmailInput(e.target.value)}
+                                                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:border-amber-500 focus:outline-none"
+                                                />
+                                            </div>
+
+                                            {emailFeedback.message && (
+                                                <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${emailFeedback.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                                                    {emailFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                                                    <span>{emailFeedback.message}</span>
+                                                </div>
+                                            )}
+
+                                            <button
+                                                type="submit"
+                                                disabled={isRequestingOtp || !newEmailInput}
+                                                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition shadow-md"
+                                            >
+                                                {isRequestingOtp ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                                <span>Hantar Kod Verifikasi (OTP)</span>
+                                            </button>
+                                        </form>
+                                    ) : (
+                                        <form onSubmit={handleVerifyEmailChange} className="space-y-3 animate-in fade-in">
+                                            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300">
+                                                Kod OTP telah dihantar ke <strong>{newEmailInput}</strong>. Sila semak peti masuk anda.
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-300 mb-1.5">Kod OTP 6-Digit</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    maxLength={6}
+                                                    placeholder="123456"
+                                                    value={emailOtpInput}
+                                                    onChange={(e) => setEmailOtpInput(e.target.value.replace(/\D/g, ''))}
+                                                    className="w-full text-center tracking-widest text-lg font-mono font-bold px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 focus:border-amber-500 focus:outline-none"
+                                                />
+                                            </div>
+
+                                            {emailFeedback.message && (
+                                                <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${emailFeedback.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                                                    {emailFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                                                    <span>{emailFeedback.message}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEmailStep(1)}
+                                                    className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs cursor-pointer"
+                                                >
+                                                    Batal
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isVerifyingEmail || emailOtpInput.length !== 6}
+                                                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition shadow-md"
+                                                >
+                                                    {isVerifyingEmail ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                                    <span>Sahkan & Kemas Kini E-mel</span>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. SEKSYEN IDENTITI VISUAL (LOGO HOMEPAGE & FAVICON) */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+                            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                                    <ImageIcon size={22} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">Identiti Visual (Logo & Favicon Browser)</h2>
+                                    <p className="text-xs text-slate-400">Muat naik gambar logo homepage dan favicon tab pelayar dengan pratonton langsung.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* A. Tetapan Logo Homepage */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-slate-300">Pilihan Mod Paparan Logo</label>
+                                        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+                                            <button
+                                                type="button"
+                                                onClick={() => setSettings({ ...settings, logoMode: 'image' })}
+                                                className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${settings.logoMode === 'image' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                                            >
+                                                Gambar Logo
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSettings({ ...settings, logoMode: 'text' })}
+                                                className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${settings.logoMode === 'text' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                                            >
+                                                Teks Sahaja
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <ImageUploader
+                                        label="Gambar Logo Kedai (PNG / SVG Telus Disyorkan)"
+                                        value={settings.logoUrl}
+                                        onChange={(url) => setSettings({ ...settings, logoUrl: url })}
+                                        folder="branding"
+                                        placeholder="https://... atau muat naik fail logo"
+                                    />
+
+                                    {/* Live Preview Logo Header */}
+                                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pratonton Langsung di Homepage (Header & Footer):</span>
+                                        <div className="p-4 bg-white rounded-lg border border-slate-200 flex items-center justify-center min-h-[70px]">
+                                            {settings.logoUrl && settings.logoMode !== 'text' ? (
+                                                <img
+                                                    src={settings.logoUrl}
+                                                    alt="Logo Preview"
+                                                    className="max-h-12 w-auto object-contain"
+                                                />
+                                            ) : (
+                                                <span className="text-2xl font-black text-amber-600 tracking-wider">
+                                                    {settings.siteAdi || "DIN'O EMPIRE"}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="p-4 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-center min-h-[70px]">
+                                            {settings.logoUrl && settings.logoMode !== 'text' ? (
+                                                <img
+                                                    src={settings.logoUrl}
+                                                    alt="Logo Preview Dark"
+                                                    className="max-h-12 w-auto object-contain"
+                                                />
+                                            ) : (
+                                                <span className="text-2xl font-black text-amber-400 tracking-wider">
+                                                    {settings.siteAdi || "DIN'O EMPIRE"}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* B. Tetapan Favicon Browser */}
+                                <div className="space-y-4">
+                                    <label className="text-xs font-bold text-slate-300 block">Ikon Tab Pelayar (Favicon .ico / .png / .svg)</label>
+                                    <ImageUploader
+                                        label="Favicon Browser (32x32 atau 64x64)"
+                                        value={settings.faviconUrl}
+                                        onChange={(url) => setSettings({ ...settings, faviconUrl: url })}
+                                        folder="branding"
+                                        placeholder="https://... atau muat naik favicon"
+                                    />
+
+                                    {/* Live Preview Favicon Tab */}
+                                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pratonton Tab Pelayar Web (Browser Tab Simulation):</span>
+                                        <div className="bg-slate-800/90 rounded-t-lg p-2.5 flex items-center gap-2 border-b border-slate-700">
+                                            <div className="flex gap-1.5 mr-2">
+                                                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-200 border border-slate-700/60 max-w-xs shadow-sm">
+                                                {settings.faviconUrl ? (
+                                                    <img src={settings.faviconUrl} alt="Favicon" className="w-4 h-4 rounded-xs object-contain" />
+                                                ) : (
+                                                    <div className="w-4 h-4 rounded-xs bg-amber-500 flex items-center justify-center text-[9px] font-black text-slate-950">D</div>
+                                                )}
+                                                <span className="truncate">{settings.siteAdi || "DIN'O EMPIRE"} | Kilang Kuala Ketil</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 pt-1">
+                                            Favicon ini dikemas kini secara langsung di tab pelayar pengguna semasa melayari kedai.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. SEKSYEN TALIAN BANTUAN & PERHUBUNGAN HOMEPAGE */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+                            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+                                    <Phone size={22} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">Talian Bantuan & Maklumat Operasi Kedai</h2>
+                                    <p className="text-xs text-slate-400">Nombor telefon ini dipaparkan di bahagian Header, Footer dan butang WhatsApp terapung.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-2">Nama Kedai / Tajuk Laman</label>
+                                    <input
+                                        type="text"
+                                        value={settings.siteAdi}
+                                        onChange={(e) => setSettings({ ...settings, siteAdi: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-2">Nombor Telefon Bantuan (Header & Hubungi Kami)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="016-6911020"
+                                        value={settings.telefon}
+                                        onChange={(e) => setSettings({ ...settings, telefon: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-2">Nombor WhatsApp Khidmat Pelanggan (Butang Terapung)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="013-2359647"
+                                        value={settings.whatsapp}
+                                        onChange={(e) => setSettings({ ...settings, whatsapp: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-300 mb-2">Alamat Premis / Kilang</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Kawasan Perusahaan Kuala Ketil, Kedah"
+                                        value={settings.alamat}
+                                        onChange={(e) => setSettings({ ...settings, alamat: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 4. SEKSYEN KADAR KOS PENGHANTARAN POS */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+                            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                                    <Truck size={22} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">Kadar Kos Penghantaran Pos (Malaysia)</h2>
+                                    <p className="text-xs text-slate-400">Pengiraan kos penghantaran automatik di halaman checkout mengikut zon penghantaran.</p>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-300 mb-2">Zon Kedah (Setempat / Kilang)</label>
@@ -1499,6 +1951,7 @@ export function AdminDashboardPage() {
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">RM</span>
                                         <input
                                             type="number"
+                                            step="0.50"
                                             value={settings.posKedah}
                                             onChange={(e) => setSettings({ ...settings, posKedah: Number(e.target.value) })}
                                             className="w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold"
@@ -1512,6 +1965,7 @@ export function AdminDashboardPage() {
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">RM</span>
                                         <input
                                             type="number"
+                                            step="0.50"
                                             value={settings.posSemenanjung}
                                             onChange={(e) => setSettings({ ...settings, posSemenanjung: Number(e.target.value) })}
                                             className="w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold"
@@ -1520,11 +1974,12 @@ export function AdminDashboardPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-300 mb-2">Sabah & Sarawak</label>
+                                    <label className="block text-xs font-bold text-slate-300 mb-2">Sabah & Sarawak (Borneo)</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">RM</span>
                                         <input
                                             type="number"
+                                            step="0.50"
                                             value={settings.posBorneo}
                                             onChange={(e) => setSettings({ ...settings, posBorneo: Number(e.target.value) })}
                                             className="w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold"
@@ -1546,54 +2001,13 @@ export function AdminDashboardPage() {
                                 </div>
                             </div>
 
-                            <hr className="border-slate-800" />
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-300 mb-2">Nombor Telefon Kedai</label>
-                                    <input
-                                        type="text"
-                                        value={settings.telefon}
-                                        onChange={(e) => setSettings({ ...settings, telefon: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-300 mb-2">Nombor WhatsApp Khidmat Pelanggan</label>
-                                    <input
-                                        type="text"
-                                        value={settings.whatsapp}
-                                        onChange={(e) => setSettings({ ...settings, whatsapp: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-300 mb-2">Alamat E-mel Rasmi</label>
-                                    <input
-                                        type="email"
-                                        value={settings.email}
-                                        onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-300 mb-2">Alamat Premis / Kilang</label>
-                                    <input
-                                        type="text"
-                                        value={settings.alamat}
-                                        onChange={(e) => setSettings({ ...settings, alamat: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end pt-4">
+                            <div className="flex justify-end pt-4 border-t border-slate-800">
                                 <button
                                     onClick={handleSaveSettings}
-                                    className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-lg flex items-center gap-2 text-sm cursor-pointer"
+                                    className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-lg flex items-center gap-2 text-sm cursor-pointer transition transform active:scale-95"
                                 >
                                     <Save size={18} />
-                                    <span>Simpan Tetapan ke Database</span>
+                                    <span>Simpan Semua Tetapan Jenama & Operasi</span>
                                 </button>
                             </div>
                         </div>

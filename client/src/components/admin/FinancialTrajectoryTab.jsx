@@ -69,7 +69,7 @@ export function FinancialTrajectoryTab({ data, onRefresh, isLoading }) {
                 </div>
             </div>
 
-            {/* 4 Stat Cards Utama (Model Johan30 Finance) */}
+            {/* 4 Stat Cards Utama (Model Trajektori Kewangan Eksekutif) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 shadow-sm">
                     <div className="flex items-center justify-between text-emerald-400 mb-2">

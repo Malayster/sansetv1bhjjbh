@@ -3,7 +3,7 @@ import Chart from 'chart.js/auto';
 import { TrendingUp, BarChart3, PieChart, MapPin, Target, DollarSign } from 'lucide-react';
 
 /**
- * Suite Analitik Chart.js Maksimum untuk Dashboard DIN'O EMPIRE
+ * Suite Analitik Eksekutif Visual untuk Dashboard DIN'O EMPIRE
  * Memaparkan 5 Carta Interaktif Premium dengan tema Dark Kilang & Amber Gold.
  */
 export function SalesAnalyticsCharts({ analyticsData, trajectoryData, orders = [] }) {
@@ -336,7 +336,7 @@ export function SalesAnalyticsCharts({ analyticsData, trajectoryData, orders = [
                             </p>
                         </div>
                         <span className="text-xs font-bold font-mono px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">
-                            Chart.js Realtime
+                            Masa Nyata
                         </span>
                     </div>
 
@@ -406,7 +406,7 @@ export function SalesAnalyticsCharts({ analyticsData, trajectoryData, orders = [
                             Unjuran Halaju Kewangan & Sasaran Bulanan Kilang
                         </h3>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            Simulasi Johan30: Sasaran Bulanan RM15,000 berbanding trajektori jualan semasa
+                            Unjuran Trajektori: Sasaran Bulanan RM15,000 berbanding prestasi semasa
                         </p>
                     </div>
                     <div className="text-right">

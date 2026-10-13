@@ -33,7 +33,7 @@ export function Header() {
         setMobileMenuOpen(false);
     };
 
-    const phoneNo = cms?.info_kedai?.telefon || settings?.telefon || '016-6911020';
+    const phoneNo = settings?.telefon || cms?.info_kedai?.telefon || '016-6911020';
 
     return (
         <>
@@ -85,7 +85,17 @@ export function Header() {
                         </button>
 
                         <Link to="/" className="shrink-0 flex items-center gap-2">
-                            <span className="text-2xl md:text-3xl font-black text-amber-600 tracking-wider">DIN'O EMPIRE</span>
+                            {settings?.logoUrl && settings?.logoMode !== 'text' ? (
+                                <img
+                                    src={settings.logoUrl}
+                                    alt={settings?.siteTitle || "DIN'O EMPIRE"}
+                                    className="h-10 md:h-12 w-auto max-w-[200px] object-contain"
+                                />
+                            ) : (
+                                <span className="text-2xl md:text-3xl font-black text-amber-600 tracking-wider">
+                                    {settings?.siteTitle || "DIN'O EMPIRE"}
+                                </span>
+                            )}
                         </Link>
 
                         <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:block relative group">

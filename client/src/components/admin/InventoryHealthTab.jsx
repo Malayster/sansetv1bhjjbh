@@ -61,7 +61,7 @@ export function InventoryHealthTab({ data, onRefresh, showNotif, isLoading }) {
                 </button>
             </div>
 
-            {/* 4 Stat Cards Inventori (Johan30 stok.vue) */}
+            {/* 4 Stat Cards Inventori (Pemantauan Inventori Kilang) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="rounded-2xl border border-emerald-500/20 bg-slate-900 p-6 shadow-sm">
                     <div className="flex items-center justify-between text-emerald-400 mb-2">
