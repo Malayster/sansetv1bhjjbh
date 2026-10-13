@@ -20,36 +20,35 @@ export class ReturnService {
         const order = await this.orderRepository.getOrderByTrackingToken(token);
 
         if (!order) {
-            throw new Error('Sipariş bulunamadı.');
+            throw new Error('Pesanan tidak dijumpai.');
         }
 
         // 2. Run validations
         if (order.durum !== 'TESLIM_EDILDI') {
-            throw new Error('Sadece teslim edilmiş siparişler için iade talebi oluşturulabilir.');
+            throw new Error('Hanya pesanan yang telah diterima boleh membuat permintaan pulangan.');
         }
 
         if (order.iadeTalebi) {
-            throw new Error('Bu sipariş için zaten bir iade talebi mevcut.');
+            throw new Error('Permintaan pulangan untuk pesanan ini sudah wujud.');
         }
 
         const hasNonReturnableItems = Array.isArray(order.kalemler)
             && order.kalemler.some((line) => line.iadeyeUygunMuSnapshot === false || line.urun?.iadeImkaniVar === false);
 
         if (hasNonReturnableItems) {
-            throw new Error('Bu siparişte özel yapım/iade edilemez ürün bulunduğu için iade talebi oluşturulamaz.');
+            throw new Error('Pesanan ini mengandungi produk yang tidak boleh dipulangkan.');
         }
 
         // 3. 14 Days Rule validation
         if (!order.teslimTarihi) {
-            // If delivery date is missing, raise error. We enforce delivery date to be registered.
-            throw new Error('Sipariş teslim tarihi bilgisi eksik, iade işlemi başlatılamıyor. Lütfen destek ile iletişime geçin.');
+            throw new Error('Tarikh penghantaran tidak lengkap. Sila hubungi sokongan.');
         }
 
         const fourteenDaysInMs = 14 * 24 * 60 * 60 * 1000;
         const timeDiff = new Date() - new Date(order.teslimTarihi);
 
         if (timeDiff > fourteenDaysInMs) {
-            throw new Error('İade süresi (14 gün) dolmuştur.');
+            throw new Error('Tempoh pulangan (14 hari) telah tamat.');
         }
 
         // 4. Create the Return Request
@@ -76,7 +75,7 @@ export class ReturnService {
     async getReturnStatus(token) {
         const order = await this.orderRepository.getOrderByTrackingToken(token);
 
-        if (!order) throw new Error('Sipariş bulunamadı.');
+        if (!order) throw new Error('Pesanan tidak dijumpai.');
 
         const iadeTalebi = order.iadeTalebi;
         if (iadeTalebi && typeof iadeTalebi.fotografUrls === 'string') {
@@ -112,7 +111,7 @@ export class ReturnService {
     async updateReturnRequest(id, body) {
         const iade = await this.returnRepository.findByIdWithOrder(id);
         if (!iade) {
-            throw new Error('İade talebi bulunamadı.');
+            throw new Error('Permintaan pulangan tidak dijumpai.');
         }
 
         const data = {};
@@ -137,7 +136,7 @@ export class ReturnService {
                 siparisId: iade.siparisId,
                 eskiDurum: iade.siparis.durum,
                 yeniDurum: targetOrderStatus,
-                not: `İade talebi ${body.durum} olarak güncellendi. Admin Notu: ${body.adminNotu || '-'}`,
+                not: `Permintaan pulangan dikemaskini kepada ${body.durum}. Nota Admin: ${body.adminNotu || '-'}`,
                 islemYapan: 'ADMIN'
             });
         }
