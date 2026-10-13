@@ -60,6 +60,30 @@ async function awardPoints(eposta, amount, orderNumber) {
     }
 }
 
+async function deductPoints(eposta, amount, orderNumber) {
+    if (!eposta || amount <= 0) return;
+    try {
+        await prisma.points.update({
+            where: { eposta },
+            data: {
+                baki: { decrement: amount },
+                jumlahDigunakan: { increment: amount }
+            }
+        });
+        await prisma.pointsLog.create({
+            data: {
+                eposta,
+                jumlah: -amount,
+                jenis: 'GUNA',
+                nota: `Redeem order ${orderNumber}`,
+                rujukan: orderNumber
+            }
+        });
+    } catch (err) {
+        console.error('[Points] Failed to deduct:', err.message);
+    }
+}
+
 export class OrderService {
     constructor(orderRepository, productService, paymentService, emailService) {
         this.orderRepository = orderRepository;
@@ -69,7 +93,7 @@ export class OrderService {
     }
 
     async processCheckout(checkoutData) {
-        const { items, guestInfo: customerInfo } = checkoutData;
+        const { items, guestInfo: customerInfo, pointsToRedeem = 0 } = checkoutData;
 
         let subTotal = 0;
         let totalWeight = 0;
@@ -79,13 +103,13 @@ export class OrderService {
         for (const item of items) {
             const product = await this.productService.getProductById(item.id);
             if (!product || product.aktif === false) {
-                throw clientError('Sepetinizdeki bir ürün artık satışta değil.');
+                throw clientError('Produk tidak lagi dijual.');
             }
 
             const requested = (quantityByProduct.get(product.id) || 0) + item.quantity;
             quantityByProduct.set(product.id, requested);
             if (requested > Number(product.stokAdedi || 0)) {
-                throw clientError(`${product.ad} için yeterli stok yok.`);
+                throw clientError(`${product.ad} stok tidak mencukupi.`);
             }
 
             const unitPrice = Number(product.indirimliFiyat || product.fiyat);
@@ -99,7 +123,7 @@ export class OrderService {
             }
 
             if (selectedColor && !productColors.includes(selectedColor)) {
-                throw clientError(`Selected color for ${product.ad} is invalid.`);
+                throw clientError(`Warna untuk ${product.ad} tidak sah.`);
             }
 
             const finalColorName = selectedColor;
@@ -120,7 +144,7 @@ export class OrderService {
         }
 
         if (totalWeight > 100) {
-            throw clientError('Order total weight exceeds 100kg limit. Please contact satis@ecommerceflaredev.web.tr or our WhatsApp line for bulk cargo shipping pricing.');
+            throw clientError('Berat melebihi had 100kg. Sila hubungi kami.');
         }
 
         let settings = await prisma.sistemAyarlari.findUnique({ where: { id: 'global-settings' } }).catch(() => null);
@@ -129,19 +153,24 @@ export class OrderService {
         const isBorneo = state.includes('sabah') || state.includes('sarawak') || state.includes('labuan');
 
         let shippingFee = Number(settings?.kargoSabitUcret ?? 8.00);
-        if (isKedah) {
-            shippingFee = 6.00;
-        } else if (isBorneo) {
-            shippingFee = 15.00;
-        }
+        if (isKedah) shippingFee = 6.00;
+        else if (isBorneo) shippingFee = 15.00;
 
         const freeShippingLimit = Number(settings?.ucretsizKargoAltLimit ?? 100.00);
-        if (subTotal >= freeShippingLimit && !isBorneo) {
-            shippingFee = 0.00;
-        }
+        if (subTotal >= freeShippingLimit && !isBorneo) shippingFee = 0.00;
 
         shippingFee = Number(shippingFee.toFixed(2));
-        const toplamTutar = subTotal + shippingFee;
+        let toplamTutar = subTotal + shippingFee;
+
+        // Apply points discount
+        let pointsUsed = 0;
+        if (pointsToRedeem > 0 && customerInfo.email) {
+            const pts = await prisma.points.findUnique({ where: { eposta: customerInfo.email } });
+            if (pts && pts.baki >= pointsToRedeem) {
+                pointsUsed = Math.min(pointsToRedeem, Math.floor(toplamTutar));
+                toplamTutar = Math.max(0, toplamTutar - pointsUsed);
+            }
+        }
 
         const { isCorporate, companyName, taxOffice, taxNumber } = checkoutData.invoiceInfo || {};
 
@@ -152,11 +181,8 @@ export class OrderService {
         const ad = fullNameParts.join(' ');
 
         let rawPhone = customerInfo.phone.replace(/\s/g, '').replace(/-/g, '');
-        if (rawPhone.startsWith('0')) {
-            rawPhone = '+60' + rawPhone.substring(1);
-        } else if (!rawPhone.startsWith('+')) {
-            rawPhone = '+60' + rawPhone;
-        }
+        if (rawPhone.startsWith('0')) rawPhone = '+60' + rawPhone.substring(1);
+        else if (!rawPhone.startsWith('+')) rawPhone = '+60' + rawPhone;
 
         const ulke = 'Malaysia';
         const takipTokeni = crypto.randomUUID();
@@ -180,9 +206,8 @@ export class OrderService {
             sirketAdi: companyName || null,
             vergiDairesi: taxOffice || null,
             vergiNumarasi: taxNumber || null,
-            kalemler: {
-                create: indexItems
-            }
+            pointsEarned: -pointsUsed,
+            kalemler: { create: indexItems }
         };
 
         const siparis = await this.orderRepository.createOrder(orderData);
@@ -192,6 +217,7 @@ export class OrderService {
             orderId: siparis.id,
             orderNumber: siparis.siparisNumarasi,
             total: siparis.toplamTutar,
+            pointsUsed,
             message: 'Pesanan berjaya dicipta, menunggu pembayaran'
         };
     }
@@ -199,13 +225,8 @@ export class OrderService {
     async initiatePayment(orderId, cardInfo = {}, buyerInfo = {}) {
         const siparis = await this.orderRepository.getOrderById(orderId);
 
-        if (!siparis) {
-            throw new Error('Pesanan tidak dijumpai.');
-        }
-
-        if (siparis.durum !== 'BEKLEMEDE') {
-            throw new Error('Pesanan ini tidak layak untuk pembayaran.');
-        }
+        if (!siparis) throw new Error('Pesanan tidak dijumpai.');
+        if (siparis.durum !== 'BEKLEMEDE') throw new Error('Pesanan ini tidak layak untuk pembayaran.');
 
         try {
             const buyer = {
@@ -256,9 +277,7 @@ export class OrderService {
         }
 
         const siparis = await this.orderRepository.getOrderByNumber(result.siparisNumarasi);
-        if (!siparis) {
-            throw new Error('Order not found for the given payment.');
-        }
+        if (!siparis) throw new Error('Order not found for the given payment.');
 
         const odemeId = PaymentService.paymentReference(provider, result.paymentId);
         const paid = {
@@ -271,9 +290,7 @@ export class OrderService {
         const alreadyRecorded = (order) => (order.odemeDurumu === 'SUCCESS'
             ? paid
             : { status: 'failure', errorMessage: 'Order was cancelled.', orderNumber: siparis.siparisNumarasi, final: true });
-        if (siparis.odemeId === odemeId) {
-            return alreadyRecorded(siparis);
-        }
+        if (siparis.odemeId === odemeId) return alreadyRecorded(siparis);
 
         const rejectWithRefund = async (errorMessage) => {
             console.error('[Payment] %s Order: %s, payment: %s', errorMessage, siparis.siparisNumarasi, odemeId);
@@ -295,15 +312,18 @@ export class OrderService {
         const claimed = await this.orderRepository.markOrderPaid(siparis.id, odemeId);
         if (!claimed) {
             const current = await this.orderRepository.getOrderById(siparis.id);
-            if (current?.odemeId === odemeId) {
-                return alreadyRecorded(current);
-            }
+            if (current?.odemeId === odemeId) return alreadyRecorded(current);
             return rejectWithRefund('Order is no longer awaiting payment.');
         }
 
         await this.orderRepository.adjustStock(siparis.kalemler, -1);
 
-        // Award points (1 point per RM1 of order total)
+        // Deduct points if used (stored as negative pointsEarned)
+        if (siparis.pointsEarned < 0) {
+            await deductPoints(siparis.eposta, Math.abs(siparis.pointsEarned), siparis.siparisNumarasi);
+        }
+
+        // Award points on net amount
         await awardPoints(siparis.eposta, Number(siparis.toplamTutar), siparis.siparisNumarasi);
 
         const freshOrder = await this.orderRepository.getOrderById(siparis.id);
@@ -331,42 +351,27 @@ export class OrderService {
 
     async cancelOrder(token, reason) {
         const order = await this.orderRepository.getOrderByTrackingToken(token);
-
-        if (!order) {
-            throw new Error('Order not found.');
-        }
-
-        if (order.durum === 'IPTAL_EDILDI') {
-            throw new Error('Order is already canceled.');
-        }
-
-        if (order.durum === 'KARGOLANDI' || order.durum === 'TESLIM_EDILDI' || order.durum === 'TAMAMLANDI') {
+        if (!order) throw new Error('Order not found.');
+        if (order.durum === 'IPTAL_EDILDI') throw new Error('Order is already canceled.');
+        if (['KARGOLANDI', 'TESLIM_EDILDI', 'TAMAMLANDI'].includes(order.durum)) {
             throw new Error('Shipped or completed orders cannot be canceled.');
         }
 
         const hasNonReturnableItems = Array.isArray(order.kalemler)
             && order.kalemler.some((line) => line.iadeyeUygunMuSnapshot === false || line.urun?.iadeImkaniVar === false);
-
         if (hasNonReturnableItems) {
-            throw new Error('This order contains custom or non-returnable items and cannot be canceled.');
+            throw new Error('This order contains non-returnable items and cannot be canceled.');
         }
 
-        console.log('[Order Cancel] Order: %s, Reason: %s', order.siparisNumarasi, reason);
-
         let refundStatus = 'NONE';
-
         if (order.odemeDurumu === 'SUCCESS') {
-            if (!order.odemeId) {
-                throw new Error('Payment reference is missing; please contact customer support to cancel this order.');
-            }
+            if (!order.odemeId) throw new Error('Payment reference missing.');
             try {
                 await this.paymentService.cancelPayment(order.odemeId, reason, Number(order.toplamTutar));
+                refundStatus = 'SUCCESS';
             } catch (error) {
-                console.error('[Payment Refund Failed] Order: %s', order.siparisNumarasi, error);
-                throw new Error('Refund could not be completed; please contact customer support to cancel this order.');
+                throw new Error('Refund could not be completed.');
             }
-            refundStatus = 'SUCCESS';
-            console.log('[Payment Refund] Successful, Order: %s', order.siparisNumarasi);
         }
 
         await this.orderRepository.cancelOrder(order.id, { refunded: refundStatus === 'SUCCESS' });
@@ -377,12 +382,12 @@ export class OrderService {
         if (order.eposta) {
             await this.emailService.sendCancellationNotification(order.eposta, order.ad, {
                 orderNumber: order.siparisNumarasi,
-                refundStatus: refundStatus,
+                refundStatus,
                 trackingToken: token
             });
         }
 
-        return { status: 'success', message: 'Order successfully canceled and refund process initiated.' };
+        return { status: 'success', message: 'Order successfully canceled.' };
     }
 
     async getOrderByTrackingToken(token) {
