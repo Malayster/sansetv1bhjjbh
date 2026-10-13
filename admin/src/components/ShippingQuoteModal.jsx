@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Truck, X } from 'lucide-react';
+import { Truck, X, Send } from 'lucide-react';
 
 const isLocalhost = typeof window !== 'undefined' &&
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -28,19 +28,26 @@ export default function ShippingQuoteModal({ show, onClose, order }) {
   const [form, setForm] = useState({
     senderPostcode: '50000',
     senderState: 'MY-14',
+    senderName: 'E-Market',
+    senderPhone: '0123456789',
+    senderAddress: 'Jalan Admin',
+    senderCity: 'Kuala Lumpur',
     receiverPostcode: order?.postaKodu || '',
     receiverState: 'MY-14',
     weight: 1
   });
   const [quotes, setQuotes] = useState([]);
+  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
 
   if (!show) return null;
 
   const fetchQuotes = async () => {
     setLoading(true);
     setError('');
+    setResult(null);
     try {
       const res = await fetch(`${API}/api/v1/admin/shipping/quotations`, {
         method: 'POST',
@@ -51,7 +58,69 @@ export default function ShippingQuoteModal({ show, onClose, order }) {
       const data = await res.json();
       if (data.status === 'success') setQuotes(data.data || []);
       else setError(data.errorMessage || 'Ralat');
-    } catch (e) {
+    } catch {
+      setError('Ralat rangkaian');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submit = async () => {
+    if (!selected) return;
+    setLoading(true);
+    setError('');
+    try {
+      const shipment = {
+        reference: order?.siparisNumarasi || 'order',
+        service_id: selected.courier.service_id,
+        collection_date: new Date().toISOString().slice(0, 10),
+        weight: Number(form.weight) || 1,
+        height: 10,
+        length: 10,
+        width: 10,
+        item: [{
+          content: 'Products',
+          weight: Number(form.weight) || 1,
+          height: 10,
+          length: 10,
+          width: 10,
+          currency_code: 'MYR',
+          value: Number(order?.toplamTutar) || 50,
+          quantity: 1
+        }],
+        sender: {
+          name: form.senderName,
+          phone_number_country_code: 'MY',
+          phone_number: form.senderPhone,
+          address_1: form.senderAddress,
+          postcode: form.senderPostcode,
+          city: form.senderCity,
+          subdivision_code: form.senderState,
+          country_code: 'MY'
+        },
+        receiver: {
+          name: `${order?.ad || ''} ${order?.soyad || ''}`.trim() || 'Customer',
+          phone_number_country_code: 'MY',
+          phone_number: order?.telefon || '0123456789',
+          email: order?.eposta || '',
+          address_1: order?.adres || 'Address',
+          postcode: form.receiverPostcode,
+          city: order?.sehir || 'City',
+          subdivision_code: form.receiverState,
+          country_code: 'MY'
+        },
+        feature: { email_tracking: true }
+      };
+      const res = await fetch(`${API}/api/v1/admin/shipping/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(shipment)
+      });
+      const data = await res.json();
+      if (data.status === 'success') setResult(data.data);
+      else setError(data.errorMessage || 'Ralat submit');
+    } catch {
       setError('Ralat rangkaian');
     } finally {
       setLoading(false);
@@ -60,10 +129,10 @@ export default function ShippingQuoteModal({ show, onClose, order }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+      <div className="modal-content" style={{ maxWidth: 680 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Truck size={18} /> Kadar Penghantaran
+            <Truck size={18} /> Penghantaran {order?.siparisNumarasi && `#${order.siparisNumarasi}`}
           </h3>
           <button className="btn-icon" onClick={onClose}><X size={18} /></button>
         </div>
@@ -100,10 +169,11 @@ export default function ShippingQuoteModal({ show, onClose, order }) {
           {error && <p style={{ color: 'var(--status-error)', marginTop: 8 }}>{error}</p>}
 
           {quotes.length > 0 && (
-            <div style={{ marginTop: 16, maxHeight: 300, overflow: 'auto' }}>
+            <div style={{ marginTop: 16, maxHeight: 220, overflow: 'auto' }}>
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th></th>
                     <th>Kurier</th>
                     <th>Perkhidmatan</th>
                     <th>Harga</th>
@@ -111,7 +181,8 @@ export default function ShippingQuoteModal({ show, onClose, order }) {
                 </thead>
                 <tbody>
                   {quotes.map((q, i) => (
-                    <tr key={i}>
+                    <tr key={i} style={{ background: selected === q ? 'var(--color-primary-glow)' : undefined, cursor: 'pointer' }} onClick={() => setSelected(q)}>
+                      <td><input type="radio" checked={selected === q} readOnly /></td>
                       <td>
                         {q.courier?.courier_logo && <img src={q.courier.courier_logo} alt="" style={{ width: 24, height: 24, marginRight: 8, verticalAlign: 'middle' }} />}
                         {q.courier?.courier_name}
@@ -122,6 +193,19 @@ export default function ShippingQuoteModal({ show, onClose, order }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {selected && !result && (
+            <button className="btn btn-primary" onClick={submit} disabled={loading} style={{ marginTop: 12 }}>
+              <Send size={14} /> Hantar Pesanan ke EasyParcel
+            </button>
+          )}
+
+          {result && (
+            <div className="card" style={{ marginTop: 16, background: 'var(--status-success-bg)' }}>
+              <div style={{ fontWeight: 700, color: 'var(--status-success)' }}>Berjaya!</div>
+              <pre style={{ fontSize: 12, marginTop: 8, whiteSpace: 'pre-wrap' }}>{JSON.stringify(result, null, 2)}</pre>
             </div>
           )}
         </div>
