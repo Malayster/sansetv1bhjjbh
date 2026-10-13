@@ -37,6 +37,7 @@ import { FeedController } from './controllers/feedController.js';
 import { UploadController } from './controllers/uploadController.js';
 import { AnalyticsController } from './controllers/analyticsController.js';
 import { NotificationController } from './controllers/notificationController.js';
+import { AuditController } from './controllers/auditController.js';
 
 const productRepository = new ProductRepository(prisma);
 const categoryRepository = new CategoryRepository(prisma);
@@ -71,6 +72,7 @@ const feedController = new FeedController(productRepository, settingsRepository)
 const uploadController = new UploadController();
 const analyticsController = new AnalyticsController(prisma);
 const notificationController = new NotificationController(prisma);
+const auditController = new AuditController(prisma);
 
 export {
     productController,
@@ -84,5 +86,6 @@ export {
     feedController,
     uploadController,
     analyticsController,
-    notificationController
+    notificationController,
+    auditController
 };
