@@ -33,16 +33,16 @@ export class UploadController {
         const file = req.body.file;
 
         if (!file || typeof file.arrayBuffer !== 'function') {
-            return res.status(400).json({ status: 'error', errorMessage: 'Dosya yüklenemedi veya geçersiz.' });
+            return res.status(400).json({ status: 'error', errorMessage: 'Fail tidak dimuat naik atau tidak sah.' });
         }
 
         const env = currentEnv;
         if (!env || !env.IMAGES_BUCKET) {
-            return res.status(500).json({ status: 'error', errorMessage: 'Görsel depolama servisi yapılandırılmamış.' });
+            return res.status(500).json({ status: 'error', errorMessage: 'Perkhidmatan storan imej tidak dikonfigurasi.' });
         }
 
         if (file.size > MAX_UPLOAD_BYTES) {
-            return res.status(413).json({ status: 'error', errorMessage: 'Görsel en fazla 5 MB olabilir.' });
+            return res.status(413).json({ status: 'error', errorMessage: 'Imej maksimum 5 MB.' });
         }
 
         // Type and extension come from the file's bytes, not from the client-supplied name or
@@ -50,7 +50,7 @@ export class UploadController {
         const buffer = await file.arrayBuffer();
         const detected = detectImageType(new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 16)));
         if (!detected) {
-            return res.status(415).json({ status: 'error', errorMessage: 'Yalnız WebP, JPEG veya PNG görseller yüklenebilir.' });
+            return res.status(415).json({ status: 'error', errorMessage: 'Hanya imej WebP, JPEG atau PNG dibenarkan.' });
         }
 
         const key = `products/${crypto.randomUUID()}.${detected.extension}`;
