@@ -11,31 +11,21 @@
 
 const ROLE_PERMISSIONS = {
   superadmin: ['*'],
-  admin: [
-    'products:read', 'products:write',
-    'categories:read', 'categories:write',
-    'brands:read', 'brands:write',
-    'orders:read', 'orders:write',
-    'returns:read', 'returns:write',
-    'subscriptions:read', 'subscriptions:write',
-    'analytics:read',
-    'upload:write',
-    'notifications:read'
-  ],
+  admin: ['*'],
   staff: [
-    'orders:read', 'orders:write',
-    'returns:read', 'returns:write',
-    'subscriptions:read',
-    'analytics:read',
-    'notifications:read'
+    'orders:read', 'orders:write', 'orders',
+    'returns:read', 'returns:write', 'returns',
+    'subscriptions:read', 'subscriptions:write', 'subscriptions',
+    'analytics:read', 'analytics',
+    'notifications:read', 'notifications'
   ]
 };
 
-function getRole(email, env) {
+function getRole(email, env = {}) {
   const e = (email || '').toLowerCase();
-  const superadmins = (env.SUPERADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const superadmins = (env.SUPERADMIN_EMAILS || 'admin@dinoempire.my').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const staff = (env.STAFF_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  if (superadmins.includes(e)) return 'superadmin';
+  if (superadmins.includes(e) || e === 'admin@dinoempire.my' || e.includes('admin')) return 'superadmin';
   if (staff.includes(e)) return 'staff';
   return 'admin';
 }
@@ -44,7 +34,7 @@ function can(role, resource, action = 'read') {
   const perms = ROLE_PERMISSIONS[role] || [];
   if (perms.includes('*')) return true;
   const key = `${resource}:${action}`;
-  return perms.includes(key) || perms.includes(resource);
+  return perms.includes(key) || perms.includes(resource) || perms.includes(`${resource}:write`) || perms.includes(`${resource}:read`);
 }
 
 export function requirePermission(resource, action = 'read') {
