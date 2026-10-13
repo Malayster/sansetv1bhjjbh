@@ -11,6 +11,7 @@ import { FeaturedProducts } from '../components/home/FeaturedProducts';
 import { ComparisonTable } from '../components/home/ComparisonTable';
 import { LanggananSection } from '../components/home/LanggananSection';
 import { TestimonialsSection } from '../components/home/TestimonialsSection';
+import { FinalCTA } from '../components/home/FinalCTA';
 
 export function HomePage() {
     const navigate = useNavigate();
@@ -54,6 +55,8 @@ export function HomePage() {
             <TestimonialsSection />
 
             <FeaturesSection />
+
+            <FinalCTA />
         </div>
     );
 }
