@@ -1,0 +1,131 @@
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Package, SkipForward, XCircle, RefreshCw } from 'lucide-react';
+import SEO from '../components/SEO';
+
+const API = import.meta.env.VITE_API_URL || '';
+
+export function MySubscriptionsPage() {
+  const [searchParams] = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get('email') || '');
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const load = async (e) => {
+    e?.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch(`${API}/api/v1/subscriptions/me?eposta=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.status === 'success') {
+        setSubs(data.data || []);
+        if ((data.data || []).length === 0) setMessage('Tiada langganan aktif untuk e-mel ini.');
+      } else {
+        setMessage(data.errorMessage || 'Ralat');
+      }
+    } catch (err) {
+      setMessage('Gagal memuatkan langganan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const action = async (id, type) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/v1/subscriptions/${id}/${type}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setMessage(type === 'skip' ? 'Bulan seterusnya dilangkau.' : 'Langganan dibatalkan.');
+        load();
+      } else {
+        setMessage(data.errorMessage || 'Ralat');
+      }
+    } catch {
+      setMessage('Ralat tindakan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white min-h-screen pb-20">
+      <SEO title="Langganan Saya - DIN'O EMPIRE" description="Urus langganan box anda." />
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
+        <h1 className="text-2xl md:text-3xl font-black mb-2">Langganan Saya</h1>
+        <p className="text-gray-500 mb-6">Masukkan e-mel untuk lihat dan urus langganan box anda.</p>
+
+        <form onSubmit={load} className="flex gap-2 mb-8">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="e-mel@anda.com"
+            className="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500"
+          />
+          <button type="submit" disabled={loading} className="bg-amber-500 text-white font-bold px-6 rounded-xl flex items-center gap-2">
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            Cari
+          </button>
+        </form>
+
+        {message && <div className="mb-4 text-sm text-amber-800 bg-amber-50 p-3 rounded-xl">{message}</div>}
+
+        <div className="space-y-4">
+          {subs.map(sub => (
+            <div key={sub.id} className="border border-gray-200 rounded-2xl p-5">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="font-black flex items-center gap-2">
+                    <Package size={18} /> Langganan {sub.frekuensi}
+                  </div>
+                  <div className="text-sm text-gray-500">Status: {sub.status}</div>
+                  <div className="text-sm text-gray-500">
+                    Seterusnya: {new Date(sub.tarikhSeterusnya).toLocaleDateString('ms-MY')}
+                    {sub.skipSeterusnya && ' (dilangkau)'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-black text-lg">RM {Number(sub.jumlahAkhir).toFixed(2)}</div>
+                  {sub.diskaunPeratus > 0 && (
+                    <div className="text-xs text-green-600">{sub.diskaunPeratus}% off</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-sm mb-4 space-y-1">
+                {sub.items?.map(item => (
+                  <div key={item.id} className="flex justify-between">
+                    <span>{item.urun?.ad || 'Produk'} × {item.kuantiti}</span>
+                    <span>RM {(item.harga * item.kuantiti).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => action(sub.id, 'skip')}
+                  disabled={loading || sub.skipSeterusnya}
+                  className="flex-1 border border-amber-500 text-amber-700 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-1 disabled:opacity-50"
+                >
+                  <SkipForward size={14} /> Skip
+                </button>
+                <button
+                  onClick={() => action(sub.id, 'cancel')}
+                  disabled={loading}
+                  className="flex-1 border border-red-300 text-red-600 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-1"
+                >
+                  <XCircle size={14} /> Batal
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
