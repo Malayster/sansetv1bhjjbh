@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, SkipForward, XCircle, Eye } from 'lucide-react';
+import { RefreshCw, SkipForward, XCircle } from 'lucide-react';
 
 export default function SubscriptionsTab({ adminRequest, ADMIN_API_URL }) {
   const [subs, setSubs] = useState([]);
@@ -45,7 +45,7 @@ export default function SubscriptionsTab({ adminRequest, ADMIN_API_URL }) {
 
   return (
     <div>
-      <div className="content-header">
+      <div className="content-header" style={{ flexWrap: 'wrap', gap: 12 }}>
         <h1 className="content-title">Langganan</h1>
         <button className="btn btn-secondary" onClick={load} disabled={loading}>
           <RefreshCw size={16} /> Muat Semula
@@ -58,13 +58,14 @@ export default function SubscriptionsTab({ adminRequest, ADMIN_API_URL }) {
           placeholder="Cari e-mel, nama atau status..."
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          style={{ maxWidth: 300 }}
+          style={{ maxWidth: '100%', width: 300 }}
         />
       </div>
 
-      <div className="card">
-        <div className="table-container">
-          <table className="admin-table">
+      {/* Desktop table */}
+      <div className="card hidden md:block">
+        <div className="table-container" style={{ overflowX: 'auto' }}>
+          <table className="admin-table" style={{ minWidth: 700 }}>
             <thead>
               <tr>
                 <th>Pelanggan</th>
@@ -92,7 +93,7 @@ export default function SubscriptionsTab({ adminRequest, ADMIN_API_URL }) {
                     <span className={`badge ${sub.status === 'AKTIF' ? 'badge-success' : 'badge-secondary'}`}>
                       {sub.status}
                     </span>
-                    {sub.skipSeterusnya && <div style={{ fontSize: 11, color: '#f59e0b' }}>Skip seterusnya</div>}
+                    {sub.skipSeterusnya && <div style={{ fontSize: 11, color: '#f59e0b' }}>Skip</div>}
                   </td>
                   <td>{new Date(sub.tarikhSeterusnya).toLocaleDateString('ms-MY')}</td>
                   <td>RM {Number(sub.jumlahAkhir).toFixed(2)}</td>
@@ -114,6 +115,30 @@ export default function SubscriptionsTab({ adminRequest, ADMIN_API_URL }) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {loading && <div style={{ textAlign: 'center', padding: 20 }}>Memuatkan...</div>}
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 40 }}>Tiada langganan.</div>
+        )}
+        {filtered.map(sub => (
+          <div key={sub.id} className="card" style={{ padding: 16 }}>
+            <div style={{ fontWeight: 600 }}>{sub.ad} {sub.soyad}</div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>{sub.eposta}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 8 }}>
+              <span>{sub.frekuensi}</span>
+              <span className={`badge ${sub.status === 'AKTIF' ? 'badge-success' : 'badge-secondary'}`}>{sub.status}</span>
+            </div>
+            <div style={{ fontSize: 13, marginBottom: 4 }}>Seterusnya: {new Date(sub.tarikhSeterusnya).toLocaleDateString('ms-MY')}</div>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>RM {Number(sub.jumlahAkhir).toFixed(2)}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => action(sub.id, 'skip')}>Skip</button>
+              <button className="btn btn-secondary" style={{ flex: 1, color: '#dc2626' }} onClick={() => action(sub.id, 'cancel')}>Batal</button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
