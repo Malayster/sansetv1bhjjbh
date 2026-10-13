@@ -21,6 +21,7 @@ import { SettingsProvider } from './context/SettingsContext';
 
 import { Shop } from './pages/Shop';
 import { BoxBuilderPage } from './pages/BoxBuilderPage';
+import { MySubscriptionsPage } from './pages/MySubscriptionsPage';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -37,6 +38,7 @@ function AppLayout() {
                     <Route path="/" element={<HomePage />} />
                     <Route path="/magaza" element={<Shop />} />
                     <Route path="/bina-box" element={<BoxBuilderPage />} />
+                    <Route path="/langganan" element={<MySubscriptionsPage />} />
                     <Route path="/product/:id" element={<ProductDetailPage />} />
                     <Route path="/urun/:slug" element={<ProductDetailPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
@@ -48,13 +50,11 @@ function AppLayout() {
                     <Route path="/sss" element={<FAQPage />} />
                     <Route path="/hakkimizda" element={<AboutPage />} />
 
-                    {/* Admin & Login Pages */}
                     <Route path="/login" element={<AdminLoginPage />} />
                     <Route path="/admin/login" element={<AdminLoginPage />} />
                     <Route path="/admin" element={<AdminDashboardPage />} />
                     <Route path="/admin/*" element={<AdminDashboardPage />} />
 
-                    {/* Legal & Info Pages */}
                     <Route path="/iade-degisim" element={<LegalPage title="Syarat Pemulangan" contentKey="iade-degisim" />} />
                     <Route path="/kargo-bilgileri" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="kargo-bilgileri" />} />
                     <Route path="/mesafeli-satis-sozlesmesi" element={<LegalPage title="Terma & Syarat Jualan" contentKey="mesafeli-satis-sozlesmesi" />} />
