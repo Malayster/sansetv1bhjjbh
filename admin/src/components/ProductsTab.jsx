@@ -1,4 +1,4 @@
-import { Plus, Edit2, Trash2, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, Upload, AlertCircle } from 'lucide-react';
 
 export default function ProductsTab({
   products,
@@ -44,6 +44,12 @@ export default function ProductsTab({
     return prod[key];
   });
 
+  const getImageCount = (prod) => {
+    const main = prod.resimUrl ? 1 : 0;
+    const extra = Array.isArray(prod.resimler) ? prod.resimler.length : 0;
+    return main + extra;
+  };
+
   const toggleSelectAllProducts = () => {
     if (filteredProducts.length === 0) return;
     if (selectedProductIds.length === filteredProducts.length) {
@@ -68,7 +74,7 @@ export default function ProductsTab({
           setProductForm({
             ad: '', fiyat: '', indirimliFiyat: '', kisaAciklama: '',
             renkSecenekleri: [], boyutSecenekleri: [], agirlik: 1,
-            aciklama: '', resimUrl: '', stokAdedi: 0, varyantBasligi: '',
+            aciklama: '', resimUrl: '', resimler: [], stokAdedi: 0, varyantBasligi: '',
             kategoriId: categories[0]?.id || '', markaId: brands[0]?.id || '', aktif: true, oneCikan: false,
             firsatUrunu: false, yeniUrun: false, cokSatanlar: false
           });
@@ -142,6 +148,7 @@ export default function ProductsTab({
                   />
                 </th>
                 <th>Imej</th>
+                <th>Jumlah Gambar</th>
                 <th className="sortable-header" onClick={() => handleSort('ad', productSort, setProductSort)}>
                   Nama Produk {renderSortIndicator(productSort, 'ad')}
                 </th>
@@ -165,62 +172,80 @@ export default function ProductsTab({
             </thead>
             <tbody>
               {sortedProducts.length === 0 ? (
-                <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>Tiada produk dijumpai.</td></tr>
-              ) : sortedProducts.map(prod => (
-                <tr key={prod.id}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedProductIds.includes(prod.id)}
-                      onChange={() => toggleSelectProduct(prod.id)}
-                    />
-                  </td>
-                  <td>
-                    {prod.resimUrl ? (
-                      <img src={prod.resimUrl.startsWith('http') ? prod.resimUrl : `${config.cdnUrl}/${prod.resimUrl}`} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
-                    ) : (
-                      <div style={{ width: 40, height: 40, background: '#eee', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>Tiada</div>
-                    )}
-                  </td>
-                  <td>{prod.ad}</td>
-                  <td>{prod.marka?.ad || '-'}</td>
-                  <td>{prod.kategori?.ad || '-'}</td>
-                  <td>RM {parseFloat(prod.fiyat || 0).toFixed(2)}</td>
-                  <td>{prod.stokAdedi ?? 0}</td>
-                  <td>
-                    <span className={`badge ${prod.aktif ? 'badge-success' : 'badge-secondary'}`}>
-                      {prod.aktif ? 'Aktif' : 'Tidak Aktif'}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="btn-icon" title="Sunting" onClick={() => {
-                      setEditingProduct(prod);
-                      setProductForm({
-                        ad: prod.ad || '',
-                        fiyat: prod.fiyat || '',
-                        indirimliFiyat: prod.indirimliFiyat || '',
-                        kisaAciklama: prod.kisaAciklama || '',
-                        renkSecenekleri: prod.renkSecenekleri || [],
-                        boyutSecenekleri: prod.boyutSecenekleri || [],
-                        agirlik: prod.agirlik || 1,
-                        aciklama: prod.aciklama || '',
-                        resimUrl: prod.resimUrl || '',
-                        stokAdedi: prod.stokAdedi || 0,
-                        varyantBasligi: prod.varyantBasligi || '',
-                        kategoriId: prod.kategoriId || '',
-                        markaId: prod.markaId || '',
-                        aktif: prod.aktif ?? true,
-                        oneCikan: prod.oneCikan || false,
-                        firsatUrunu: prod.firsatUrunu || false,
-                        yeniUrun: prod.yeniUrun || false,
-                        cokSatanlar: prod.cokSatanlar || false
-                      });
-                      setShowProductModal(true);
-                    }}><Edit2 size={16} /></button>
-                    <button className="btn-icon" title="Padam" onClick={() => deleteProduct && deleteProduct(prod.id)}><Trash2 size={16} /></button>
-                  </td>
-                </tr>
-              ))}
+                <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>Tiada produk dijumpai.</td></tr>
+              ) : sortedProducts.map(prod => {
+                const imgCount = getImageCount(prod);
+                const hasEnough = imgCount >= 2;
+                return (
+                  <tr key={prod.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedProductIds.includes(prod.id)}
+                        onChange={() => toggleSelectProduct(prod.id)}
+                      />
+                    </td>
+                    <td>
+                      {prod.resimUrl ? (
+                        <img src={prod.resimUrl.startsWith('http') ? prod.resimUrl : `${config.cdnUrl}/${prod.resimUrl}`} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
+                      ) : (
+                        <div style={{ width: 40, height: 40, background: '#eee', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>Tiada</div>
+                      )}
+                    </td>
+                    <td>
+                      <span style={{ 
+                        color: hasEnough ? 'var(--color-success, #16a34a)' : 'var(--color-danger, #dc2626)',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        {imgCount}
+                        {!hasEnough && <AlertCircle size={14} />}
+                      </span>
+                      {!hasEnough && <div style={{ fontSize: 11, color: '#dc2626' }}>Min 2</div>}
+                    </td>
+                    <td>{prod.ad}</td>
+                    <td>{prod.marka?.ad || '-'}</td>
+                    <td>{prod.kategori?.ad || '-'}</td>
+                    <td>RM {parseFloat(prod.fiyat || 0).toFixed(2)}</td>
+                    <td>{prod.stokAdedi ?? 0}</td>
+                    <td>
+                      <span className={`badge ${prod.aktif ? 'badge-success' : 'badge-secondary'}`}>
+                        {prod.aktif ? 'Aktif' : 'Tidak Aktif'}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="btn-icon" title="Sunting" onClick={() => {
+                        setEditingProduct(prod);
+                        setProductForm({
+                          ad: prod.ad || '',
+                          fiyat: prod.fiyat || '',
+                          indirimliFiyat: prod.indirimliFiyat || '',
+                          kisaAciklama: prod.kisaAciklama || '',
+                          renkSecenekleri: prod.renkSecenekleri || [],
+                          boyutSecenekleri: prod.boyutSecenekleri || [],
+                          agirlik: prod.agirlik || 1,
+                          aciklama: prod.aciklama || '',
+                          resimUrl: prod.resimUrl || '',
+                          resimler: prod.resimler || [],
+                          stokAdedi: prod.stokAdedi || 0,
+                          varyantBasligi: prod.varyantBasligi || '',
+                          kategoriId: prod.kategoriId || '',
+                          markaId: prod.markaId || '',
+                          aktif: prod.aktif ?? true,
+                          oneCikan: prod.oneCikan || false,
+                          firsatUrunu: prod.firsatUrunu || false,
+                          yeniUrun: prod.yeniUrun || false,
+                          cokSatanlar: prod.cokSatanlar || false
+                        });
+                        setShowProductModal(true);
+                      }}><Edit2 size={16} /></button>
+                      <button className="btn-icon" title="Padam" onClick={() => deleteProduct && deleteProduct(prod.id)}><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
