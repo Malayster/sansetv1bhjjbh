@@ -1,9 +1,12 @@
 import { TrendingUp, ShoppingBag as OrdersIcon, Package, CornerDownLeft, Repeat, Star } from 'lucide-react';
+import SimpleBarChart from './SimpleBarChart';
 
 export default function DashboardTab({ stats, analytics }) {
   const sub = analytics?.subscriptions || {};
   const pts = analytics?.points || {};
   const recent = analytics?.recentSubscriptions || [];
+  const trend = analytics?.ordersTrend || [];
+  const top = analytics?.topProducts || [];
 
   return (
     <div>
@@ -38,7 +41,7 @@ export default function DashboardTab({ stats, analytics }) {
         <div className="card">
           <div className="kpi-title">Langganan Aktif</div>
           <div className="kpi-value">{sub.active || 0}</div>
-          <div className="kpi-trend"><Repeat size={14} /> daripada {sub.total || 0} jumlah</div>
+          <div className="kpi-trend"><Repeat size={14} /> daripada {sub.total || 0}</div>
         </div>
         <div className="card">
           <div className="kpi-title">Langganan Dibatalkan</div>
@@ -56,6 +59,39 @@ export default function DashboardTab({ stats, analytics }) {
           <div className="kpi-trend"><Star size={14} /> Jumlah ditebus</div>
         </div>
       </div>
+
+      {trend.length > 0 && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="kpi-title" style={{ marginBottom: 16 }}>Pesanan 7 Hari Lepas</div>
+          <SimpleBarChart data={trend} valueKey="count" labelKey="date" />
+        </div>
+      )}
+
+      {top.length > 0 && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="kpi-title" style={{ marginBottom: 12 }}>Produk Terlaris</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Produk</th>
+                  <th>Jualan</th>
+                  <th>Harga</th>
+                </tr>
+              </thead>
+              <tbody>
+                {top.map(p => (
+                  <tr key={p.id}>
+                    <td>{p.ad}</td>
+                    <td>{p.satisAdedi || 0}</td>
+                    <td>RM {Number(p.fiyat).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {recent.length > 0 && (
         <div className="card" style={{ marginTop: 16 }}>
