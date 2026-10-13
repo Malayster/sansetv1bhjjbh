@@ -18,6 +18,7 @@ import seoRoutes from './routes/seoRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import metricsRoutes from './routes/metricsRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import pointsRoutes from './routes/pointsRoutes.js';
 import { feedController } from './container.js';
 import { adapt } from './utils/honoAdapter.js';
 
@@ -38,7 +39,7 @@ app.use('*', cors({
 app.use('*', secureHeaders({ crossOriginResourcePolicy: 'cross-origin' }));
 
 app.use('/api/*', rateLimit('API_RATE_LIMITER', 'api'));
-for (const path of ['/api/v1/orders/*', '/api/v1/payment/*', '/api/v1/returns/*', '/api/v1/subscriptions/*']) {
+for (const path of ['/api/v1/orders/*', '/api/v1/payment/*', '/api/v1/returns/*', '/api/v1/subscriptions/*', '/api/v1/points/*']) {
     app.use(path, rateLimit('SENSITIVE_RATE_LIMITER', 'sensitive'));
 }
 
@@ -61,6 +62,7 @@ app.route('/api/v1/payment', paymentRoutes);
 app.route('/api/v1/settings', settingsRoutes);
 app.route('/api/v1/feeds', feedRoutes);
 app.route('/api/v1/subscriptions', subscriptionRoutes);
+app.route('/api/v1/points', pointsRoutes);
 
 app.route('/', seoRoutes);
 app.route('/api/v1', seoRoutes);
