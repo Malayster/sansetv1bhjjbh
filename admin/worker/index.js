@@ -9,6 +9,16 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     if (pathname.startsWith('/api/')) {
+      const contentType = request.headers.get('content-type') || '';
+      if (contentType.includes('multipart/form-data')) {
+        const body = await request.arrayBuffer();
+        const newRequest = new Request(request.url, {
+          method: request.method,
+          headers: request.headers,
+          body: body,
+        });
+        return env.API.fetch(newRequest);
+      }
       return env.API.fetch(request);
     }
     return env.ASSETS.fetch(request);
