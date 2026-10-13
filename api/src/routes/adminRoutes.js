@@ -66,6 +66,10 @@ router.post('/shipping/quotations', requirePermission('orders'), async (c) => {
   const ctrl = new ShippingController(c.env);
   return adapt(ctrl.getQuotations)(c);
 });
+router.post('/shipping/submit', requirePermission('orders'), async (c) => {
+  const ctrl = new ShippingController(c.env);
+  return adapt(ctrl.submitOrder)(c);
+});
 router.get('/shipping/tracking', requirePermission('orders'), async (c) => {
   const ctrl = new ShippingController(c.env);
   return adapt(ctrl.getTracking)(c);
