@@ -21,6 +21,15 @@ export class ShippingController {
     res.json({ status: 'success', data: quotes });
   });
 
+  submitOrder = asyncHandler(async (req, res) => {
+    const shipment = req.body;
+    if (!shipment?.service_id || !shipment?.sender || !shipment?.receiver) {
+      return res.status(400).json({ status: 'error', errorMessage: 'service_id, sender dan receiver diperlukan.' });
+    }
+    const result = await this.ep.submitOrder(shipment);
+    res.json({ status: 'success', data: result });
+  });
+
   getTracking = asyncHandler(async (req, res) => {
     const { awb } = req.query;
     if (!awb) return res.status(400).json({ status: 'error', errorMessage: 'AWB diperlukan.' });
