@@ -11,7 +11,8 @@ import {
     settingsController,
     uploadController,
     analyticsController,
-    notificationController
+    notificationController,
+    auditController
 } from '../container.js';
 
 const router = new Hono();
@@ -53,9 +54,10 @@ router.put('/settings', requirePermission('settings'), adapt(settingsController.
 
 router.get('/analytics', requirePermission('analytics'), adapt(analyticsController.getDashboard));
 
-// Notifications
 router.get('/notifications', adapt(notificationController.list));
 router.post('/notifications/:id/read', adapt(notificationController.markRead));
 router.post('/notifications/read-all', adapt(notificationController.markAllRead));
+
+router.get('/audit', requirePermission('settings'), adapt(auditController.list));
 
 export default router;
