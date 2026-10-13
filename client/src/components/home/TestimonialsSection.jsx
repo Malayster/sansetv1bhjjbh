@@ -38,10 +38,6 @@ export function TestimonialsSection() {
         .animate-fade-up {
           animation: fadeUp 0.6s ease-out both;
         }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
       `}</style>
 
       <div className="container mx-auto px-4">
@@ -56,7 +52,8 @@ export function TestimonialsSection() {
           {reviews.map((r, i) => (
             <div
               key={i}
-              className={`border border-gray-200 rounded-2xl p-6 bg-gray-50 animate-fade-up delay-${i + 1} hover:-translate-y-1 hover:shadow-md transition-all duration-300`}
+              className="border border-gray-200 rounded-2xl p-6 bg-gray-50 animate-fade-up hover:-translate-y-1 hover:shadow-md transition-all duration-300"
+              style={{ animationDelay: `${(i + 1) * 0.1}s` }}
             >
               <div className="flex gap-1 mb-3">
                 {[...Array(r.stars)].map((_, s) => (
