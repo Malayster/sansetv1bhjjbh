@@ -35,10 +35,6 @@ export function LanggananSection() {
         .animate-fade-up {
           animation: fadeUp 0.6s ease-out both;
         }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
       `}</style>
 
       <div className="container mx-auto px-4">
@@ -55,7 +51,8 @@ export function LanggananSection() {
           {perks.map((p, i) => (
             <div
               key={i}
-              className={`bg-white rounded-2xl p-6 shadow-sm border border-amber-100 animate-fade-up delay-${i + 1} hover:-translate-y-1 hover:shadow-md transition-all duration-300`}
+              className="bg-white rounded-2xl p-6 shadow-sm border border-amber-100 animate-fade-up hover:-translate-y-1 hover:shadow-md transition-all duration-300"
+              style={{ animationDelay: `${(i + 1) * 0.1}s` }}
             >
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4">
                 <p.icon size={24} className="text-amber-600" />
@@ -66,7 +63,7 @@ export function LanggananSection() {
           ))}
         </div>
 
-        <div className="text-center animate-fade-up delay-4">
+        <div className="text-center animate-fade-up" style={{ animationDelay: '0.5s' }}>
           <Link
             to="/bina-box"
             className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 hover:scale-105 text-white font-black px-8 py-4 rounded-full text-lg transition-all duration-300 shadow-lg"
