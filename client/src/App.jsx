@@ -20,6 +20,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { SettingsProvider } from './context/SettingsContext';
 
 import { Shop } from './pages/Shop';
+import { BoxBuilderPage } from './pages/BoxBuilderPage';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -35,6 +36,7 @@ function AppLayout() {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/magaza" element={<Shop />} />
+                    <Route path="/bina-box" element={<BoxBuilderPage />} />
                     <Route path="/product/:id" element={<ProductDetailPage />} />
                     <Route path="/urun/:slug" element={<ProductDetailPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
