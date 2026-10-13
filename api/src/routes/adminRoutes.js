@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { adminAuth } from '../middlewares/adminAuth.js';
+import { requirePermission, getUserRole } from '../middlewares/rolePermission.js';
 import { adapt } from '../utils/honoAdapter.js';
 import {
     productController,
@@ -16,33 +17,48 @@ const router = new Hono();
 
 router.use('*', adminAuth);
 
-router.post('/upload', adapt(uploadController.uploadImage));
+// Current user info
+router.get('/me', (c) => {
+  const user = c.get('adminUser');
+  const role = getUserRole(user?.email, c.env);
+  return c.json({ status: 'success', data: { email: user?.email, role } });
+});
 
-router.get('/products', adapt(productController.adminGetProducts));
-router.post('/products', adapt(productController.adminCreateProduct));
-router.put('/products/:id', adapt(productController.adminUpdateProduct));
-router.delete('/products/:id', adapt(productController.adminDeleteProduct));
+// Upload
+router.post('/upload', requirePermission('upload'), adapt(uploadController.uploadImage));
 
-router.get('/categories', adapt(categoryController.adminGetCategories));
-router.post('/categories', adapt(categoryController.adminCreateCategory));
-router.put('/categories/:id', adapt(categoryController.adminUpdateCategory));
-router.delete('/categories/:id', adapt(categoryController.adminDeleteCategory));
+// Products
+router.get('/products', requirePermission('products'), adapt(productController.adminGetProducts));
+router.post('/products', requirePermission('products'), adapt(productController.adminCreateProduct));
+router.put('/products/:id', requirePermission('products'), adapt(productController.adminUpdateProduct));
+router.delete('/products/:id', requirePermission('products'), adapt(productController.adminDeleteProduct));
 
-router.get('/brands', adapt(brandController.adminGetBrands));
-router.post('/brands', adapt(brandController.adminCreateBrand));
-router.put('/brands/:id', adapt(brandController.adminUpdateBrand));
-router.delete('/brands/:id', adapt(brandController.adminDeleteBrand));
+// Categories
+router.get('/categories', requirePermission('categories'), adapt(categoryController.adminGetCategories));
+router.post('/categories', requirePermission('categories'), adapt(categoryController.adminCreateCategory));
+router.put('/categories/:id', requirePermission('categories'), adapt(categoryController.adminUpdateCategory));
+router.delete('/categories/:id', requirePermission('categories'), adapt(categoryController.adminDeleteCategory));
 
-router.get('/orders', adapt(orderController.adminGetOrders));
-router.get('/orders/:id', adapt(orderController.adminGetOrder));
-router.put('/orders/:id', adapt(orderController.adminUpdateOrder));
+// Brands
+router.get('/brands', requirePermission('brands'), adapt(brandController.adminGetBrands));
+router.post('/brands', requirePermission('brands'), adapt(brandController.adminCreateBrand));
+router.put('/brands/:id', requirePermission('brands'), adapt(brandController.adminUpdateBrand));
+router.delete('/brands/:id', requirePermission('brands'), adapt(brandController.adminDeleteBrand));
 
-router.get('/returns', adapt(returnController.adminGetAllReturns));
-router.put('/returns/:id', adapt(returnController.adminUpdateReturnRequest));
+// Orders
+router.get('/orders', requirePermission('orders'), adapt(orderController.adminGetOrders));
+router.get('/orders/:id', requirePermission('orders'), adapt(orderController.adminGetOrder));
+router.put('/orders/:id', requirePermission('orders'), adapt(orderController.adminUpdateOrder));
 
-router.get('/settings', adapt(settingsController.getSettings));
-router.put('/settings', adapt(settingsController.updateSettings));
+// Returns
+router.get('/returns', requirePermission('returns'), adapt(returnController.adminGetAllReturns));
+router.put('/returns/:id', requirePermission('returns'), adapt(returnController.adminUpdateReturnRequest));
 
-router.get('/analytics', adapt(analyticsController.getDashboard));
+// Settings (superadmin only via role)
+router.get('/settings', requirePermission('settings'), adapt(settingsController.getSettings));
+router.put('/settings', requirePermission('settings'), adapt(settingsController.updateSettings));
+
+// Analytics
+router.get('/analytics', requirePermission('analytics'), adapt(analyticsController.getDashboard));
 
 export default router;
