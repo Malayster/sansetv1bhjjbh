@@ -24,10 +24,6 @@ export function HomePage() {
         navigate(`/magaza?markaId=${brandId}`);
     };
 
-    const handleExploreClick = () => {
-        navigate('/magaza');
-    };
-
     const seoTitle = "DIN'O EMPIRE - Kilang Kuala Ketil & Barangan Terpilih Malaysia";
     const seoDescription = "DIN'O EMPIRE - Nikmati pelbagai barangan berkualiti terus dari kilang Kuala Ketil dengan penghantaran pos pantas dan pembayaran FPX ToyyibPay selamat.";
     const structuredData = combineSchemas(generateWebsiteSchema(), generateOrganizationSchema());
@@ -41,7 +37,7 @@ export function HomePage() {
                 canonical="https://ecommerceflaredev.web.tr/"
             />
 
-            <HeroSection scrollToProducts={handleExploreClick} />
+            <HeroSection />
 
             <BrandSlider
                 brands={brands}
