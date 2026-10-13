@@ -1,7 +1,6 @@
 /**
  * Express-to-Hono controller adapter.
  * Wraps Express middleware/controller signatures (req, res, next) so they can run natively inside Hono.
- * This prevents rewriting complex controller logic and reduces regression risks.
  */
 export const adapt = (expressMethod) => {
     return async (c) => {
@@ -10,7 +9,6 @@ export const adapt = (expressMethod) => {
         let redirectUrl = null;
         const headersMap = {};
 
-        // Parse query params, route parameters, and request body.
         const queryParams = c.req.query();
         const routeParams = c.req.param();
 
@@ -24,20 +22,19 @@ export const adapt = (expressMethod) => {
                 } catch (e) {
                     body = {};
                 }
-            } else if (contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')) {
+            } else if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
                 try {
-                    body = await c.req.parseBody();
+                    body = await c.req.parseBody({ all: true });
                 } catch (e) {
+                    console.error('[Adapter] parseBody failed:', e.message);
                     body = {};
                 }
             }
         }
 
-        // Context dynamic values (like validation results)
         const parsedBody = c.get('parsedBody');
         const reqBody = parsedBody || body;
 
-        // Express-like Request Mock
         const req = {
             query: queryParams,
             params: routeParams,
@@ -47,7 +44,6 @@ export const adapt = (expressMethod) => {
             url: c.req.url
         };
 
-        // Express-like Response Mock
         const res = {
             status(code) {
                 statusCode = code;
@@ -75,24 +71,18 @@ export const adapt = (expressMethod) => {
             }
         };
 
-        // Express-like Next Function
         const next = (err) => {
-            if (err) {
-                throw err;
-            }
+            if (err) throw err;
         };
 
-        // Execute the controller method
         await expressMethod(req, res, next);
 
-        // Apply headers to Hono response context
         if (Object.keys(headersMap).length > 0) {
             for (const [name, value] of Object.entries(headersMap)) {
                 c.header(name, value);
             }
         }
 
-        // Return Hono response
         if (redirectUrl) {
             return c.redirect(redirectUrl);
         }
