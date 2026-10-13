@@ -30,8 +30,22 @@ const reviews = [
 export function TestimonialsSection() {
   return (
     <section className="py-16 md:py-24 bg-white">
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up {
+          animation: fadeUp 0.6s ease-out both;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+      `}</style>
+
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fade-up">
           <h2 className="text-3xl md:text-4xl font-black text-corporate-black mb-2">
             Apa kata pelanggan
           </h2>
@@ -40,7 +54,10 @@ export function TestimonialsSection() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {reviews.map((r, i) => (
-            <div key={i} className="border border-gray-200 rounded-2xl p-6 bg-gray-50">
+            <div
+              key={i}
+              className={`border border-gray-200 rounded-2xl p-6 bg-gray-50 animate-fade-up delay-${i + 1} hover:-translate-y-1 hover:shadow-md transition-all duration-300`}
+            >
               <div className="flex gap-1 mb-3">
                 {[...Array(r.stars)].map((_, s) => (
                   <Star key={s} size={16} className="fill-amber-400 text-amber-400" />
