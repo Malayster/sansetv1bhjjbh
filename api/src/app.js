@@ -21,6 +21,7 @@ import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import pointsRoutes from './routes/pointsRoutes.js';
 import { feedController } from './container.js';
 import { adapt } from './utils/honoAdapter.js';
+import { processDueSubscriptions } from './services/subscriptionBillingService.js';
 
 const app = new Hono();
 
@@ -78,6 +79,16 @@ export default {
     fetch: app.fetch,
     async scheduled(event, env, ctx) {
         console.log('[Cron Trigger] Active: executing scheduled task for cron: %s', event.cron);
+
+        // 1. Process due subscriptions
+        try {
+            const billing = await processDueSubscriptions(env);
+            console.log('[Cron] Subscription billing:', billing);
+        } catch (error) {
+            console.error('[Cron] Subscription billing failed:', error);
+        }
+
+        // 2. Warm sitemap cache
         try {
             const clientUrl = env.CLIENT_URL || 'https://ecommerceflaredev.web.tr';
             const sitemapUrl = `${clientUrl}/sitemap.xml`;
