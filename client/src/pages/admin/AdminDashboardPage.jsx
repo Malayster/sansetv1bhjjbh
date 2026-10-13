@@ -38,7 +38,14 @@ import {
     Image as ImageIcon,
     Phone,
     Send,
-    Check
+    Check,
+    Menu,
+    MessageCircle,
+    Clock3,
+    Boxes,
+    Sparkles,
+    ChevronRight,
+    SlidersHorizontal
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
@@ -58,6 +65,13 @@ export function AdminDashboardPage() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [notification, setNotification] = useState('');
     const [isLoadingData, setIsLoadingData] = useState(true);
+    const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+    // Pengendali pemilihan tab dengan Auto-Hide untuk mobile drawer
+    const handleSelectTab = (tabId) => {
+        setActiveTab(tabId);
+        setIsMobileDrawerOpen(false);
+    };
 
     // Semak pengesahan admin
     useEffect(() => {
@@ -639,22 +653,23 @@ export function AdminDashboardPage() {
         switch (durum) {
             case 'BEKLEMEDE':
             case 'PENDING':
-                return { label: 'Menunggu Bayaran', cls: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' };
+                return { label: 'Menunggu Bayaran', cls: 'bg-amber-500/10 text-amber-400 border border-amber-500/20', icon: Clock3 };
             case 'HAZIRLANIYOR':
             case 'PREPARING':
-                return { label: 'Sedang Dibungkus', cls: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' };
+            case 'PAID':
+                return { label: 'Sedang Dibungkus', cls: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20', icon: Package };
             case 'KARGOLANDI':
             case 'SHIPPED':
-                return { label: 'Telah Diposkan', cls: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' };
+                return { label: 'Telah Diposkan', cls: 'bg-blue-500/10 text-blue-400 border border-blue-500/20', icon: Truck };
             case 'TESLIM_EDILDI':
             case 'DELIVERED':
             case 'TAMAMLANDI':
-                return { label: 'Selesai Dihantar', cls: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' };
+                return { label: 'Selesai Dihantar', cls: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', icon: CheckCircle2 };
             case 'IPTAL_EDILDI':
             case 'CANCELLED':
-                return { label: 'Dibatalkan', cls: 'bg-red-500/10 text-red-400 border border-red-500/20' };
+                return { label: 'Dibatalkan', cls: 'bg-red-500/10 text-red-400 border border-red-500/20', icon: AlertTriangle };
             default:
-                return { label: durum || 'Diproses', cls: 'bg-slate-800 text-slate-300' };
+                return { label: durum || 'Diproses', cls: 'bg-slate-800 text-slate-300', icon: Clock };
         }
     };
 
@@ -669,8 +684,158 @@ export function AdminDashboardPage() {
                 </div>
             )}
 
-            {/* Sidebar */}
-            <aside className="w-full md:w-64 bg-slate-900/90 border-r border-slate-800 flex flex-col shrink-0">
+            {/* 1. Mobile Top Header (Fixed Top): Hamburger di sebelah kiri tepi logo */}
+            <div className="sticky top-0 z-40 bg-slate-900/95 border-b border-slate-800 backdrop-blur-md px-4 py-3 flex items-center justify-between md:hidden shrink-0">
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setIsMobileDrawerOpen(true)}
+                        className="p-2.5 bg-slate-800/90 hover:bg-slate-800 active:scale-95 text-amber-400 rounded-xl transition border border-slate-700/80 cursor-pointer shadow-sm flex items-center justify-center"
+                        title="Buka Menu Navigasi"
+                        aria-label="Buka Menu Navigasi"
+                    >
+                        <Menu size={20} />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        {settings.logoUrl && settings.logoMode !== 'text' ? (
+                            <img src={settings.logoUrl} alt="Logo" className="h-7 w-auto object-contain max-w-[120px]" />
+                        ) : (
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center font-black text-slate-950 text-xs shadow-md">
+                                    D
+                                </div>
+                                <span className="font-black text-white text-sm tracking-tight leading-none">DIN'O EMPIRE</span>
+                            </div>
+                        )}
+                        <span className="text-[9px] bg-amber-500/15 text-amber-400 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">Admin</span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={loadAllData}
+                        disabled={isLoadingData}
+                        className="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700/60 active:scale-95 cursor-pointer"
+                        title="Segarkan Data API"
+                    >
+                        <RefreshCw size={16} className={isLoadingData ? 'animate-spin text-amber-400' : ''} />
+                    </button>
+                    <Link
+                        to="/"
+                        target="_blank"
+                        className="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700/60 active:scale-95"
+                        title="Lihat Kedai Rasmi"
+                    >
+                        <Store size={16} />
+                    </Link>
+                </div>
+            </div>
+
+            {/* 2. Mobile Full Slide-Over Drawer (Keluar Penuh & Auto-Hide bila tab dipilih) */}
+            {isMobileDrawerOpen && (
+                <div className="fixed inset-0 z-50 md:hidden flex animate-in fade-in duration-200">
+                    <div
+                        className="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity"
+                        onClick={() => setIsMobileDrawerOpen(false)}
+                    />
+                    <div className="relative w-5/6 max-w-sm h-full bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-5 z-10 overflow-y-auto animate-in slide-in-from-left duration-300 shadow-2xl">
+                        <div>
+                            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center font-black text-slate-950 shadow-md">
+                                        D
+                                    </div>
+                                    <div>
+                                        <h2 className="font-black text-white text-sm tracking-tight leading-none">DIN'O EMPIRE</h2>
+                                        <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Pentadbir Kedai</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsMobileDrawerOpen(false)}
+                                    className="p-2 text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                                    title="Tutup Menu"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <nav className="space-y-1.5">
+                                {[
+                                    { id: 'dashboard', label: 'Papan Pemuka', icon: LayoutDashboard },
+                                    { id: 'trajectory', label: 'Unjuran Kewangan', icon: TrendingUp },
+                                    { id: 'analytics', label: 'Analitik & Pasaran', icon: BarChart3 },
+                                    { id: 'cms', label: 'Pengurusan CMS', icon: Globe },
+                                    { id: 'inventory', label: 'Amaran & Stok', icon: AlertTriangle, badge: inventoryHealth?.kiraan?.tipis > 0 ? `${inventoryHealth.kiraan.tipis} Tipis` : null },
+                                    { id: 'orders', label: 'Pesanan Pelanggan', icon: ShoppingBag, badge: pendingOrdersCount > 0 ? pendingOrdersCount : null },
+                                    { id: 'products', label: 'Barangan (Produk)', icon: Package, badge: products.length },
+                                    { id: 'categories', label: 'Kategori', icon: Layers, badge: categories.length },
+                                    { id: 'returns', label: 'Pemulangan', icon: RotateCcw },
+                                    { id: 'settings', label: 'Tetapan Kedai', icon: Settings },
+                                    { id: 'audit', label: 'Jejak Audit', icon: ShieldCheck }
+                                ].map(item => {
+                                    const Icon = item.icon;
+                                    const isActive = activeTab === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => handleSelectTab(item.id)}
+                                            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                                                isActive
+                                                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                                                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Icon size={18} className={isActive ? 'text-slate-950' : 'text-amber-400'} />
+                                                <span>{item.label}</span>
+                                            </div>
+                                            {item.badge !== undefined && item.badge !== null && (
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                                                    isActive ? 'bg-slate-950 text-amber-400' : 'bg-slate-800 text-slate-300'
+                                                }`}>
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-800 space-y-2 mt-4">
+                            <button
+                                onClick={() => {
+                                    loadAllData();
+                                    setIsMobileDrawerOpen(false);
+                                }}
+                                disabled={isLoadingData}
+                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-300 bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
+                            >
+                                <RefreshCw size={14} className={isLoadingData ? 'animate-spin' : ''} />
+                                <span>Segarkan Data API</span>
+                            </button>
+                            <Link
+                                to="/"
+                                target="_blank"
+                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-300 bg-slate-800/80 hover:bg-slate-800 transition-colors"
+                            >
+                                <Store size={14} />
+                                <span>Lihat Kedai Rasmi</span>
+                            </Link>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors cursor-pointer"
+                            >
+                                <LogOut size={14} />
+                                <span>Log Keluar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. Desktop Static Sidebar */}
+            <aside className="hidden md:flex md:w-64 bg-slate-900/90 border-r border-slate-800 flex-col shrink-0">
                 <div className="p-6 border-b border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center font-black text-slate-950 shadow-md shadow-amber-500/20">
@@ -754,7 +919,7 @@ export function AdminDashboardPage() {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 min-w-0 p-6 md:p-10 overflow-y-auto">
+            <main className="flex-1 min-w-0 p-4 md:p-10 pb-28 md:pb-10 overflow-y-auto">
                 {isLoadingData && products.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-96 gap-4 text-slate-400">
                         <Loader2 size={36} className="animate-spin text-amber-500" />
@@ -845,41 +1010,57 @@ export function AdminDashboardPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-amber-500 mb-3">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Hasil Jualan</span>
-                                    <TrendingUp size={22} />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm hover:border-slate-700 transition">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Hasil Jualan</span>
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                                        <DollarSign size={18} />
+                                    </div>
                                 </div>
-                                <div className="text-3xl font-black text-white">RM {totalSales.toFixed(2)}</div>
-                                <span className="text-[11px] text-emerald-400 font-semibold mt-2 inline-block">✓ Disahkan Pembayaran FPX</span>
+                                <div className="text-xl sm:text-3xl font-black text-white font-mono">RM {totalSales.toFixed(2)}</div>
+                                <span className="text-[10px] sm:text-[11px] text-emerald-400 font-semibold mt-1.5 flex items-center gap-1">
+                                    <CheckCircle size={12} /> FPX Sah
+                                </span>
                             </div>
 
-                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-indigo-400 mb-3">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Jumlah Pesanan</span>
-                                    <ShoppingBag size={22} />
+                            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm hover:border-slate-700 transition">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Pesanan</span>
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center shrink-0">
+                                        <ShoppingBag size={18} />
+                                    </div>
                                 </div>
-                                <div className="text-3xl font-black text-white">{totalOrdersCount}</div>
-                                <span className="text-[11px] text-slate-400 mt-2 inline-block">{pendingOrdersCount} menunggu dibungkus / dipos</span>
+                                <div className="text-xl sm:text-3xl font-black text-white font-mono">{totalOrdersCount}</div>
+                                <span className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5 flex items-center gap-1 truncate">
+                                    <Clock3 size={12} className="text-amber-400 shrink-0" /> {pendingOrdersCount} menunggu pos
+                                </span>
                             </div>
 
-                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-emerald-400 mb-3">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Produk Aktif</span>
-                                    <Package size={22} />
+                            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm hover:border-slate-700 transition">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Produk Aktif</span>
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                                        <Boxes size={18} />
+                                    </div>
                                 </div>
-                                <div className="text-3xl font-black text-white">{activeProductsCount}</div>
-                                <span className="text-[11px] text-slate-400 mt-2 inline-block">Daripada {products.length} keseluruhan produk</span>
+                                <div className="text-xl sm:text-3xl font-black text-white font-mono">{activeProductsCount}</div>
+                                <span className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5 flex items-center gap-1 truncate">
+                                    <Package size={12} className="text-emerald-400 shrink-0" /> {products.length} produk
+                                </span>
                             </div>
 
-                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-between text-rose-400 mb-3">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pemulangan</span>
-                                    <RotateCcw size={22} />
+                            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm hover:border-slate-700 transition">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Pemulangan</span>
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
+                                        <RotateCcw size={18} />
+                                    </div>
                                 </div>
-                                <div className="text-3xl font-black text-white">0</div>
-                                <span className="text-[11px] text-slate-400 mt-2 inline-block">Tiada kes tertunggak</span>
+                                <div className="text-xl sm:text-3xl font-black text-white font-mono">0</div>
+                                <span className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                                    <ShieldCheck size={12} className="text-emerald-400" /> Sifar isu
+                                </span>
                             </div>
                         </div>
 
@@ -1011,9 +1192,15 @@ export function AdminDashboardPage() {
                                                     <td className="py-4 text-slate-300 text-xs">{location}</td>
                                                     <td className="py-4 font-bold text-amber-400">RM {Number(order.toplamTutar || 0).toFixed(2)}</td>
                                                     <td className="py-4">
-                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${status.cls}`}>
-                                                            {status.label}
-                                                        </span>
+                                                        {(() => {
+                                                            const StatusIcon = status.icon || Clock;
+                                                            return (
+                                                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${status.cls}`}>
+                                                                    <StatusIcon size={12} className="shrink-0" />
+                                                                    <span>{status.label}</span>
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td className="py-4 text-right">
                                                         <button
@@ -1417,20 +1604,38 @@ export function AdminDashboardPage() {
                                                         )}
                                                     </td>
                                                     <td className="p-4">
-                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-block ${status.cls}`}>
-                                                            {status.label}
-                                                        </span>
+                                                        {(() => {
+                                                            const StatusIcon = status.icon || Clock;
+                                                            return (
+                                                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${status.cls}`}>
+                                                                    <StatusIcon size={12} className="shrink-0" />
+                                                                    <span>{status.label}</span>
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td className="p-4 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            {buyerPhone && buyerPhone !== '-' && (
+                                                                <a
+                                                                    href={`https://wa.me/${buyerPhone.replace(/[^0-9]/g, '').startsWith('6') ? buyerPhone.replace(/[^0-9]/g, '') : '6' + buyerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Salam ${buyerName}, pesanan anda #${orderNum} di DIN'O EMPIRE sedang diproses.`)}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center justify-center p-2 bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                                    title="Hubungi Pembeli melalui WhatsApp"
+                                                                >
+                                                                    <MessageCircle size={14} />
+                                                                </a>
+                                                            )}
+
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setPrintingOrder(order)}
-                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold transition cursor-pointer"
                                                                 title="Cetak Slip Pembungkusan Format EasyParcel"
                                                             >
                                                                 <Printer size={14} />
-                                                                <span>Slip Pos</span>
+                                                                <span className="hidden sm:inline">Slip Pos</span>
                                                             </button>
 
                                                             <button
@@ -1441,9 +1646,10 @@ export function AdminDashboardPage() {
                                                                     setTrackingNumber(order.kargoTakipNo || '');
                                                                     setCourierName(order.kargoFirmasi || 'J&T Express');
                                                                 }}
-                                                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer"
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer"
                                                             >
-                                                                Urus
+                                                                <Edit2 size={13} />
+                                                                <span>Urus</span>
                                                             </button>
                                                         </div>
                                                     </td>
@@ -2014,6 +2220,58 @@ export function AdminDashboardPage() {
                     </div>
                 )}
             </main>
+
+            {/* 4. Mobile Bottom Quick Icon Rail (Sentuhan Pantas Navigasi Ikon Mobile) */}
+            <div className="fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 border-t border-slate-800 backdrop-blur-md px-2 py-2 flex items-center justify-around shadow-2xl md:hidden">
+                <button
+                    onClick={() => handleSelectTab('dashboard')}
+                    className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition cursor-pointer ${activeTab === 'dashboard' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <LayoutDashboard size={20} />
+                    <span className="text-[10px]">Utama</span>
+                </button>
+                <button
+                    onClick={() => handleSelectTab('orders')}
+                    className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition relative cursor-pointer ${activeTab === 'orders' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <ShoppingBag size={20} />
+                    {pendingOrdersCount > 0 && (
+                        <span className="absolute top-0 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">
+                            {pendingOrdersCount}
+                        </span>
+                    )}
+                    <span className="text-[10px]">Pesanan</span>
+                </button>
+                <button
+                    onClick={() => handleSelectTab('products')}
+                    className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition cursor-pointer ${activeTab === 'products' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <Package size={20} />
+                    <span className="text-[10px]">Produk</span>
+                </button>
+                <button
+                    onClick={() => handleSelectTab('trajectory')}
+                    className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition cursor-pointer ${activeTab === 'trajectory' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <TrendingUp size={20} />
+                    <span className="text-[10px]">Unjuran</span>
+                </button>
+                <button
+                    onClick={() => handleSelectTab('settings')}
+                    className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition cursor-pointer ${activeTab === 'settings' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <Settings size={20} />
+                    <span className="text-[10px]">Tetapan</span>
+                </button>
+                <button
+                    onClick={() => setIsMobileDrawerOpen(true)}
+                    className="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl text-amber-400 bg-amber-500/10 border border-amber-500/20 active:scale-95 cursor-pointer"
+                    title="Buka Menu Laci Penuh"
+                >
+                    <Menu size={20} />
+                    <span className="text-[10px] font-black">Menu</span>
+                </button>
+            </div>
 
             {/* Modal Tambah/Sunting Produk */}
             {isProductModalOpen && (
