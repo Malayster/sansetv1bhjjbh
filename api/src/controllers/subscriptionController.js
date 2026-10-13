@@ -1,4 +1,5 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
+import crypto from 'crypto';
 
 const TIERS = [
   { min: 50, discount: 5 },
@@ -12,6 +13,10 @@ function calculateDiscount(total) {
     if (total >= tier.min) discount = tier.discount;
   }
   return discount;
+}
+
+function generateToken() {
+  return crypto.randomBytes(16).toString('hex');
 }
 
 export class SubscriptionController {
@@ -54,6 +59,8 @@ export class SubscriptionController {
       nextDate.setMonth(nextDate.getMonth() + 1);
     }
 
+    const accessToken = generateToken();
+
     const langganan = await this.prisma.langganan.create({
       data: {
         eposta,
@@ -68,22 +75,23 @@ export class SubscriptionController {
         diskaunPeratus,
         jumlahAsas,
         jumlahAkhir,
+        paymentToken: accessToken,
         items: { create: itemData }
       },
       include: { items: { include: { urun: true } } }
     });
 
-    res.json({ status: 'success', data: langganan });
+    res.json({ status: 'success', data: { ...langganan, accessToken } });
   });
 
   getMySubscriptions = asyncHandler(async (req, res) => {
-    const { eposta } = req.query;
-    if (!eposta) {
-      return res.status(400).json({ status: 'error', errorMessage: 'E-mel diperlukan.' });
+    const { eposta, token } = req.query;
+    if (!eposta || !token) {
+      return res.status(400).json({ status: 'error', errorMessage: 'E-mel dan token diperlukan.' });
     }
 
     const list = await this.prisma.langganan.findMany({
-      where: { eposta, status: { not: 'DIBATALKAN' } },
+      where: { eposta, paymentToken: token, status: { not: 'DIBATALKAN' } },
       include: { items: { include: { urun: true } } },
       orderBy: { olusturulmaTarihi: 'desc' }
     });
@@ -93,6 +101,16 @@ export class SubscriptionController {
 
   skipNext = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ status: 'error', errorMessage: 'Token diperlukan.' });
+    }
+
+    const existing = await this.prisma.langganan.findFirst({ where: { id, paymentToken: token } });
+    if (!existing) {
+      return res.status(403).json({ status: 'error', errorMessage: 'Token tidak sah.' });
+    }
+
     const updated = await this.prisma.langganan.update({
       where: { id },
       data: { skipSeterusnya: true }
@@ -102,6 +120,16 @@ export class SubscriptionController {
 
   cancel = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ status: 'error', errorMessage: 'Token diperlukan.' });
+    }
+
+    const existing = await this.prisma.langganan.findFirst({ where: { id, paymentToken: token } });
+    if (!existing) {
+      return res.status(403).json({ status: 'error', errorMessage: 'Token tidak sah.' });
+    }
+
     const updated = await this.prisma.langganan.update({
       where: { id },
       data: { status: 'DIBATALKAN' }
