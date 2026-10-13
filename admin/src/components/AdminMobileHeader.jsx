@@ -1,4 +1,5 @@
 import { Menu, X } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 export default function AdminMobileHeader({ sidebarOpen, setSidebarOpen, title }) {
   return (
@@ -20,7 +21,7 @@ export default function AdminMobileHeader({ sidebarOpen, setSidebarOpen, title }
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
       <span style={{ fontWeight: 700, fontSize: 16 }}>{title || 'Admin'}</span>
-      <div style={{ width: 40 }} />
+      <NotificationBell />
     </div>
   );
 }
