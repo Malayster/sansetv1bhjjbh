@@ -1,28 +1,28 @@
 /**
- * Ortak CRUD işlemlerini sağlayan Temel Repository sınıfı.
- * Açık/Kapalı Prensibine (OCP) uygundur, özel modeller için genişletilebilir.
+ * Kelas Repository asas yang menyediakan operasi CRUD bersama.
+ * Mematuhi Prinsip Terbuka/Tertutup (OCP), boleh dilanjutkan untuk model khas.
  */
 export class BaseRepository {
     /**
-     * @param {Object} model - Belirli bir model için Prisma temsili (örn. prisma.urun).
+     * @param {Object} model - Representasi Prisma untuk model tertentu (cth. prisma.urun).
      */
     constructor(model) {
         this.model = model;
     }
 
     /**
-     * Verilen seçeneklere uyan tüm kayıtları bulur.
-     * @param {Object} [options={}] - Prisma findMany seçenekleri.
-     * @returns {Promise<Array<Object>>} Kayıt listesi.
+     * Cari semua rekod yang sepadan dengan pilihan.
+     * @param {Object} [options={}] - Pilihan findMany Prisma.
+     * @returns {Promise<Array<Object>>} Senarai rekod.
      */
     async findAll(options = {}) {
         return this.model.findMany(options);
     }
 
     /**
-     * ID'ye göre tek bir kayıt bulur.
-     * @param {string} id - Kaydın UUID'si.
-     * @returns {Promise<Object|null>} Kayıt veya bulunamazsa null.
+     * Cari satu rekod mengikut ID.
+     * @param {string} id - UUID rekod.
+     * @returns {Promise<Object|null>} Rekod atau null jika tidak dijumpai.
      */
     async findById(id) {
         return this.model.findUnique({
@@ -31,19 +31,19 @@ export class BaseRepository {
     }
 
     /**
-     * Yeni bir kayıt oluşturur.
-     * @param {Object} data - Yeni kayıt için veri.
-     * @returns {Promise<Object>} Oluşturulan kayıt.
+     * Cipta rekod baru.
+     * @param {Object} data - Data untuk rekod baru.
+     * @returns {Promise<Object>} Rekod yang dicipta.
      */
     async create(data) {
         return this.model.create({ data });
     }
 
     /**
-     * Mevcut bir kaydı ID ile günceller.
-     * @param {string} id - Güncellenecek kaydın UUID'si.
-     * @param {Object} data - Güncellenecek veri.
-     * @returns {Promise<Object>} Güncellenen kayıt.
+     * Kemaskini rekod sedia ada mengikut ID.
+     * @param {string} id - UUID rekod yang dikemaskini.
+     * @param {Object} data - Data yang dikemaskini.
+     * @returns {Promise<Object>} Rekod yang dikemaskini.
      */
     async update(id, data) {
         return this.model.update({
@@ -53,9 +53,9 @@ export class BaseRepository {
     }
 
     /**
-     * ID ile bir kaydı siler.
-     * @param {string} id - Silinecek kaydın UUID'si.
-     * @returns {Promise<Object>} Silinen kayıt.
+     * Padam rekod mengikut ID.
+     * @param {string} id - UUID rekod yang dipadam.
+     * @returns {Promise<Object>} Rekod yang dipadam.
      */
     async delete(id) {
         return this.model.delete({
