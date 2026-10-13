@@ -1,7 +1,10 @@
 -- Migration: add_langganan_points
--- Run against D1: wrangler d1 execute <DB_NAME> --file=api/prisma/migrations/add_langganan_points.sql
+-- Jalankan: wrangler d1 execute <DB_NAME> --file=api/prisma/migrations/add_langganan_points.sql
+-- Atau melalui Cloudflare Dashboard → D1 → Console
 
--- Langganan (Subscription)
+-- ============================================
+-- 1. Jadual baru: Langganan
+-- ============================================
 CREATE TABLE IF NOT EXISTS langganan (
   id TEXT PRIMARY KEY,
   eposta TEXT NOT NULL,
@@ -28,7 +31,9 @@ CREATE INDEX IF NOT EXISTS idx_langganan_eposta ON langganan(eposta);
 CREATE INDEX IF NOT EXISTS idx_langganan_status ON langganan(status);
 CREATE INDEX IF NOT EXISTS idx_langganan_tarikh ON langganan(tarikhSeterusnya);
 
--- LanggananItem
+-- ============================================
+-- 2. Jadual baru: LanggananItem
+-- ============================================
 CREATE TABLE IF NOT EXISTS langganan_items (
   id TEXT PRIMARY KEY,
   langgananId TEXT NOT NULL,
@@ -41,7 +46,9 @@ CREATE TABLE IF NOT EXISTS langganan_items (
 
 CREATE INDEX IF NOT EXISTS idx_langganan_items_langganan ON langganan_items(langgananId);
 
--- Points
+-- ============================================
+-- 3. Jadual baru: Points
+-- ============================================
 CREATE TABLE IF NOT EXISTS points (
   id TEXT PRIMARY KEY,
   eposta TEXT NOT NULL UNIQUE,
@@ -51,7 +58,9 @@ CREATE TABLE IF NOT EXISTS points (
   updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- PointsLog
+-- ============================================
+-- 4. Jadual baru: PointsLog
+-- ============================================
 CREATE TABLE IF NOT EXISTS points_log (
   id TEXT PRIMARY KEY,
   eposta TEXT NOT NULL,
@@ -64,10 +73,10 @@ CREATE TABLE IF NOT EXISTS points_log (
 
 CREATE INDEX IF NOT EXISTS idx_points_log_eposta ON points_log(eposta);
 
--- Add columns to siparisler if not exist
--- SQLite does not support IF NOT EXISTS for columns; run these manually if needed
+-- ============================================
+-- 5. Kolum baru pada siparisler (jalankan jika belum ada)
+-- Jika ralat "duplicate column", abaikan — kolum sudah wujud.
+-- ============================================
 -- ALTER TABLE siparisler ADD COLUMN langgananId TEXT;
 -- ALTER TABLE siparisler ADD COLUMN pointsEarned INTEGER DEFAULT 0;
 -- CREATE INDEX IF NOT EXISTS idx_siparis_langganan ON siparisler(langgananId);
-
--- Note: For existing D1 databases, run the ALTER statements separately if the columns do not exist.
