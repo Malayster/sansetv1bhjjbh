@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, X, Plus, AlertCircle } from 'lucide-react';
+import { X, Plus, AlertCircle } from 'lucide-react';
 
 export default function ProductModal({
   show,
@@ -56,7 +56,6 @@ export default function ProductModal({
 
   const removeImage = (idx) => {
     if (idx === 0 && productForm.resimUrl) {
-      // Remove main, promote first extra if any
       const extras = productForm.resimler || [];
       if (extras.length > 0) {
         const first = extras[0];
@@ -89,10 +88,10 @@ export default function ProductModal({
       <div className="modal" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{editingProduct ? 'Sunting Produk' : 'Tambah Produk Baru'}</h3>
-          <button className="btn-icon" onClick={onClose}><X size={18} /></button>
+          <button type="button" className="btn-icon" onClick={onClose}><X size={18} /></button>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); onSave(e); }} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <form onSubmit={(e) => { e.preventDefault(); if (hasEnough) onSave(e); }} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Gambar */}
           <div>
@@ -106,13 +105,27 @@ export default function ProductModal({
                 alignItems: 'center',
                 gap: 4
               }}>
-                {imageCount}/2+
+                {imageCount} / 2+
                 {!hasEnough && <AlertCircle size={14} />}
               </span>
             </label>
-            <p style={{ fontSize: 12, color: '#666', margin: '4px 0 8px' }}>
-              Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar.
-            </p>
+
+            {!hasEnough && (
+              <div style={{ 
+                background: '#fef2f2', 
+                color: '#dc2626', 
+                padding: '8px 12px', 
+                borderRadius: 6, 
+                fontSize: 13, 
+                marginBottom: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <AlertCircle size={16} />
+                Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar sebelum boleh disimpan.
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {images.map((img, idx) => (
@@ -231,10 +244,16 @@ export default function ProductModal({
             <label htmlFor="aktif" className="form-label" style={{ margin: 0 }}>Produk Aktif</label>
           </div>
 
-          <div className="modal-footer" style={{ marginTop: 8 }}>
+          {/* Footer dengan butang Simpan sentiasa kelihatan */}
+          <div className="modal-footer" style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" disabled={loading || !hasEnough}>
-              {loading ? 'Menyimpan...' : (hasEnough ? 'Simpan' : 'Perlu min 2 gambar')}
+            <button 
+              type="submit" 
+              className="btn btn-primary" 
+              disabled={loading || !hasEnough}
+              style={{ minWidth: 120 }}
+            >
+              {loading ? 'Menyimpan...' : 'Simpan'}
             </button>
           </div>
         </form>
