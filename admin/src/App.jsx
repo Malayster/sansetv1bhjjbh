@@ -9,7 +9,8 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  Repeat
 } from 'lucide-react';
 
 import DashboardTab from './components/DashboardTab';
@@ -19,6 +20,7 @@ import BrandsTab from './components/BrandsTab';
 import OrdersTab from './components/OrdersTab';
 import ReturnsTab from './components/ReturnsTab';
 import SettingsTab from './components/SettingsTab';
+import SubscriptionsTab from './components/SubscriptionsTab';
 import ImageCropper from './components/ImageCropper';
 import ProductModal from './components/ProductModal';
 
@@ -294,7 +296,7 @@ export default function App() {
     fetchData();
   };
 
-  const executeCropAndUpload = () => {}; // placeholder if cropper used
+  const executeCropAndUpload = () => {};
 
   return (
     <div className="admin-layout">
@@ -321,6 +323,9 @@ export default function App() {
           </li>
           <li className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}>
             <button onClick={() => setActiveTab('returns')}><CornerDownLeft size={18} /> Permohonan Pemulangan</button>
+          </li>
+          <li className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}>
+            <button onClick={() => setActiveTab('subscriptions')}><Repeat size={18} /> Langganan</button>
           </li>
           <li className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}>
             <button onClick={() => setActiveTab('settings')}><SettingsIcon size={18} /> Tetapan Sistem</button>
@@ -451,6 +456,10 @@ export default function App() {
             setReturnStatusForm={setReturnStatusForm}
             setShowReturnModal={setShowReturnModal}
           />
+        )}
+
+        {activeTab === 'subscriptions' && (
+          <SubscriptionsTab adminRequest={adminRequest} ADMIN_API_URL={ADMIN_API_URL} />
         )}
 
         {activeTab === 'settings' && (
