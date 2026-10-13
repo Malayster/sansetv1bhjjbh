@@ -1,39 +1,28 @@
-# E-Market - Online Alışveriş Platformu
+# DIN'O EMPIRE - Platform E-Dagang
 
-## Site Hakkında
-E-Market (ecommerceflaredev.web.tr), Türkiye geneline hizmet veren profesyonel bir e-ticaret platformudur. Farklı kategorilerde binlerce ürünü en uygun fiyatlarla kullanıcılara sunmaktadır.
-## Ürün Kategorileri
-- **Elektronik**: Telefonlar, kulaklıklar, akıllı saatler ve teknolojik aksesuarlar.
-- **Giyim & Aksesuar**: T-shirtler, cüzdanlar ve günlük giyim ürünleri.
-- **Ev & Yaşam**: Kupalar, masa lambaları ve dekoratif ev eşyaları.
-- **Spor & Outdoor**: Termoslar, yoga matları ve spor ekipmanları.
+## Tentang Laman
+DIN'O EMPIRE (dinoempire.my) adalah platform e-dagang untuk Malaysia. Kami menawarkan pelbagai produk berkualiti dengan harga berpatutan.
 
-## Teknik Özellikler
-- **Altyapı**: Serverless ve Dağıtık Mimari
-- **Frontend (Pages)**:
-  - Framework: React 18 + Vite
-  - Styling: Tailwind CSS 3.x
-  - State/Hooks: Custom hooks, Context API
-  - Routing: React Router DOM 6.x
-  - SEO: React Helmet Async
-  - PWA: Vite Plugin PWA
-  - Icons: Lucide React
-- **Backend (Workers)**:
-  - Framework: Hono + Cloudflare Workers
-  - Database: Cloudflare D1 (SQLite) via Prisma ORM
-  - Object Storage: Cloudflare R2
-- **Ödeme**: Param POS Entegrasyonu
-- **Güvenlik**: Cloudflare WAF, Rate Limiting
+## Kategori Produk
+- **Elektronik**: Telefon, fon telinga, jam pintar dan aksesori.
+- **Pakaian & Aksesori**: T-shirt, dompet dan pakaian harian.
+- **Rumah & Gaya Hidup**: Cawan, lampu meja dan hiasan rumah.
+- **Sukan & Luar**: Termos, tikar yoga dan peralatan sukan.
 
-## İletişim & Destek
-- E-posta: bilgi@ecommerceflaredev.web.tr
-- Telefon: 0850 000 00 00
-- Yer: Karaköy, İstanbul, Türkiye
+## Ciri Teknikal
+- **Infrastruktur**: Serverless (Cloudflare Workers + D1 + R2)
+- **Frontend**: React 18 + Vite + Tailwind CSS
+- **Backend**: Hono + Cloudflare Workers
+- **Pembayaran**: ToyyibPay (FPX & Kad)
+- **Penghantaran**: EasyParcel
 
-## API Kullanımı (Geliştiriciler & Botlar için)
-- **Sitemap**: https://api.ecommerceflaredev.web.tr/api/v1/sitemap.xml
+## Hubungi
+- E-mel: dinoempire.my@gmail.com
+- Laman: https://dinoempire.my
 
-## Politikalar
-- **Kargo**: Belirli limit üzeri ücretsiz kargo (güncel limit için site ayarlarına bakınız)
-- **İade**: 14 gün içinde koşulsuz iade hakkı (Mesafeli Satış Sözleşmesi kapsamında)
-- **Teslimat**: Hızlı kargo ile Türkiye genelinde gönderim yapılmaktadır.
+## API
+- Sitemap: https://api.dinoempire.my/api/v1/sitemap.xml
+
+## Polisi
+- **Penghantaran**: Percuma untuk pesanan RM150 ke atas
+- **Pulangan**: 14 hari dari tarikh penerimaan
