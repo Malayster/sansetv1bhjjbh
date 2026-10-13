@@ -4,6 +4,24 @@ const isLocalhost = typeof window !== 'undefined' &&
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const ADMIN_API_URL = isLocalhost ? 'http://localhost:8787' : '';
 
+const ROLE_PERMISSIONS = {
+  superadmin: ['*'],
+  admin: [
+    'products:read', 'products:write',
+    'categories:read', 'categories:write',
+    'brands:read', 'brands:write',
+    'orders:read', 'orders:write',
+    'returns:read', 'returns:write',
+    'subscriptions:read', 'subscriptions:write',
+    'analytics:read', 'upload:write', 'notifications:read'
+  ],
+  staff: [
+    'orders:read', 'orders:write',
+    'returns:read', 'returns:write',
+    'subscriptions:read', 'analytics:read', 'notifications:read'
+  ]
+};
+
 export function useAdminRole() {
   const [role, setRole] = useState(null);
   const [email, setEmail] = useState(null);
@@ -22,14 +40,11 @@ export function useAdminRole() {
       .finally(() => setLoading(false));
   }, []);
 
-  const can = (resource) => {
+  const can = (resource, action = 'read') => {
     if (!role) return false;
-    if (role === 'superadmin') return true;
-    const map = {
-      admin: ['products', 'categories', 'brands', 'orders', 'returns', 'subscriptions', 'analytics', 'upload'],
-      staff: ['orders', 'returns', 'subscriptions', 'analytics']
-    };
-    return (map[role] || []).includes(resource);
+    const perms = ROLE_PERMISSIONS[role] || [];
+    if (perms.includes('*')) return true;
+    return perms.includes(`${resource}:${action}`) || perms.includes(resource);
   };
 
   return { role, email, loading, can };
