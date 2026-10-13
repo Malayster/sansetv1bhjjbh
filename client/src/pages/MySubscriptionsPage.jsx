@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Package, SkipForward, XCircle, RefreshCw, Star } from 'lucide-react';
 import SEO from '../components/SEO';
+import { PointsHistory } from '../components/PointsHistory';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -13,6 +14,7 @@ export function MySubscriptionsPage() {
   const [points, setPoints] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
 
   const load = async (e) => {
     e?.preventDefault();
@@ -100,19 +102,36 @@ export function MySubscriptionsPage() {
         </form>
 
         {points && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Star className="text-amber-500" size={28} />
-              <div>
-                <div className="text-sm text-amber-800">Points Anda</div>
-                <div className="text-2xl font-black text-amber-900">{points.baki || 0}</div>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Star className="text-amber-500" size={28} />
+                <div>
+                  <div className="text-sm text-amber-800">Points Anda</div>
+                  <div className="text-2xl font-black text-amber-900">{points.baki || 0}</div>
+                </div>
+              </div>
+              <div className="text-left sm:text-right text-xs text-amber-700">
+                <div>Diperoleh: {points.jumlahDiperoleh || 0}</div>
+                <div>Digunakan: {points.jumlahDigunakan || 0}</div>
+                <div className="mt-1">1 point = RM1</div>
               </div>
             </div>
-            <div className="text-left sm:text-right text-xs text-amber-700">
-              <div>Diperoleh: {points.jumlahDiperoleh || 0}</div>
-              <div>Digunakan: {points.jumlahDigunakan || 0}</div>
-              <div className="mt-1">1 point = RM1</div>
-            </div>
+            {points.log && points.log.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="text-xs text-amber-700 underline"
+                >
+                  {showHistory ? 'Sembunyi' : 'Lihat'} sejarah
+                </button>
+                {showHistory && (
+                  <div className="mt-2 bg-white rounded-xl p-3">
+                    <PointsHistory log={points.log} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
