@@ -99,10 +99,11 @@ export function BoxBuilderPage() {
       });
       const data = await res.json();
       if (data.status === 'success') {
-        alert('Langganan berjaya dicipta!');
+        alert('Langganan berjaya dicipta! Simpan token akses anda.');
         setBoxItems({});
         setShowSubForm(false);
-        navigate(`/langganan?email=${encodeURIComponent(subForm.eposta)}`);
+        const token = data.data?.accessToken || '';
+        navigate(`/langganan?email=${encodeURIComponent(subForm.eposta)}&token=${encodeURIComponent(token)}`);
       } else {
         alert(data.errorMessage || 'Ralat mencipta langganan');
       }
@@ -141,7 +142,7 @@ export function BoxBuilderPage() {
                 <div className="text-sm text-amber-700">Anda sudah di tahap tertinggi!</div>
               )}
             </div>
-            <div className="text-right">
+            <div className="text-right md:text-right">
               <div className="text-2xl font-black text-amber-900">RM {finalTotal.toFixed(2)}</div>
               {discountAmount > 0 && (
                 <div className="text-xs text-amber-700 line-through">RM {subtotal.toFixed(2)}</div>
@@ -191,7 +192,7 @@ export function BoxBuilderPage() {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-24 border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+            <div className="lg:sticky lg:top-24 border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
               <h2 className="font-black text-lg mb-4 flex items-center gap-2">
                 <Package size={20} /> Box Anda
               </h2>
@@ -247,7 +248,7 @@ export function BoxBuilderPage() {
 
         {showSubForm && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSubForm(false)}>
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <h3 className="font-black text-lg mb-4">Jadikan Langganan</h3>
               <form onSubmit={createSubscription} className="space-y-3">
                 <input required className="w-full border rounded-xl px-3 py-2" placeholder="E-mel" type="email" value={subForm.eposta} onChange={e => setSubForm({ ...subForm, eposta: e.target.value })} />
