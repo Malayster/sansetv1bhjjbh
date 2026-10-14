@@ -92,6 +92,39 @@ export class OrderService {
         this.emailService = emailService;
     }
 
+    async getAllOrdersForAdmin() {
+        return this.orderRepository.findAllForAdmin();
+    }
+
+    async getOrderByIdWithDetails(id) {
+        return this.orderRepository.getOrderByIdWithDetails(id);
+    }
+
+    async updateOrder(id, data) {
+        const allowed = {};
+        if (data.durum !== undefined) allowed.durum = data.durum;
+        if (data.kargoTakipNo !== undefined) allowed.kargoTakipNo = data.kargoTakipNo;
+        if (data.kargoFirmasi !== undefined) allowed.kargoFirmasi = data.kargoFirmasi;
+        if (data.faturaDurumu !== undefined) allowed.faturaDurumu = data.faturaDurumu;
+        if (data.faturaNo !== undefined) allowed.faturaNo = data.faturaNo;
+        if (data.adminNotu !== undefined) allowed.adminNotu = data.adminNotu;
+
+        const existing = await this.orderRepository.getOrderById(id);
+        if (!existing) throw new Error('Pesanan tidak dijumpai.');
+
+        if (data.durum && data.durum !== existing.durum) {
+            await this.orderRepository.createOrderHistory({
+                siparisId: id,
+                eskiDurum: existing.durum,
+                yeniDurum: data.durum,
+                not: data.not || 'Status dikemaskini',
+                islemYapan: 'ADMIN'
+            });
+        }
+
+        return this.orderRepository.updateStatus(id, existing.odemeDurumu, data.durum || existing.durum);
+    }
+
     async processCheckout(checkoutData) {
         const { items, guestInfo: customerInfo, pointsToRedeem = 0 } = checkoutData;
 
@@ -162,7 +195,6 @@ export class OrderService {
         shippingFee = Number(shippingFee.toFixed(2));
         let toplamTutar = subTotal + shippingFee;
 
-        // Apply points discount
         let pointsUsed = 0;
         if (pointsToRedeem > 0 && customerInfo.email) {
             const pts = await prisma.points.findUnique({ where: { eposta: customerInfo.email } });
@@ -318,12 +350,10 @@ export class OrderService {
 
         await this.orderRepository.adjustStock(siparis.kalemler, -1);
 
-        // Deduct points if used (stored as negative pointsEarned)
         if (siparis.pointsEarned < 0) {
             await deductPoints(siparis.eposta, Math.abs(siparis.pointsEarned), siparis.siparisNumarasi);
         }
 
-        // Award points on net amount
         await awardPoints(siparis.eposta, Number(siparis.toplamTutar), siparis.siparisNumarasi);
 
         const freshOrder = await this.orderRepository.getOrderById(siparis.id);
