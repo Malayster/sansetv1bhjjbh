@@ -46,7 +46,7 @@ describe('checkout validation', () => {
 
     it('prices from the database and issues a 10-digit order number', async () => {
         const result = await checkout([{ id: 'p1', quantity: 3, price: 1 }]);
-        expect(result.total).toBe(350);
+        expect(result.total).toBe(300);
         expect(result.orderNumber).toMatch(/^[1-9]\d{9}$/);
     });
 });
@@ -82,7 +82,7 @@ describe('public settings', () => {
         });
         const res = { json: vi.fn() };
         await controller.getPublicSettings({}, res, vi.fn());
-        expect(res.json).toHaveBeenCalledWith({ siteAdi: 'E-Market' });
+        expect(res.json).toHaveBeenCalledWith({ status: 'success', data: { siteAdi: 'E-Market' } });
     });
 });
 

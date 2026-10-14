@@ -39,14 +39,15 @@ export function SettingsProvider({ children }) {
                 api.get('/api/v1/cms').catch(() => ({ data: { data: {} } }))
             ]);
 
-            if (setRes.data) {
+            const settingsData = setRes.data?.data || setRes.data;
+            if (settingsData) {
                 setSettings({
-                    ...setRes.data,
-                    siteTitle: setRes.data.siteAdi || "DIN'O EMPIRE",
-                    companyName: setRes.data.siteAdi || "DIN'O EMPIRE Enterprise",
+                    ...settingsData,
+                    siteTitle: settingsData.siteAdi || "DIN'O EMPIRE",
+                    companyName: settingsData.siteAdi || "DIN'O EMPIRE Enterprise",
                     currency: 'MYR',
-                    kargoSabitUcret: Number(setRes.data.kargoSabitUcret || 8.00),
-                    ucretsizKargoAltLimit: Number(setRes.data.ucretsizKargoAltLimit || 100.00)
+                    kargoSabitUcret: Number(settingsData.kargoSabitUcret || 8.00),
+                    ucretsizKargoAltLimit: Number(settingsData.ucretsizKargoAltLimit || 100.00)
                 });
             }
 

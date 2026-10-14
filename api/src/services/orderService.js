@@ -394,6 +394,18 @@ export class OrderService {
         return this.orderRepository.getOrderByTrackingToken(token);
     }
 
+    async getAllOrdersForAdmin() {
+        return this.orderRepository.findAllForAdmin();
+    }
+
+    async getOrderByIdWithDetails(id) {
+        return this.orderRepository.getOrderByIdWithDetails(id);
+    }
+
+    async updateOrder(id, data) {
+        return this.orderRepository.update(id, data);
+    }
+
     async getInstallmentOptions(bin, amount) {
         return this.paymentService.getInstallmentOptions(bin, amount);
     }

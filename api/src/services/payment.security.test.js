@@ -104,7 +104,7 @@ describe('IyzicoService.verifyCallback', () => {
 });
 
 describe('PaymentService payment references', () => {
-    const service = new PaymentService({}, {}, {}, { paymentProvider: 'param' });
+    const service = new PaymentService({}, {}, {}, {}, { paymentProvider: 'param' });
 
     it('routes a prefixed reference to its own provider', () => {
         expect(service.parsePaymentReference('paytr-123456')).toEqual({ provider: 'paytr', paymentId: '123456' });

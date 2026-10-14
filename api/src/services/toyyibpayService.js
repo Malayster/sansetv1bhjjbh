@@ -99,7 +99,7 @@ export class ToyyibPayService {
         const refno = callbackData.refno || '';
         const received = callbackData.hash || '';
 
-        if (!received || !secretKey) return true;
+        if (!received || !secretKey) return false;
 
         const expected = crypto.createHash('md5')
             .update(`${secretKey}${status}${orderId}${refno}ok`)

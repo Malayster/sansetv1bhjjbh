@@ -42,7 +42,7 @@ export class PaymentService {
     }
 
     getProvider() {
-        return (this.config.paymentProvider || 'toyyibpay').toLowerCase().trim();
+        return ((this.config && this.config.paymentProvider) || 'toyyibpay').toLowerCase().trim();
     }
 
     _getService(provider) {
