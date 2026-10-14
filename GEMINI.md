@@ -10,91 +10,78 @@ Anda adalah pembantu pembangunan untuk projek **DIN'O EMPIRE** (e-dagang Malaysi
 - **Penghantaran**: EasyParcel
 - **Bahasa UI**: Bahasa Melayu + English sahaja (jangan guna Turki)
 
-## Struktur Penting
-
-```
-client/          # Storefront React (Vite)
-admin/           # Admin dashboard React
-api/             # Hono API (Cloudflare Workers)
-  src/
-    controllers/ # HTTP handlers
-    services/    # Business logic (ToyyibPay, EasyParcel, dll.)
-    routes/      # Route definitions
-  wrangler.toml  # Env vars & bindings
-```
-
 ## Peraturan
 
 1. **Jangan tulis perkataan Turki** (sepet, sipariş, ödeme, fatura, kargo, ürün, iade, dll.). Guna Melayu atau English.
-2. **Jangan hardcode secret** dalam kod. Guna env vars (`wrangler.toml` [vars] atau `wrangler secret put`).
-3. **Setiap produk wajib ada sekurang-kurangnya 2 gambar** (sudah dikuatkuasakan dalam ProductModal).
+2. **Jangan hardcode secret** dalam kod atau `wrangler.toml` [vars]. Guna `wrangler secret put`.
+3. **Setiap produk wajib ada sekurang-kurangnya 2 gambar**.
 4. **Jangan ubah schema D1** tanpa migration baru dalam `api/migrations/`.
 5. **Commit kecil dan jelas**. Guna format: `fix:`, `feat:`, `chore:`, `docs:`.
 
-## Tugas Semasa / Fokus
+## Tindakan Segera (Manual)
 
-### 1. Upload Gambar (Prioriti)
+### 1. ToyyibPay Secret (KRITIKAL)
+Secret key pernah ada dalam git history. **Rotate key di ToyyibPay dashboard sekarang.**
+
+```bash
+cd api
+npx wrangler secret put TOYYIBPAY_USER_SECRET_KEY
+# paste key baru
+```
+
+### 2. CDN / R2 Public Access
+`https://cdn.dinoempire.my` return 503. Gambar tidak boleh diakses.
+
+1. Cloudflare Dashboard → R2 → `dino-empire-assets`
+2. Settings → Enable Public Access
+3. Custom Domains → Add `cdn.dinoempire.my`
+4. Deploy semula API
+
+### 3. Migration
+```bash
+cd api && npx wrangler d1 migrations apply dino-empire-db --remote
+```
+
+## Tugas Semasa
+
+### Upload Gambar
 - Endpoint: `POST /api/v1/admin/upload`
 - Fail: `api/src/controllers/uploadController.js`
-- R2 binding: `IMAGES_BUCKET` (bucket: `dino-empire-assets`)
-- **CDN_URL** kini: `https://cdn.dinoempire.my`
-- **Tindakan diperlukan** (manual di Cloudflare Dashboard):
-  1. R2 → `dino-empire-assets` → Enable Public Access
-  2. Add custom domain `cdn.dinoempire.my`
-  3. Deploy semula API
+- R2 binding: `IMAGES_BUCKET`
 
-### 2. ToyyibPay
+### ToyyibPay
 - Service: `api/src/services/toyyibpayService.js`
 - Callback: `/api/v1/payment/toyyibpay/callback`
-- Env: `TOYYIBPAY_USER_SECRET_KEY`, `TOYYIBPAY_CATEGORY_CODE`
-- Hash validation sudah ada
+- Hash validation ada
 
-### 3. EasyParcel
+### EasyParcel
 - Service: `api/src/services/easyParcelService.js`
-- Callback: `/api/v1/easyparcel/callback` (public)
-- Admin UI: `admin/src/components/ShippingQuoteModal.jsx`
+- Callback: `/api/v1/easyparcel/callback`
 
 ## Perintah Berguna
 
 ```bash
-# Local dev
 npm run dev
-
-# Deploy API
 cd api && npx wrangler deploy
-
-# Semak secret
 cd api && npx wrangler secret list
-
-# Migration D1
 cd api && npx wrangler d1 migrations apply dino-empire-db --remote
 ```
 
 ## Semak Sebelum Commit
 
-- [ ] Tiada perkataan Turki dalam fail yang diubah
+- [ ] Tiada perkataan Turki
 - [ ] Tiada secret hardcode
-- [ ] Upload gambar masih berfungsi (jika ubah controller)
+- [ ] Upload gambar berfungsi (jika ubah)
 - [ ] Mobile responsive (jika ubah UI)
-- [ ] Commit message jelas
 
-## Fail yang Baru Dikemaskini (13 Okt 2026)
+## Fail Dikemaskini (14 Okt 2026)
 
-- `api/src/controllers/uploadController.js` — mesej Melayu
-- `api/src/services/returnService.js` — mesej Melayu
-- `api/src/config.js` — fallback domain dinoempire.my
-- `api/wrangler.toml` — CDN_URL = https://cdn.dinoempire.my
-- `client/public/legal/*.html` — semua Melayu
-- `client/public/llms.txt` — Melayu
-- `client/src/data/malaysia.json` — negeri Malaysia (turkiye.json dipadam)
-
-## Jika Ada Error
-
-1. Semak log Cloudflare Workers
-2. Semak R2 public access jika gambar tidak muncul
-3. Semak CORS jika request dari admin gagal
-4. Jangan revert perubahan Melayu tanpa sebab
+- `api/wrangler.toml` — secret dikeluarkan
+- `api/src/services/emailService.js` — Melayu + RM
+- `api/migrations/0012_malaysia_defaults.sql` — default Malaysia
+- `client/index.html` — Open Graph
+- `api/src/app.js` — cron fallback betul
 
 ---
 
-**Ringkasan**: Pastikan UI Melayu, upload gambar berfungsi dengan CDN public, dan jangan introduce Turki atau secret.
+**Ringkasan**: Pastikan secret tidak dalam git, CDN public, UI Melayu, dan jangan introduce Turki.
