@@ -5,9 +5,6 @@ import { useCart } from '../context/CartContext';
 import { useCategories } from '../hooks/useCategories';
 import { useSettings } from '../context/SettingsContext';
 
-/**
- * Enhanced Header component with mobile hamburger menu, mega menu dropdown for categories.
- */
 export function Header() {
     const { toggleSidebar, cartCount } = useCart();
     const { settings, cms } = useSettings();
@@ -22,13 +19,13 @@ export function Header() {
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/magaza?search=${encodeURIComponent(searchQuery)}`);
+            navigate(`/kedai?search=${encodeURIComponent(searchQuery)}`);
             setMobileMenuOpen(false);
         }
     };
 
     const handleCategoryClick = (cat) => {
-        navigate(`/magaza?kategori=${cat.slug}`);
+        navigate(`/kedai?kategori=${cat.slug}`);
         setActiveDropdown(null);
         setMobileMenuOpen(false);
     };
@@ -60,8 +57,8 @@ export function Header() {
                             </span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Link to="/sss" className="hover:text-action-red transition-colors">Soalan Lazim</Link>
-                            <Link to="/iletisim" className="hover:text-action-red transition-colors">Hubungi Kami</Link>
+                            <Link to="/soalan-lazim" className="hover:text-action-red transition-colors">Soalan Lazim</Link>
+                            <Link to="/hubungi" className="hover:text-action-red transition-colors">Hubungi Kami</Link>
                             <a href={`tel:${phoneNo.replace(/[^0-9]/g, '')}`} className="flex items-center gap-1 hover:text-action-red transition-colors">
                                 <Phone size={14} />
                                 {phoneNo}
@@ -153,7 +150,7 @@ export function Header() {
                         <div className="flex items-center justify-between gap-1 h-14 whitespace-nowrap text-[13px] font-black uppercase tracking-tight text-white/90">
                             <button
                                 className="px-4 h-full cursor-pointer hover:bg-white/10 transition-all flex items-center gap-1.5"
-                                onClick={() => navigate('/magaza')}
+                                onClick={() => navigate('/kedai')}
                             >
                                 <span>SEMUA BARANGAN</span>
                             </button>
