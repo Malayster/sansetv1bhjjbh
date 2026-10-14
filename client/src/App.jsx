@@ -27,11 +27,29 @@ import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { TikTokBioPage } from './pages/TikTokBioPage';
 
+const isAdminDomain = typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my';
+
 function AppLayout() {
     const location = useLocation();
-    const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/login';
+    const isAdminRoute = isAdminDomain || location.pathname.startsWith('/admin') || location.pathname === '/login';
     const isBioRoute = location.pathname === '/tt' || location.pathname === '/bio';
     const isCustomLayout = isAdminRoute || isBioRoute;
+
+    if (isAdminDomain) {
+        return (
+            <div className="min-h-screen bg-white flex flex-col">
+                <main className="flex-1 min-h-0">
+                    <Routes>
+                        <Route path="/" element={<AdminDashboardPage />} />
+                        <Route path="/login" element={<AdminLoginPage />} />
+                        <Route path="/admin" element={<AdminDashboardPage />} />
+                        <Route path="/admin/*" element={<AdminDashboardPage />} />
+                        <Route path="*" element={<AdminDashboardPage />} />
+                    </Routes>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
