@@ -23,12 +23,15 @@ import { Shop } from './pages/Shop';
 import { BoxBuilderPage } from './pages/BoxBuilderPage';
 import { MySubscriptionsPage } from './pages/MySubscriptionsPage';
 import { WhatsAppButton } from './components/WhatsAppButton';
+import { AdminLoginPage } from './pages/admin/AdminLoginPage';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { TikTokBioPage } from './pages/TikTokBioPage';
 
 function AppLayout() {
     const location = useLocation();
+    const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/login';
     const isBioRoute = location.pathname === '/tt' || location.pathname === '/bio';
-    const isCustomLayout = isBioRoute;
+    const isCustomLayout = isAdminRoute || isBioRoute;
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
@@ -54,10 +57,10 @@ function AppLayout() {
                     <Route path="/soalan-lazim" element={<FAQPage />} />
                     <Route path="/tentang" element={<AboutPage />} />
 
-                    {/* Admin redirect ke domain khas */}
-                    <Route path="/login" element={<Navigate to="https://admin.dinoempire.my" replace />} />
-                    <Route path="/admin" element={<Navigate to="https://admin.dinoempire.my" replace />} />
-                    <Route path="/admin/*" element={<Navigate to="https://admin.dinoempire.my" replace />} />
+                    <Route path="/login" element={<AdminLoginPage />} />
+                    <Route path="/admin/login" element={<AdminLoginPage />} />
+                    <Route path="/admin" element={<AdminDashboardPage />} />
+                    <Route path="/admin/*" element={<AdminDashboardPage />} />
 
                     <Route path="/pulangan" element={<LegalPage title="Syarat Pemulangan" contentKey="iade-degisim" />} />
                     <Route path="/penghantaran" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="kargo-bilgileri" />} />
