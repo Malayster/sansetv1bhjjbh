@@ -83,9 +83,11 @@ export function AdminLoginPage() {
         setLoading(true);
 
         try {
+            const turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value || '';
             const res = await api.post('/api/v1/admin/login', {
                 email: email.trim(),
-                pin: pin.trim()
+                pin: pin.trim(),
+                'cf-turnstile-response': turnstileToken
             }).catch(() => null);
 
             // Semak PIN daripada backend atau PIN tersimpan
@@ -304,6 +306,8 @@ export function AdminLoginPage() {
                                     </button>
                                 </div>
                             </div>
+
+                            <div className="cf-turnstile flex justify-center my-3" data-sitekey="0x4AAAAAAFWM8AsdKciaKEjB" data-action="admin_login"></div>
 
                             <button
                                 type="submit"

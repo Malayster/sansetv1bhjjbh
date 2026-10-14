@@ -153,6 +153,8 @@ export function ContactPage() {
                                 />
                             </div>
 
+                            <div className="cf-turnstile flex justify-center my-3" data-sitekey="0x4AAAAAAFWM8AsdKciaKEjB" data-action="contact"></div>
+
                             <button
                                 type="submit"
                                 className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm"

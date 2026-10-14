@@ -147,6 +147,7 @@ export function CheckoutPage() {
         }
         setLoading(true);
         try {
+            const turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value || '';
             const orderResponse = await api.post('/api/v1/orders/checkout', {
                 items: cartItems.map(item => ({
                     id: item.id, quantity: item.quantity, price: item.fiyat,
@@ -162,7 +163,8 @@ export function CheckoutPage() {
                     isCorporate: formData.isCorporate, companyName: formData.companyName,
                     taxOffice: formData.taxOffice, taxNumber: formData.taxNumber
                 },
-                pointsToRedeem: appliedPoints
+                pointsToRedeem: appliedPoints,
+                'cf-turnstile-response': turnstileToken
             });
 
             if (orderResponse.data.status !== 'pending_payment') {
@@ -301,11 +303,12 @@ export function CheckoutPage() {
                             {currentStep === 3 && (
                                 <div className="space-y-6">
                                     <h2 className="text-xl font-bold">Pembayaran</h2>
+                                    <div className="cf-turnstile flex justify-center my-4" data-sitekey="0x4AAAAAAFWM8AsdKciaKEjB" data-action="checkout"></div>
                                     <button onClick={handleSubmit} disabled={loading}
-                                        className="w-full bg-amber-500 text-white font-bold py-4 rounded-xl disabled:opacity-50">
+                                        className="w-full bg-amber-500 text-white font-bold py-4 rounded-xl disabled:opacity-50 cursor-pointer">
                                         {loading ? 'Memproses...' : `Bayar RM ${displayTotal.toFixed(2)}`}
                                     </button>
-                                    <button onClick={prevStep} className="w-full border py-3 rounded-xl">Kembali</button>
+                                    <button onClick={prevStep} className="w-full border py-3 rounded-xl cursor-pointer">Kembali</button>
                                 </div>
                             )}
                         </div>
