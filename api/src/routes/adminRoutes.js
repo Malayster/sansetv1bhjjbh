@@ -15,6 +15,7 @@ import {
     auditController
 } from '../container.js';
 import { ShippingController } from '../controllers/shippingController.js';
+import { config, currentEnv } from '../config.js';
 
 const router = new Hono();
 
@@ -120,7 +121,56 @@ router.get('/me', (c) => {
   return c.json({ status: 'success', data: { email: user?.email, role } });
 });
 
-router.post('/upload', requirePermission('upload'), adapt(uploadController.uploadImage));
+// Upload native Hono (elak adapter parseBody jadi string)
+router.post('/upload', requirePermission('upload'), async (c) => {
+  const contentType = c.req.header('content-type') || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return c.json({ status: 'error', errorMessage: 'Content-Type mesti multipart/form-data.' }, 400);
+  }
+
+  let form;
+  try {
+    form = await c.req.formData();
+  } catch (e) {
+    return c.json({ status: 'error', errorMessage: 'Gagal parse FormData: ' + e.message }, 400);
+  }
+
+  const file = form.get('file') || form.get('image') || form.get('upload');
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    const keys = [...form.keys()].join(', ');
+    return c.json({ status: 'error', errorMessage: `Fail tidak dijumpai. Medan: ${keys}` }, 400);
+  }
+
+  const env = c.env;
+  if (!env.IMAGES_BUCKET) {
+    return c.json({ status: 'error', errorMessage: 'R2 bucket tidak dikonfigurasi.' }, 500);
+  }
+
+  const buffer = await file.arrayBuffer();
+  if (buffer.byteLength > 5 * 1024 * 1024) {
+    return c.json({ status: 'error', errorMessage: 'Imej maksimum 5 MB.' }, 413);
+  }
+
+  const head = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 16));
+  const ascii = (s, e) => String.fromCharCode(...head.subarray(s, e));
+  let ext = null, mime = null;
+  if (head.length >= 12 && ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') {
+    ext = 'webp'; mime = 'image/webp';
+  } else if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) {
+    ext = 'jpg'; mime = 'image/jpeg';
+  } else if (head.length >= 8 && head[0] === 0x89 && ascii(1, 4) === 'PNG') {
+    ext = 'png'; mime = 'image/png';
+  }
+  if (!ext) {
+    return c.json({ status: 'error', errorMessage: 'Hanya WebP, JPEG atau PNG dibenarkan.' }, 415);
+  }
+
+  const key = `products/${crypto.randomUUID()}.${ext}`;
+  await env.IMAGES_BUCKET.put(key, buffer, { httpMetadata: { contentType: mime } });
+
+  const cdn = env.CDN_URL || 'https://cdn.dinoempire.my';
+  return c.json({ status: 'success', key, url: `${cdn}/${key}` });
+});
 
 router.get('/products', requirePermission('products'), adapt(productController.adminGetProducts));
 router.post('/products', requirePermission('products'), adapt(productController.adminCreateProduct));
@@ -155,7 +205,6 @@ router.post('/notifications/read-all', adapt(notificationController.markAllRead)
 
 router.get('/audit', requirePermission('settings'), adapt(auditController.list));
 
-// Shipping (EasyParcel)
 router.post('/shipping/quotations', requirePermission('orders'), async (c) => {
   const ctrl = new ShippingController(c.env);
   return adapt(ctrl.getQuotations)(c);
