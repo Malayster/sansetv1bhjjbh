@@ -17,7 +17,6 @@ import {
 import { ShippingController } from '../controllers/shippingController.js';
 import { EmailService } from '../services/emailService.js';
 import { config } from '../config.js';
-import { turnstileGuard } from '../middlewares/turnstileMiddleware.js';
 
 const router = new Hono();
 
@@ -59,7 +58,7 @@ router.post('/verify-otp', async (c) => {
   return c.json({ status: 'error', errorMessage: 'Kod OTP tidak sah atau tamat tempoh.' }, 401);
 });
 
-router.post('/login', turnstileGuard('admin_login'), async (c) => {
+router.post('/login', async (c) => {
   const { email, pin, password } = await c.req.json();
   const inputPin = pin || password;
   try {
