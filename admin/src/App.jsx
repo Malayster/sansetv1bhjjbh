@@ -165,14 +165,26 @@ export default function App() {
   };
 
   const saveSettings = async (e) => {
-    e.preventDefault(); setLoading(true);
+    e.preventDefault();
+    setLoading(true);
     try {
-      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+      const res = await adminRequest(`${ADMIN_API_URL}/api/v1/admin/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
       const data = await res.json();
-      if (data.status === 'success') alert('Tetapan disimpan');
-      else alert(data.errorMessage || 'Ralat');
-    } catch (err) { if (err.message !== 'UNAUTHORIZED') alert('Ralat menyimpan tetapan'); }
-    finally { setLoading(false); }
+      if (data.status === 'success') {
+        alert('Tetapan disimpan');
+        await fetchData();
+      } else {
+        alert(data.errorMessage || JSON.stringify(data) || 'Ralat menyimpan tetapan');
+      }
+    } catch (err) {
+      if (err.message !== 'UNAUTHORIZED') alert('Ralat menyimpan tetapan: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const bulkDeleteProducts = async (ids) => { if (!confirm(`Padam ${ids.length} produk?`)) return; for (const id of ids) await adminRequest(`${ADMIN_API_URL}/api/v1/admin/products/${id}`, { method: 'DELETE' }); setSelectedProductIds([]); fetchData(); };
@@ -232,7 +244,7 @@ export default function App() {
       </div>
 
       <ProductModal show={showProductModal} onClose={() => setShowProductModal(false)} editingProduct={editingProduct} productForm={productForm} setProductForm={setProductForm} categories={categories} brands={brands} saveProduct={saveProduct} onImageUpload={onImageUpload} loading={loading} config={config} />
-      <ImageCropper cropState={cropState} setCropState={setCropState} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} isDragging={isDragging} setIsDragging={setIsDragging} dragStart={dragStart} setDragStart={setDragStart} executeCropAndUpload={executeCropAndUpload} loading={loading} />
+      <ImageCropper cropState={cropState} setCropState={setCropState} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} isDragging={isDragging} setIsDragging={setIsDragging} dragStart={dragStart} setDragStart={setDragStart} executeCropAndUpload={executeCropAndUpload} />
     </div>
   );
 }
