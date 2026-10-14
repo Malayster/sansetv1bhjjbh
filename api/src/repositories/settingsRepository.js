@@ -6,9 +6,19 @@ export class SettingsRepository extends BaseRepository {
     }
 
     async getSettings() {
-        return this.model.findUnique({
+        let settings = await this.model.findUnique({
             where: { id: 'global-settings' }
         });
+        if (!settings) {
+            settings = await this.model.create({
+                data: {
+                    id: 'global-settings',
+                    siteAdi: "DIN'O EMPIRE",
+                    maintenanceMode: false
+                }
+            });
+        }
+        return settings;
     }
 
     async createSettings(data) {
@@ -21,9 +31,14 @@ export class SettingsRepository extends BaseRepository {
     }
 
     async updateSettings(data) {
-        return this.model.update({
+        return this.model.upsert({
             where: { id: 'global-settings' },
-            data
+            create: {
+                id: 'global-settings',
+                siteAdi: data.siteAdi || "DIN'O EMPIRE",
+                ...data
+            },
+            update: data
         });
     }
 }
