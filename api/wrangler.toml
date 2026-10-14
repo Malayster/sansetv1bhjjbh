@@ -13,10 +13,12 @@ API_URL = "https://api.dinoempire.my"
 ORDER_NOTIFICATION_EMAIL = "dinoempire.my@gmail.com"
 CDN_URL = "https://cdn.dinoempire.my"
 
-# ── Pembayaran ToyyibPay (Produksi Langsung) ──
+# ── Pembayaran ToyyibPay ──
+# TOYYIBPAY_USER_SECRET_KEY mesti diset sebagai secret:
+#   npx wrangler secret put TOYYIBPAY_USER_SECRET_KEY
+# Jangan letak dalam vars atau commit.
 PAYMENT_PROVIDER = "toyyibpay"
 TOYYIBPAY_BASE_URL = "https://toyyibpay.com"
-TOYYIBPAY_USER_SECRET_KEY = "buy5h8p1-0jls-u5h6-66yk-1nybygutf16y"
 TOYYIBPAY_CATEGORY_CODE = "b4gn1lj7"
 
 # ── E-mel / Penghantaran ──
