@@ -23,7 +23,7 @@ export function HomePage() {
     }, []);
 
     const handleBrandSelect = (brandId) => {
-        navigate(`/magaza?markaId=${brandId}`);
+        navigate(`/kedai?markaId=${brandId}`);
     };
 
     const seoTitle = "DIN'O EMPIRE - Kilang Kuala Ketil & Barangan Terpilih Malaysia";
@@ -51,7 +51,6 @@ export function HomePage() {
 
             <FeaturedProducts />
 
-            {/* SEKSYEN BARU TERSENDIRI: TIKTOK SHOPPABLE REELS KILANG */}
             <TikTokReelsSection />
 
             <ComparisonTable />
