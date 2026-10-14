@@ -2,14 +2,16 @@ import axios from 'axios';
 
 /**
  * API Base URL Configuration
- * Uses proxy in development to avoid CORS, and direct URL in production.
+ * On admin.dinoempire.my, use same-origin so Worker can proxy /api and forward Access JWT.
  */
 export const getApiUrl = () => {
     const envUrl = import.meta.env.VITE_API_URL;
-    if (envUrl) {
-        return envUrl;
-    }
+    if (envUrl) return envUrl;
     if (import.meta.env.DEV) return '';
+
+    if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
+        return '';
+    }
 
     return 'https://api.dinoempire.my';
 };
