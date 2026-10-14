@@ -1,6 +1,6 @@
--- AlterTable: urunler
-ALTER TABLE "urunler" ADD COLUMN "kisaAciklama" TEXT;
-ALTER TABLE "urunler" ADD COLUMN "boyutSecenekleri" TEXT NOT NULL DEFAULT '[]';
+-- AlterTable: urunler (kisaAciklama & boyutSecenekleri already added in 0002)
+-- ALTER TABLE "urunler" ADD COLUMN "kisaAciklama" TEXT;
+-- ALTER TABLE "urunler" ADD COLUMN "boyutSecenekleri" TEXT NOT NULL DEFAULT '[]';
 ALTER TABLE "urunler" DROP COLUMN "kartelaIcCephe";
 ALTER TABLE "urunler" DROP COLUMN "kartelaDisCephe";
 
