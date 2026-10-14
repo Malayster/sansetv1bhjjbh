@@ -15,7 +15,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { SettingsProvider } from './context/SettingsContext';
 
@@ -41,30 +41,46 @@ function AppLayout() {
                     <Route path="/" element={<HomePage />} />
                     <Route path="/tt" element={<TikTokBioPage />} />
                     <Route path="/bio" element={<TikTokBioPage />} />
-                    <Route path="/magaza" element={<Shop />} />
+
+                    {/* Routes Melayu */}
+                    <Route path="/kedai" element={<Shop />} />
                     <Route path="/bina-box" element={<BoxBuilderPage />} />
                     <Route path="/langganan" element={<MySubscriptionsPage />} />
+                    <Route path="/produk/:slug" element={<ProductDetailPage />} />
                     <Route path="/product/:id" element={<ProductDetailPage />} />
-                    <Route path="/urun/:slug" element={<ProductDetailPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
-                    <Route path="/siparis-takip" element={<OrderTrackingPage />} />
-                    <Route path="/odeme" element={<CheckoutPage />} />
+                    <Route path="/bayaran" element={<CheckoutPage />} />
+                    <Route path="/jejak-pesanan" element={<OrderTrackingPage />} />
                     <Route path="/payment/success" element={<PaymentSuccessPage />} />
                     <Route path="/payment/failure" element={<PaymentFailurePage />} />
-                    <Route path="/iletisim" element={<ContactPage />} />
-                    <Route path="/sss" element={<FAQPage />} />
-                    <Route path="/hakkimizda" element={<AboutPage />} />
+                    <Route path="/hubungi" element={<ContactPage />} />
+                    <Route path="/soalan-lazim" element={<FAQPage />} />
+                    <Route path="/tentang" element={<AboutPage />} />
 
                     <Route path="/login" element={<AdminLoginPage />} />
                     <Route path="/admin/login" element={<AdminLoginPage />} />
                     <Route path="/admin" element={<AdminDashboardPage />} />
                     <Route path="/admin/*" element={<AdminDashboardPage />} />
 
-                    <Route path="/iade-degisim" element={<LegalPage title="Syarat Pemulangan" contentKey="iade-degisim" />} />
-                    <Route path="/kargo-bilgileri" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="kargo-bilgileri" />} />
-                    <Route path="/mesafeli-satis-sozlesmesi" element={<LegalPage title="Terma & Syarat Jualan" contentKey="mesafeli-satis-sozlesmesi" />} />
-                    <Route path="/on-bilgilendirme" element={<LegalPage title="Maklumat Awal Pembelian" contentKey="on-bilgilendirme" />} />
-                    <Route path="/gizlilik-ve-kvkk" element={<LegalPage title="Dasar Privasi & Perlindungan Data (PDPA)" contentKey="gizlilik-ve-kvkk" />} />
+                    <Route path="/pulangan" element={<LegalPage title="Syarat Pemulangan" contentKey="iade-degisim" />} />
+                    <Route path="/penghantaran" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="kargo-bilgileri" />} />
+                    <Route path="/terma-syarat" element={<LegalPage title="Terma & Syarat Jualan" contentKey="mesafeli-satis-sozlesmesi" />} />
+                    <Route path="/maklumat-awal" element={<LegalPage title="Maklumat Awal Pembelian" contentKey="on-bilgilendirme" />} />
+                    <Route path="/privasi" element={<LegalPage title="Dasar Privasi & Perlindungan Data (PDPA)" contentKey="gizlilik-ve-kvkk" />} />
+
+                    {/* Redirect dari routes Turki lama */}
+                    <Route path="/magaza" element={<Navigate to="/kedai" replace />} />
+                    <Route path="/urun/:slug" element={<Navigate to="/produk/:slug" replace />} />
+                    <Route path="/siparis-takip" element={<Navigate to="/jejak-pesanan" replace />} />
+                    <Route path="/odeme" element={<Navigate to="/bayaran" replace />} />
+                    <Route path="/iletisim" element={<Navigate to="/hubungi" replace />} />
+                    <Route path="/sss" element={<Navigate to="/soalan-lazim" replace />} />
+                    <Route path="/hakkimizda" element={<Navigate to="/tentang" replace />} />
+                    <Route path="/iade-degisim" element={<Navigate to="/pulangan" replace />} />
+                    <Route path="/kargo-bilgileri" element={<Navigate to="/penghantaran" replace />} />
+                    <Route path="/mesafeli-satis-sozlesmesi" element={<Navigate to="/terma-syarat" replace />} />
+                    <Route path="/on-bilgilendirme" element={<Navigate to="/maklumat-awal" replace />} />
+                    <Route path="/gizlilik-ve-kvkk" element={<Navigate to="/privasi" replace />} />
                 </Routes>
             </main>
             {!isCustomLayout && <Footer />}
