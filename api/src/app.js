@@ -82,7 +82,6 @@ export default {
     async scheduled(event, env, ctx) {
         console.log('[Cron Trigger] Active: executing scheduled task for cron: %s', event.cron);
 
-        // 1. Process due subscriptions
         try {
             const billing = await processDueSubscriptions(env);
             console.log('[Cron] Subscription billing:', billing);
@@ -90,11 +89,10 @@ export default {
             console.error('[Cron] Subscription billing failed:', error);
         }
 
-        // 2. Warm sitemap cache
         try {
-            const clientUrl = env.CLIENT_URL || 'https://ecommerceflaredev.web.tr';
+            const clientUrl = env.CLIENT_URL || 'https://dinoempire.my';
             const sitemapUrl = `${clientUrl}/sitemap.xml`;
-            const apiFetchUrl = `${env.API_URL || 'http://localhost:8787'}/sitemap.xml`;
+            const apiFetchUrl = `${env.API_URL || 'https://api.dinoempire.my'}/sitemap.xml`;
             const response = await fetch(apiFetchUrl);
             if (response.ok) {
                 console.log('[Cron Trigger] Sitemap cache warmed successfully: %s', sitemapUrl);
