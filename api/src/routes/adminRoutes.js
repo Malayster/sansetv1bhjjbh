@@ -15,11 +15,20 @@ import {
     auditController
 } from '../container.js';
 import { ShippingController } from '../controllers/shippingController.js';
-import { config, currentEnv } from '../config.js';
+import { EmailService } from '../services/emailService.js';
+import { config } from '../config.js';
 
 const router = new Hono();
 
-// ── Laluan Pengesahan Keselamatan & Log Masuk Pentadbir ─────────────────
+async function sendOtpEmail(c, email, otp, purpose) {
+  try {
+    const emailService = new EmailService(config.email);
+    await emailService.sendOtp(email, otp, purpose);
+  } catch (e) {
+    console.error('[OTP] Gagal hantar e-mel:', e);
+  }
+}
+
 router.post('/send-otp', async (c) => {
   const { email } = await c.req.json();
   if (!email) return c.json({ status: 'error', errorMessage: 'Sila masukkan e-mel.' }, 400);
@@ -27,7 +36,8 @@ router.post('/send-otp', async (c) => {
   try {
     await c.env.DB.prepare(`INSERT OR REPLACE INTO cms_kandungan (kunci, kandunganJson, guncellenmeTarihi) VALUES (?, ?, CURRENT_TIMESTAMP)`).bind('otp_' + email.toLowerCase(), JSON.stringify({ otp, expires: Date.now() + 600000 })).run();
   } catch (e) {}
-  return c.json({ status: 'success', message: `Kod keselamatan OTP 6-digit telah dihantar ke ${email}.` });
+  await sendOtpEmail(c, email, otp, 'log masuk pentadbir');
+  return c.json({ status: 'success', message: `Kod OTP telah dihantar ke ${email}.` });
 });
 
 router.post('/verify-otp', async (c) => {
@@ -88,7 +98,8 @@ router.post('/request-email-change', async (c) => {
   try {
     await c.env.DB.prepare(`INSERT OR REPLACE INTO cms_kandungan (kunci, kandunganJson, guncellenmeTarihi) VALUES (?, ?, CURRENT_TIMESTAMP)`).bind('email_change_' + newEmail.toLowerCase(), JSON.stringify({ otp, expires: Date.now() + 600000 })).run();
   } catch (e) {}
-  return c.json({ status: 'success', message: `Kod pengesahan 6-digit telah dihantar ke ${newEmail}.` });
+  await sendOtpEmail(c, newEmail, otp, 'tukar e-mel pentadbir');
+  return c.json({ status: 'success', message: `Kod OTP telah dihantar ke ${newEmail}.` });
 });
 
 router.post('/verify-email-change', async (c) => {
@@ -121,7 +132,6 @@ router.get('/me', (c) => {
   return c.json({ status: 'success', data: { email: user?.email, role } });
 });
 
-// Upload native Hono (elak adapter parseBody jadi string)
 router.post('/upload', requirePermission('upload'), async (c) => {
   const contentType = c.req.header('content-type') || '';
   if (!contentType.includes('multipart/form-data')) {
