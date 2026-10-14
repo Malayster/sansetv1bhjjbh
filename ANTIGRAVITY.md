@@ -6,12 +6,41 @@ Anda adalah agent Gemini yang bekerja dalam Antigravity / VSCodium pada repo **M
 
 ---
 
+## 0. Tugas Segera: Deploy Admin Panel ke Cloudflare
+
+Worker `dinoempire-admin` sudah dicipta oleh Cloudflare dan custom domain `admin.dinoempire.my` sudah diattach. Fail `admin/wrangler.toml` dan `admin/src/worker.js` sudah ada dalam repo.
+
+**Lakukan sekarang:**
+
+```bash
+cd admin
+npm install
+npm run build
+npx wrangler deploy
+```
+
+Selepas berjaya, uji `https://admin.dinoempire.my` (selepas login Cloudflare Access).
+
+**Nota:** API (`api.dinoempire.my`) mesti ada secret berikut supaya Access berfungsi:
+
+```bash
+cd api
+npx wrangler secret put TEAM_DOMAIN
+# Masukkan: https://dinoempire.cloudflareaccess.com
+
+npx wrangler secret put POLICY_AUD
+# Masukkan AUD tag dari aplikasi Access
+```
+
+---
+
 ## 1. Konteks Projek
 
 | Item | Nilai |
 |------|-------|
-| Domain | https://dinoempire.my |
-| API | https://api.dinoempire.my |
+| Storefront | https://dinoempire.my (`dinoempirev1`) |
+| Admin | https://admin.dinoempire.my (`dinoempire-admin`) |
+| API | https://api.dinoempire.my (`dinoempire-api`) |
 | Stack | Cloudflare Workers (Hono) + D1 + R2 + React |
 | Pembayaran | ToyyibPay (FPX & Kad) |
 | Penghantaran | EasyParcel |
@@ -63,6 +92,16 @@ cd api && npx wrangler deploy
 cd api && npx wrangler d1 migrations apply dino-empire-db --remote
 ```
 
+### 3.4 Cloudflare Access Secrets (API)
+```bash
+cd api
+npx wrangler secret put TEAM_DOMAIN
+# https://dinoempire.cloudflareaccess.com
+
+npx wrangler secret put POLICY_AUD
+# AUD tag dari Zero Trust → Access → Applications
+```
+
 ---
 
 ## 4. Tugas Kod yang Perlu Diselesaikan
@@ -105,7 +144,7 @@ Fail: `api/src/services/emailService.js`
 - `client/public/manifest.json` — nama DIN'O EMPIRE
 
 ### 4.5 Schema / Negara
-Migration `api/migrations/0012_malaysia_defaults.sql` sudah wujud. Pastikan dijalankan.
+Migration `api/migrations/0012_malaysia_defaults.sql` dan `0013_schema_drift_sync.sql` sudah wujud. Pastikan dijalankan.
 
 ---
 
@@ -115,6 +154,9 @@ Migration `api/migrations/0012_malaysia_defaults.sql` sudah wujud. Pastikan dija
 api/
   wrangler.toml          # Env (tanpa secret)
   src/
+    middlewares/
+      adminAuth.js       # Cloudflare Access (jose)
+      turnstileMiddleware.js
     controllers/
       uploadController.js
       seoController.js
@@ -132,6 +174,11 @@ client/
   public/
     robots.txt
     manifest.json
+admin/
+  wrangler.toml          # dinoempire-admin
+  src/
+    worker.js            # SPA asset server
+    ...
 ```
 
 ---
@@ -145,9 +192,14 @@ npm run dev
 # Deploy API
 cd api && npx wrangler deploy
 
+# Deploy Admin
+cd admin && npm run build && npx wrangler deploy
+
 # Secret
 cd api && npx wrangler secret list
 cd api && npx wrangler secret put TOYYIBPAY_USER_SECRET_KEY
+cd api && npx wrangler secret put TEAM_DOMAIN
+cd api && npx wrangler secret put POLICY_AUD
 
 # Migration
 cd api && npx wrangler d1 migrations apply dino-empire-db --remote
@@ -171,23 +223,31 @@ cd api && npx prisma generate
 
 ## 8. Urutan Kerja yang Disyorkan
 
-1. Pastikan secret ToyyibPay sudah di-rotate dan di-set sebagai secret.
-2. Aktifkan R2 public access + custom domain CDN.
-3. Jalankan migration.
-4. Deploy API.
-5. Uji upload gambar di admin → pastikan URL CDN boleh dibuka.
-6. Cari dan betulkan sebarang sisa Turki atau pautan lama.
-7. Deploy client.
-8. Uji laman utama, kedai, produk, checkout, dan jejak pesanan.
-9. Kemaskini GEMINI.md / ANTIGRAVITY.md jika ada perubahan penting.
+1. Deploy admin: `cd admin && npm install && npm run build && npx wrangler deploy`
+2. Set secret Cloudflare Access pada API (`TEAM_DOMAIN`, `POLICY_AUD`).
+3. Pastikan secret ToyyibPay sudah di-rotate dan di-set sebagai secret.
+4. Aktifkan R2 public access + custom domain CDN.
+5. Jalankan migration.
+6. Deploy API.
+7. Uji `https://admin.dinoempire.my` selepas login Access.
+8. Uji upload gambar di admin → pastikan URL CDN boleh dibuka.
+9. Cari dan betulkan sebarang sisa Turki atau pautan lama.
+10. Deploy client.
+11. Uji laman utama, kedai, produk, checkout, dan jejak pesanan.
 
 ---
 
 ## 9. Fail yang Sudah Dikemaskini (14 Okt 2026)
 
+- `admin/wrangler.toml` — Worker dinoempire-admin
+- `admin/src/worker.js` — SPA asset server
+- `api/src/middlewares/adminAuth.js` — jose + TEAM_DOMAIN/POLICY_AUD
+- `api/src/middlewares/turnstileMiddleware.js`
+- `api/package.json` — jose
 - `api/wrangler.toml` — secret dikeluarkan
 - `api/src/services/emailService.js` — Melayu + RM
 - `api/migrations/0012_malaysia_defaults.sql`
+- `api/migrations/0013_schema_drift_sync.sql`
 - `client/src/App.jsx` — routes Melayu + redirect
 - `client/src/components/Header.jsx`
 - `client/src/components/Footer.jsx`
@@ -198,4 +258,4 @@ cd api && npx prisma generate
 
 ---
 
-**Mula sekarang.** Jalankan langkah 3.1 → 3.3 dulu, kemudian teruskan dengan tugas kod. Laporkan status selepas setiap bahagian.
+**Mula sekarang.** Jalankan seksyen 0 (deploy admin) dahulu, kemudian teruskan dengan langkah 3.1 ke atas. Laporkan status selepas setiap bahagian.
