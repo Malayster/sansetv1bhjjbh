@@ -64,10 +64,10 @@ export function Header() {
                                 {phoneNo}
                             </a>
                             <span className="text-gray-300">|</span>
-                            <Link to="/login" className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold transition-colors" title="Log Masuk Pentadbir">
+                            <a href="https://admin.dinoempire.my" className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold transition-colors" title="Log Masuk Pentadbir">
                                 <Lock size={12} />
                                 <span>Log Masuk Pentadbir</span>
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -117,14 +117,14 @@ export function Header() {
                                 <span>Bina Box</span>
                             </Link>
 
-                            <Link
-                                to="/login"
+                            <a
+                                href="https://admin.dinoempire.my"
                                 className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg border border-gray-200 hover:border-amber-300 transition-all shadow-xs"
                                 title="Log Masuk Pentadbir"
                             >
                                 <Lock size={15} className="text-amber-600" />
                                 <span>Admin</span>
-                            </Link>
+                            </a>
 
                             <button
                                 className="flex items-center gap-1.5 md:gap-3 bg-action-red text-white px-3 md:px-5 py-2 md:py-2.5 rounded-lg hover:bg-red-700 transition-all shadow-md transform hover:scale-105 active:scale-95 group relative overflow-hidden"
@@ -281,14 +281,14 @@ export function Header() {
                         </div>
 
                         <div className="p-4 border-t border-gray-100 bg-slate-50 space-y-2">
-                            <Link
-                                to="/login"
+                            <a
+                                href="https://admin.dinoempire.my"
                                 onClick={() => setMobileMenuOpen(false)}
                                 className="w-full py-3 px-4 bg-amber-500/10 border border-amber-500/30 text-amber-700 font-bold rounded-xl flex items-center justify-center gap-2 text-sm hover:bg-amber-500/20 transition-colors"
                             >
                                 <Lock size={16} />
                                 Log Masuk Pentadbir
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -116,7 +116,7 @@ export function Footer() {
                                 { name: 'Syarat Pemulangan', href: '/pulangan' },
                                 { name: 'Dasar Privasi (PDPA)', href: '/privasi' },
                                 { name: 'Soalan Lazim (FAQ)', href: '/soalan-lazim' },
-                                { name: 'Log Masuk Pentadbir', href: '/login' },
+                                { name: 'Log Masuk Pentadbir', href: 'https://admin.dinoempire.my', external: true },
                                 { name: 'Hubungi WhatsApp', href: `https://wa.me/${cleanNum}?text=${waText}` }
                             ].map((item) => (
                                 <li key={item.name}>
