@@ -140,7 +140,7 @@ export class EmailService {
     async sendOrderConfirmation(toEmail, toName, orderDetails) {
         console.log('[Email] Pengesahan pesanan dihantar: %s - Pesanan: %s', toEmail, orderDetails.id);
 
-        const orderLink = `${config.clientUrl}/siparis-takip?token=${orderDetails.trackingToken}`;
+        const orderLink = `${config.clientUrl}/jejak-pesanan?token=${orderDetails.trackingToken}`;
 
         const content = `
             <p>Yang berhormat <strong>${esc(toName)}</strong>,</p>
@@ -197,7 +197,7 @@ export class EmailService {
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${config.clientUrl}" style="background-color: #191919; color: #4f46e5; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Kembali ke Laman Utama</a>
                 <br><br>
-                <a href="${config.clientUrl}/siparis-takip?token=${details.trackingToken}" style="background-color: #dc2a12; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Butiran Pesanan</a>
+                <a href="${config.clientUrl}/jejak-pesanan?token=${details.trackingToken}" style="background-color: #dc2a12; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Butiran Pesanan</a>
             </div>
         `;
 
