@@ -1,10 +1,12 @@
 {
-    "name": "E-Market - Online Alışveriş",
-    "short_name": "E-Market",
+    "name": "DIN'O EMPIRE - Kedai Rasmi",
+    "short_name": "DIN'O EMPIRE",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#4f46e5",
+    "theme_color": "#0f172a",
+    "lang": "ms",
+    "description": "Kedai rasmi barangan berkualiti dari kilang Kuala Ketil, Kedah.",
     "icons": [
         {
             "src": "/icons/favicon-48x48.png",
