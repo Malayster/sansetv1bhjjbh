@@ -42,9 +42,13 @@ export const adminAuth = async (c, next) => {
     const audience = c.env.ACCESS_AUD;
 
     // Mod ujian tempatan (Local development bypass)
-    if (c.env.NODE_ENV === 'development' || !teamDomain || !audience) {
+    if (c.env.NODE_ENV === 'development') {
         c.set('adminUser', { email: 'admin@dinoempire.my', role: 'admin', sub: 'local-dev-admin' });
         return next();
+    }
+
+    if (!teamDomain || !audience) {
+        return c.json({ status: 'error', errorMessage: 'Cloudflare Access tidak dikonfigurasikan.' }, 503);
     }
 
     const token = c.req.header('Cf-Access-Jwt-Assertion');
