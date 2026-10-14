@@ -137,6 +137,23 @@ export class EmailService {
 </html>`;
     }
 
+    async sendOtp(toEmail, otp, purpose = 'pengesahan') {
+        const content = `
+            <p>Salam,</p>
+            <p>Kod OTP anda untuk ${purpose} ialah:</p>
+            <div style="background-color: #F4F4F4; padding: 20px; border-radius: 6px; margin: 25px 0; text-align: center;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #191919;">${esc(otp)}</span>
+            </div>
+            <p style="color: #666666;">Kod ini sah selama 10 minit. Jika anda tidak meminta kod ini, abaikan e-mel ini.</p>
+        `;
+        await this._sendMail({
+            toEmail,
+            toName: '',
+            subject: `Kod OTP DIN'O EMPIRE - ${otp}`,
+            htmlContent: this._createEmailTemplate('Kod Pengesahan OTP', content, '#4f46e5')
+        });
+    }
+
     async sendOrderConfirmation(toEmail, toName, orderDetails) {
         console.log('[Email] Pengesahan pesanan dihantar: %s - Pesanan: %s', toEmail, orderDetails.id);
 
