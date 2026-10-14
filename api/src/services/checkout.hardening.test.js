@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../prisma.js', () => ({
-    default: { sistemAyarlari: { findUnique: vi.fn(async () => ({ kargoPolitikaTuru: 'SABIT_UCRET', kargoSabitUcret: 50 })) } },
+    default: { sistemAyarlari: { findUnique: vi.fn(async () => ({ kargoPolitikaTuru: 'SABIT_UCRET', kargoSabitUcret: 50, ucretsizKargoAltLimit: 100 })) } },
 }));
 
 const { OrderService, generateOrderNumber } = await import('./orderService.js');
@@ -44,9 +44,10 @@ describe('checkout validation', () => {
         await expect(checkout([{ id: 'p1', quantity: 2 }, { id: 'p1', quantity: 2 }])).rejects.toMatchObject({ statusCode: 400 });
     });
 
-    it('prices from the database and issues a 10-digit order number', async () => {
+    it('prices from the database and issues a 10-digit order number (free shipping when subtotal >= 100)', async () => {
         const result = await checkout([{ id: 'p1', quantity: 3, price: 1 }]);
-        expect(result.total).toBe(350);
+        // subtotal 300 >= free limit 100, so shipping becomes 0
+        expect(result.total).toBe(300);
         expect(result.orderNumber).toMatch(/^[1-9]\d{9}$/);
     });
 });
@@ -82,7 +83,10 @@ describe('public settings', () => {
         });
         const res = { json: vi.fn() };
         await controller.getPublicSettings({}, res, vi.fn());
-        expect(res.json).toHaveBeenCalledWith({ siteAdi: 'E-Market' });
+        expect(res.json).toHaveBeenCalledWith({
+            status: 'success',
+            data: { siteAdi: 'E-Market' }
+        });
     });
 });
 
