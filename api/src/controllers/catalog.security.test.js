@@ -17,18 +17,18 @@ describe('validateProductNumbers', () => {
     });
 
     it('rejects negative, zero or non-numeric prices, stock and weight', () => {
-        expect(validateProductNumbers({ fiyat: -5 })).toMatch(/Fiyat/);
-        expect(validateProductNumbers({ fiyat: NaN })).toMatch(/Fiyat/);
-        expect(validateProductNumbers({ indirimliFiyat: 0 })).toMatch(/İndirimli/);
+        expect(validateProductNumbers({ fiyat: -5 })).toMatch(/Harga/);
+        expect(validateProductNumbers({ fiyat: NaN })).toMatch(/Harga/);
+        expect(validateProductNumbers({ indirimliFiyat: 0 })).toMatch(/Harga diskaun/);
         expect(validateProductNumbers({ stokAdedi: -1 })).toMatch(/Stok/);
         expect(validateProductNumbers({ stokAdedi: NaN })).toMatch(/Stok/);
-        expect(validateProductNumbers({ agirlik: 0 })).toMatch(/Ağırlık/);
+        expect(validateProductNumbers({ agirlik: 0 })).toMatch(/Berat/);
     });
 
     it('does not create a product with an invalid price', async () => {
         const service = { createProduct: vi.fn() };
         const res = fakeRes();
-        await new ProductController(service).adminCreateProduct({ body: { ad: 'Kupa', fiyat: '-10' } }, res, vi.fn());
+        await new ProductController(service).adminCreateProduct({ body: { ad: 'Kupa', fiyat: '-10', resimUrl: 'a', resimler: ['b'] } }, res, vi.fn());
         expect(res.statusCode).toBe(400);
         expect(service.createProduct).not.toHaveBeenCalled();
     });
