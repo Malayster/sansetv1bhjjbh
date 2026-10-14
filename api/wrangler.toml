@@ -7,7 +7,7 @@ routes = [ { pattern = "api.dinoempire.my", custom_domain = true } ]
 
 [vars]
 NODE_ENV = "production"
-CORS_ORIGIN = "https://dinoempire.my,https://www.dinoempire.my,http://localhost:8000,http://localhost:5173"
+CORS_ORIGIN = "https://dinoempire.my,https://www.dinoempire.my,https://admin.dinoempire.my,http://localhost:8000,http://localhost:5173"
 CLIENT_URL = "https://dinoempire.my"
 API_URL = "https://api.dinoempire.my"
 ORDER_NOTIFICATION_EMAIL = "dinoempire.my@gmail.com"
