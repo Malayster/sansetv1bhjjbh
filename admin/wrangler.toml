@@ -1,0 +1,10 @@
+name = "dinoempire-admin"
+main = "src/worker.js"
+compatibility_date = "2026-02-01"
+compatibility_flags = [ "nodejs_compat" ]
+
+routes = [ { pattern = "admin.dinoempire.my", custom_domain = true } ]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
