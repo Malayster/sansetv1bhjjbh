@@ -143,7 +143,7 @@ export function Shop() {
     );
 
     return (
-        <div className="bg-white min-h-screen pb-20">
+        <div className="bg-[#020507] text-white min-h-screen pb-20">
             <SEO
                 title={pageTitle}
                 description={seoDescription}
@@ -155,33 +155,33 @@ export function Shop() {
             <div className="container mx-auto px-4 py-6 md:py-10">
                 {/* Breadcrumb / Header */}
                 <div className="flex flex-col gap-3 mb-8">
-                    <nav className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/')}>Laman Utama</span>
-                        <ChevronRight size={14} className="text-gray-300" />
-                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/kedai')}>Kedai</span>
+                    <nav className="flex items-center gap-2 text-xs text-white/60 font-medium">
+                        <span className="cursor-pointer hover:text-emerald-400 transition-colors" onClick={() => navigate('/')}>Laman Utama</span>
+                        <ChevronRight size={14} className="text-white/30" />
+                        <span className="cursor-pointer hover:text-emerald-400 transition-colors" onClick={() => navigate('/kedai')}>Kedai</span>
 
                         {activeCategory && (
                             <>
-                                <ChevronRight size={14} className="text-gray-300" />
-                                <span className="font-bold text-indigo-600">{activeCategory.ad}</span>
+                                <ChevronRight size={14} className="text-white/30" />
+                                <span className="font-bold text-emerald-400">{activeCategory.ad}</span>
                             </>
                         )}
                     </nav>
 
-                    <div className="flex items-end justify-between border-b-2 border-gray-100 pb-4">
+                    <div className="flex items-end justify-between border-b border-white/10 pb-4">
                         <div>
-                            <h1 className="text-xl md:text-2xl font-black text-corporate-black mb-1 flex items-center gap-2">
+                            <h1 className="text-xl md:text-3xl font-black text-white mb-1 flex items-center gap-2">
                                 {activeCategory ? `${activeCategory.ad}` : pageTitle}
                             </h1>
                             {!loading && (
-                                <p className="text-gray-400 text-xs font-medium">{displayProducts.length} barangan disenaraikan</p>
+                                <p className="text-white/50 text-xs font-mono">{displayProducts.length} barangan disenaraikan</p>
                             )}
                         </div>
 
                         {/* Mobile Filter Toggle */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className="md:hidden flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 hover:border-indigo-600/50 transition-all text-sm font-semibold text-gray-700 cursor-pointer"
+                            className="md:hidden flex items-center gap-2 bg-white/5 border border-white/15 px-3 py-2 rounded-xl hover:bg-white/10 transition-all text-sm font-semibold text-white cursor-pointer"
                         >
                             <SlidersHorizontal size={16} />
                             <span>Tapis</span>
@@ -222,14 +222,14 @@ export function Shop() {
                                 {displayProducts.map(product => (
                                     <ProductCard key={product.id} product={product} />
                                 ))}
-                            {displayProducts.length === 0 && (
-                                    <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                        <Package size={56} className="mx-auto text-gray-300 mb-5" />
-                                        <h3 className="text-lg font-black text-gray-700 mb-2">Tiada Barangan Ditemui</h3>
-                                        <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Tiada barangan yang sepadan dengan gabungan penapis yang anda pilih.</p>
+                                {displayProducts.length === 0 && (
+                                    <div className="col-span-full text-center py-20 bg-[#060d11] rounded-2xl border border-dashed border-white/10">
+                                        <Package size={56} className="mx-auto text-white/30 mb-5" />
+                                        <h3 className="text-lg font-black text-white mb-2">Tiada Barangan Ditemui</h3>
+                                        <p className="text-white/50 text-sm mb-6 max-w-xs mx-auto">Tiada barangan yang sepadan dengan gabungan penapis yang anda pilih.</p>
                                         <button
                                             onClick={() => navigate('/kedai')}
-                                            className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-black text-sm hover:bg-amber-600 transition-colors shadow-xs cursor-pointer"
+                                            className="bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2.5 rounded-full font-black text-sm transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer"
                                         >
                                             Kosongkan Penapis
                                         </button>

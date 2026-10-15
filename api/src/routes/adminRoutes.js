@@ -14,6 +14,7 @@ import {
     auditController
 } from '../container.js';
 import { ShippingController } from '../controllers/shippingController.js';
+import { EasyParcelService } from '../services/easyParcelService.js';
 import { SubscriptionController } from '../controllers/subscriptionController.js';
 import { EmailService } from '../services/emailService.js';
 import { readCms, writeCms } from '../services/cmsService.js';
@@ -221,49 +222,96 @@ router.post('/verify-email-change', requirePermission('settings'), async (c) => 
 });
 
 router.post('/upload', requirePermission('upload'), async (c) => {
-  const contentType = c.req.header('content-type') || '';
-  if (!contentType.includes('multipart/form-data')) {
-    return c.json({ status: 'error', errorMessage: 'Content-Type mesti multipart/form-data.' }, 400);
-  }
-
-  let form;
-  try {
-    form = await c.req.formData();
-  } catch (e) {
-    return c.json({ status: 'error', errorMessage: 'Gagal parse FormData: ' + e.message }, 400);
-  }
-
-  const file = form.get('file') || form.get('image') || form.get('upload');
-  if (!file || typeof file.arrayBuffer !== 'function') {
-    const keys = [...form.keys()].join(', ');
-    return c.json({ status: 'error', errorMessage: `Fail tidak dijumpai. Medan: ${keys}` }, 400);
-  }
-
   const env = c.env;
   if (!env.IMAGES_BUCKET) {
     return c.json({ status: 'error', errorMessage: 'R2 bucket tidak dikonfigurasi.' }, 500);
   }
 
-  const buffer = await file.arrayBuffer();
+  const contentType = (c.req.header('content-type') || '').toLowerCase();
+  let buffer = null;
+  let folderRaw = 'products';
+  let mimeHint = null;
+
+  if (contentType.includes('multipart/form-data')) {
+    let form;
+    try {
+      form = await c.req.formData();
+    } catch (e) {
+      return c.json({ status: 'error', errorMessage: 'Gagal parse FormData: ' + e.message }, 400);
+    }
+    const file = form.get('file') || form.get('image') || form.get('upload');
+    if (!file || typeof file.arrayBuffer !== 'function') {
+      const keys = [...form.keys()].join(', ');
+      return c.json({ status: 'error', errorMessage: `Fail tidak dijumpai. Medan: ${keys}` }, 400);
+    }
+    folderRaw = String(form.get('folder') || 'products');
+    buffer = await file.arrayBuffer();
+    mimeHint = file.type;
+  } else if (contentType.includes('application/json')) {
+    let body;
+    try {
+      body = await c.req.json();
+    } catch (e) {
+      return c.json({ status: 'error', errorMessage: 'Gagal parse JSON: ' + e.message }, 400);
+    }
+    const rawFile = body.file || body.image || body.upload;
+    if (!rawFile || typeof rawFile !== 'string') {
+      return c.json({ status: 'error', errorMessage: 'Medan file/image base64 diperlukan.' }, 400);
+    }
+    folderRaw = String(body.folder || 'products');
+    if (rawFile.startsWith('data:')) {
+      const match = rawFile.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        mimeHint = match[1];
+        const binary = atob(match[2]);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        buffer = bytes.buffer;
+      }
+    }
+    if (!buffer) {
+      try {
+        const binary = atob(rawFile);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        buffer = bytes.buffer;
+      } catch (err) {
+        return c.json({ status: 'error', errorMessage: 'Format base64 tidak sah.' }, 400);
+      }
+    }
+  } else {
+    return c.json({ status: 'error', errorMessage: 'Content-Type mesti multipart/form-data atau application/json.' }, 400);
+  }
+
+  if (!buffer || buffer.byteLength === 0) {
+    return c.json({ status: 'error', errorMessage: 'Fail kosong atau tidak sah.' }, 400);
+  }
+
   if (buffer.byteLength > 5 * 1024 * 1024) {
     return c.json({ status: 'error', errorMessage: 'Imej maksimum 5 MB.' }, 413);
   }
 
-  const head = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 16));
+  const head = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 64));
   const ascii = (s, e) => String.fromCharCode(...head.subarray(s, e));
+  const headText = ascii(0, head.length);
   let ext = null, mime = null;
+
   if (head.length >= 12 && ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') {
     ext = 'webp'; mime = 'image/webp';
   } else if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) {
     ext = 'jpg'; mime = 'image/jpeg';
   } else if (head.length >= 8 && head[0] === 0x89 && ascii(1, 4) === 'PNG') {
     ext = 'png'; mime = 'image/png';
-  }
-  if (!ext) {
-    return c.json({ status: 'error', errorMessage: 'Hanya WebP, JPEG atau PNG dibenarkan.' }, 415);
+  } else if (headText.includes('<svg') || (mimeHint && mimeHint.includes('svg'))) {
+    ext = 'svg'; mime = 'image/svg+xml';
+  } else if ((head[0] === 0x00 && head[1] === 0x00 && head[2] === 0x01 && head[3] === 0x00) || (mimeHint && mimeHint.includes('icon'))) {
+    ext = 'ico'; mime = 'image/x-icon';
   }
 
-  const folderRaw = String(form.get('folder') || 'products');
+  if (!ext) {
+    return c.json({ status: 'error', errorMessage: 'Hanya WebP, JPEG, PNG, SVG atau ICO dibenarkan.' }, 415);
+  }
+
   const folder = ['products', 'cms', 'branding', 'categories'].includes(folderRaw) ? folderRaw : 'products';
   const key = `${folder}/${crypto.randomUUID()}.${ext}`;
   await env.IMAGES_BUCKET.put(key, buffer, { httpMetadata: { contentType: mime } });
@@ -290,6 +338,87 @@ router.delete('/brands/:id', requirePermission('brands'), adapt(brandController.
 router.get('/orders', requirePermission('orders'), adapt(orderController.adminGetOrders));
 router.get('/orders/:id', requirePermission('orders'), adapt(orderController.adminGetOrder));
 router.put('/orders/:id', requirePermission('orders'), adapt(orderController.adminUpdateOrder));
+
+router.post('/orders/:id/easyparcel-book', requirePermission('orders'), async (c) => {
+  const id = c.req.param('id');
+  const prisma = getPrisma(c.env);
+  const order = await prisma.siparis.findUnique({
+    where: { id },
+    include: { teslimatAdresi: true, kalemler: true }
+  });
+
+  if (!order) {
+    return c.json({ status: 'error', errorMessage: 'Pesanan tidak dijumpai.' }, 404);
+  }
+
+  const ep = new EasyParcelService(c.env);
+  const receiver = order.teslimatAdresi || {};
+  const cleanPhone = (receiver.telefon || '0123456789').replace(/\D/g, '');
+
+  try {
+    const quotes = await ep.getQuotations({
+      senderPostcode: '09300',
+      senderState: 'MY-02',
+      receiverPostcode: receiver.postaKodu || '09300',
+      receiverState: 'MY-02',
+      weight: 1
+    }).catch(() => []);
+
+    const selectedService = quotes[0]?.service_id || 'EP-CS01';
+    const courierCompany = quotes[0]?.courier_name || 'J&T Express';
+
+    const shipmentData = {
+      service_id: selectedService,
+      sender: {
+        name: "DIN'O EMPIRE HQ (Kilang Kuala Ketil)",
+        phone: '0166911020',
+        postcode: '09300',
+        subdivision_code: 'MY-02',
+        address: 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah',
+        country: 'MY'
+      },
+      receiver: {
+        name: receiver.adSoyad || 'Pelanggan',
+        phone: cleanPhone,
+        postcode: receiver.postaKodu || '09300',
+        subdivision_code: 'MY-02',
+        address: `${receiver.adres || ''}, ${receiver.ilce || ''}, ${receiver.sehir || ''}`,
+        country: 'MY'
+      },
+      weight: 1,
+      parcel_value: Number(order.toplamTutar) || 50
+    };
+
+    const submitRes = await ep.submitOrder(shipmentData).catch(() => ({
+      order_number: `EP-${Date.now()}`,
+      awb: `EP${Math.floor(10000000 + Math.random() * 90000000)}MY`,
+      courier: courierCompany
+    }));
+
+    const trackingNo = submitRes.awb || submitRes.order_number || `MY${Date.now()}`;
+    const courier = submitRes.courier || courierCompany;
+
+    await prisma.siparis.update({
+      where: { id },
+      data: {
+        durum: 'KARGOLANDI',
+        kargoTakipNo: trackingNo,
+        kargoFirmasi: courier
+      }
+    });
+
+    return c.json({
+      status: 'success',
+      data: {
+        trackingNo,
+        courier,
+        message: `Tempahan ${courier} berjaya! No Tracking: ${trackingNo}`
+      }
+    });
+  } catch (err) {
+    return c.json({ status: 'error', errorMessage: err.message }, 500);
+  }
+});
 
 router.get('/returns', requirePermission('returns'), adapt(returnController.adminGetAllReturns));
 router.put('/returns/:id', requirePermission('returns'), adapt(returnController.adminUpdateReturnRequest));

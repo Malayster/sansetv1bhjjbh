@@ -78,6 +78,18 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
         socialProofText: "🔥 5,000+ Bungkusan Berjaya Dihantar Seluruh Malaysia"
     });
 
+    // Kandungan Laman Utama Mewah (Enterprise Homepage CMS) State
+    const [homepageConfig, setHomepageConfig] = useState(cmsData?.homepage_config || {
+        heroHeadline: "Kualiti kilang tanpa kompromi.",
+        heroSubtitle: "Nikmati pelbagai barangan terpilih gred eksklusif diproses bersih mengikut piawaian ketat Halal terus dari kilang pengeluaran kami. Dapatkan penjimatan sehingga 35% tanpa melalui orang tengah, dihantar terus ke depan pintu rumah anda.",
+        heroBadge: "PRODUK SEGAR HARIAN: TERUS DARI KILANG KUALA KETIL",
+        ctaPrimaryText: "Beli Pek Kilang (RM 28.00)",
+        ctaSecondaryText: "Lihat Semua Produk",
+        featuredProductId: "9c2410a7-f275-46d6-b4d7-0c44a54cedbd",
+        discountText: "Jimat 35%",
+        freeShippingText: "PENGHANTARAN PERCUMA ke seluruh Semenanjung untuk pesanan atas RM100"
+    });
+
     const [productList, setProductList] = useState([]);
     useEffect(() => {
         api.get('/api/v1/products?limit=100').then(res => {
@@ -213,7 +225,8 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                 announcement_bar: announcement,
                 info_kedai: infoKedai,
                 tiktok_videos: tiktokVideos,
-                bio_links: bioData
+                bio_links: bioData,
+                homepage_config: homepageConfig
             });
             showNotif('Semua perubahan kandungan CMS & TikTok berjaya disimpan ke pangkalan data!');
             if (onSaveSuccess) onSaveSuccess();
@@ -247,6 +260,126 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                     <Save size={18} />
                     <span>{isSaving ? 'Menyimpan...' : 'Simpan Semua Perubahan CMS'}</span>
                 </button>
+            </div>
+
+            {/* SEKSYEN KHAS: KANDUNGAN LAMAN UTAMA MEWAH (SHOPIFY ENTERPRISE CMS) */}
+            <div className="rounded-3xl border border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 via-slate-900 to-slate-900 p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider mb-2 border border-emerald-500/30">
+                            <Sparkles size={14} />
+                            LAMAN UTAMA MEWAH (SHOPIFY ENTERPRISE STYLE)
+                        </div>
+                        <h2 className="text-xl font-black text-white flex items-center gap-2">
+                            Kawalan Kandungan Laman Utama & Produk 3D Parallax
+                        </h2>
+                        <p className="text-xs text-slate-400 mt-1">
+                            Ubah teks tajuk, produk terpilih kad 3D, tawaran promosi dan jaminan pelanggan tanpa sebarang kod.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Tajuk Utama (H1) */}
+                    <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
+                            Tajuk Utama Hero (H1)
+                        </label>
+                        <input
+                            type="text"
+                            value={homepageConfig.heroHeadline}
+                            onChange={(e) => setHomepageConfig({ ...homepageConfig, heroHeadline: e.target.value })}
+                            placeholder="cth: Kualiti kilang tanpa kompromi."
+                            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-emerald-500 transition"
+                        />
+                    </div>
+
+                    {/* Teks Lencana (Badge) */}
+                    <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
+                            Teks Lencana Hero (Top Badge)
+                        </label>
+                        <input
+                            type="text"
+                            value={homepageConfig.heroBadge}
+                            onChange={(e) => setHomepageConfig({ ...homepageConfig, heroBadge: e.target.value })}
+                            placeholder="cth: PRODUK SEGAR HARIAN: TERUS DARI KILANG KUALA KETIL"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-emerald-300 font-mono text-xs focus:outline-none focus:border-emerald-500 transition"
+                        />
+                    </div>
+
+                    {/* Sub-Tajuk / Penerangan */}
+                    <div className="md:col-span-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
+                            Penerangan Hero (Subtitle)
+                        </label>
+                        <textarea
+                            rows={3}
+                            value={homepageConfig.heroSubtitle}
+                            onChange={(e) => setHomepageConfig({ ...homepageConfig, heroSubtitle: e.target.value })}
+                            placeholder="Penerangan ringkas tentang kualiti dan tawaran terus dari kilang..."
+                            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs leading-relaxed focus:outline-none focus:border-emerald-500 transition"
+                        />
+                    </div>
+
+                    {/* Pemilih Produk 3D Parallax */}
+                    <div className="md:col-span-2 p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                                <Sparkles size={16} />
+                                Produk Pilihan Pada Kad 3D Parallax
+                            </label>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                                Bergerak secara 3D di Hero Section
+                            </span>
+                        </div>
+
+                        <select
+                            value={homepageConfig.featuredProductId}
+                            onChange={(e) => setHomepageConfig({ ...homepageConfig, featuredProductId: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-emerald-500 transition cursor-pointer"
+                        >
+                            {productList.length === 0 ? (
+                                <option value="9c2410a7-f275-46d6-b4d7-0c44a54cedbd">Pek Kilang DIN'O Special (RM 28.00)</option>
+                            ) : (
+                                productList.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.ad} — RM {(p.indirimliFiyat || p.fiyat).toFixed(2)} (Stok: {p.stokAdedi})
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                        <p className="text-[11px] text-slate-400">
+                            Pilih mana-mana produk daripada katalog kedai anda. Kad 3D di laman utama akan automatik memaparkan gambar, harga promosi, dan baki stok produk tersebut.
+                        </p>
+                    </div>
+
+                    {/* Teks Butang Utama & Sekunder */}
+                    <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
+                            Teks Butang Belian Utama (CTA 1)
+                        </label>
+                        <input
+                            type="text"
+                            value={homepageConfig.ctaPrimaryText}
+                            onChange={(e) => setHomepageConfig({ ...homepageConfig, ctaPrimaryText: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-xs focus:outline-none focus:border-emerald-500 transition"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
+                            Teks Diskaun Jimat Kilang
+                        </label>
+                        <input
+                            type="text"
+                            value={homepageConfig.discountText}
+                            onChange={(e) => setHomepageConfig({ ...homepageConfig, discountText: e.target.value })}
+                            placeholder="cth: Jimat 35%"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-amber-400 font-bold text-xs focus:outline-none focus:border-emerald-500 transition"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* SEKSYEN 1: BAR PENGUMUMAN (ANNOUNCEMENT BAR) */}

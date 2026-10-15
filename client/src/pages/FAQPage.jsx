@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, Sparkles } from 'lucide-react';
 import SEO from '../components/SEO';
 
 const faqs = [
@@ -64,51 +64,55 @@ export function FAQPage() {
     };
 
     return (
-        <div className="bg-bg-soft min-h-screen py-10">
+        <div className="bg-[#020507] text-white min-h-screen py-12 md:py-16 font-sans">
             <SEO
                 title="Soalan Lazim (FAQ) - DIN'O EMPIRE"
                 description="Jawapan kepada persoalan lazim mengenai kadar pos, cara pembayaran FPX toyyibPay, dan kualiti produk DIN'O EMPIRE."
             />
 
-            <div className="max-w-4xl mx-auto px-4">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black text-corporate-black mb-2 flex items-center justify-center gap-2">
-                        <HelpCircle className="text-amber-600" size={32} />
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
+                <div className="text-center mb-12">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider mb-3">
+                        <Sparkles size={13} />
+                        BANTUAN & PANDUAN
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black text-white mb-3 tracking-tight flex items-center justify-center gap-2">
+                        <HelpCircle className="text-emerald-400" size={32} />
                         Soalan Lazim (FAQ)
                     </h1>
-                    <div className="w-24 h-1 bg-amber-500 mx-auto rounded-full" />
-                    <p className="text-gray-600 mt-3 text-sm">
-                        Ketahui jawapan kepada soalan yang kerap ditanya mengenai pembelian dan penghantaran di DIN'O EMPIRE.
+                    <div className="w-20 h-1 bg-emerald-500 mx-auto rounded-full mb-4" />
+                    <p className="text-white/60 max-w-xl mx-auto text-sm leading-relaxed">
+                        Ketahui jawapan kepada soalan yang kerap ditanya mengenai pembelian, pos kurier, dan produk Kilang Kuala Ketil.
                     </p>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-6">
                     {faqs.map((category, catIdx) => (
-                        <div key={category.category} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100">
-                                <h2 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-amber-600 rounded-full" />
+                        <div key={category.category} className="bg-[#060d11] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+                            <div className="bg-white/[0.02] px-6 py-4 border-b border-white/10 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                <h2 className="font-mono font-bold text-emerald-400 text-sm uppercase tracking-wider">
                                     {category.category}
                                 </h2>
                             </div>
 
-                            <div className="divide-y divide-gray-100">
+                            <div className="divide-y divide-white/5">
                                 {category.questions.map((faq, qIdx) => {
                                     const isOpen = !!openIndex[`${catIdx}-${qIdx}`];
                                     return (
-                                        <div key={qIdx} className="p-6">
+                                        <div key={qIdx} className="p-5 sm:p-6 transition hover:bg-white/[0.01]">
                                             <button
                                                 onClick={() => toggle(catIdx, qIdx)}
-                                                className="w-full flex items-center justify-between text-left gap-4 font-bold text-gray-900 hover:text-amber-600 transition"
+                                                className="w-full flex items-center justify-between text-left gap-4 font-bold text-white hover:text-emerald-400 transition cursor-pointer"
                                             >
-                                                <span className="text-base">{faq.q}</span>
-                                                <span className="text-gray-400 shrink-0">
-                                                    {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                <span className="text-sm sm:text-base">{faq.q}</span>
+                                                <span className="text-white/40 shrink-0">
+                                                    {isOpen ? <ChevronUp size={20} className="text-emerald-400" /> : <ChevronDown size={20} />}
                                                 </span>
                                             </button>
 
                                             {isOpen && (
-                                                <p className="mt-3 text-sm text-gray-650 leading-relaxed pt-2 border-t border-gray-50">
+                                                <p className="mt-3 text-sm text-white/70 leading-relaxed pt-3 border-t border-white/10 animate-in fade-in duration-200">
                                                     {faq.a}
                                                 </p>
                                             )}

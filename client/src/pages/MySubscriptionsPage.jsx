@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, SkipForward, XCircle, RefreshCw, Star } from 'lucide-react';
+import { Package, SkipForward, XCircle, RefreshCw, Star, Sparkles } from 'lucide-react';
 import SEO from '../components/SEO';
 import { PointsHistory } from '../components/PointsHistory';
 
@@ -72,62 +72,85 @@ export function MySubscriptionsPage() {
   };
 
   return (
-    <div className="bg-white min-h-screen pb-20">
-      <SEO title="Akaun Saya - DIN'O EMPIRE" description="Urus langganan dan points anda." />
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
-        <h1 className="text-2xl md:text-3xl font-black mb-2">Akaun Saya</h1>
-        <p className="text-gray-500 mb-6">Masukkan e-mel dan token akses untuk lihat langganan.</p>
+    <div className="bg-[#020507] text-white min-h-screen py-12 md:py-16 font-sans">
+      <SEO title="Pelan Langganan & Akaun - DIN'O EMPIRE" description="Urus langganan pek kilang dan baki points ganjaran anda." />
+      <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider mb-2">
+            <Sparkles size={12} />
+            PELAN JIMAT LANGGANAN KILANG
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Portal Pelan Langganan Anda</h1>
+          <p className="text-white/60 text-xs sm:text-sm">Masukkan e-mel dan token pesanan untuk mengurus penghantaran bulanan & ganjaran points.</p>
+        </div>
 
-        <form onSubmit={load} className="space-y-3 mb-8">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="e-mel@anda.com"
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500"
-          />
-          <input
-            type="text"
-            required
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            placeholder="Token akses"
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500"
-          />
-          <button type="submit" disabled={loading} className="w-full sm:w-auto bg-amber-500 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2">
+        <form onSubmit={load} className="bg-[#060d11] p-6 rounded-2xl border border-white/10 space-y-4 mb-8 shadow-2xl">
+          <div>
+            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Alamat E-mel</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="e-mel@anda.com"
+              className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-white/30 text-sm focus:outline-none focus:border-emerald-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Token Akses Langganan</label>
+            <input
+              type="text"
+              required
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="Masukkan token dari e-mel atau invois"
+              className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-white/30 text-sm focus:outline-none focus:border-emerald-400"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider px-8 py-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition shadow-[0_0_15px_rgba(16,185,129,0.35)]"
+          >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Cari
+            Semak Rekod Langganan
           </button>
         </form>
 
+        {message && (
+          <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 text-white/80 text-xs mb-6 font-mono">
+            {message}
+          </div>
+        )}
+
         {points && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+          <div className="bg-[#060d11] border border-emerald-500/30 rounded-2xl p-6 mb-8 shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Star className="text-amber-500" size={28} />
+                <Star className="text-amber-400" size={32} />
                 <div>
-                  <div className="text-sm text-amber-800">Points Anda</div>
-                  <div className="text-2xl font-black text-amber-900">{points.baki || 0}</div>
+                  <div className="text-xs font-mono uppercase text-emerald-400 font-bold">Baki Points Ganjaran</div>
+                  <div className="text-3xl font-black text-white font-mono">{points.baki || 0}</div>
                 </div>
               </div>
-              <div className="text-left sm:text-right text-xs text-amber-700">
+              <div className="text-left sm:text-right text-xs text-white/60 font-mono space-y-0.5">
                 <div>Diperoleh: {points.jumlahDiperoleh || 0}</div>
                 <div>Digunakan: {points.jumlahDigunakan || 0}</div>
-                <div className="mt-1">1 point = RM1</div>
+                <div className="text-emerald-400 font-bold mt-1">1 point = Nilai diskaun RM 1.00</div>
               </div>
             </div>
             {points.log && points.log.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-4 pt-4 border-t border-white/10">
                 <button
+                  type="button"
                   onClick={() => setShowHistory(!showHistory)}
-                  className="text-xs text-amber-700 underline"
+                  className="text-xs text-emerald-400 hover:underline font-mono font-bold"
                 >
-                  {showHistory ? 'Sembunyi' : 'Lihat'} sejarah
+                  {showHistory ? 'Sembunyikan Sejarah' : 'Lihat Sejarah Transaksi Points'}
                 </button>
                 {showHistory && (
-                  <div className="mt-2 bg-white rounded-xl p-3">
-                    <PointsHistory log={points.log} />
+                  <div className="mt-3">
+                    <PointsHistory logs={points.log} />
                   </div>
                 )}
               </div>
@@ -135,60 +158,44 @@ export function MySubscriptionsPage() {
           </div>
         )}
 
-        {message && <div className="mb-4 text-sm text-amber-800 bg-amber-50 p-3 rounded-xl">{message}</div>}
-
-        <h2 className="font-black text-lg mb-3">Langganan</h2>
-        <div className="space-y-4">
-          {subs.map(sub => (
-            <div key={sub.id} className="border border-gray-200 rounded-2xl p-5">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+        {subs.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-black text-white uppercase font-mono tracking-wider flex items-center gap-2">
+              <Package className="text-emerald-400" size={20} />
+              Senarai Langganan Aktif
+            </h2>
+            {subs.map(s => (
+              <div key={s.id} className="bg-[#060d11] rounded-2xl border border-white/10 p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <div className="font-black flex items-center gap-2">
-                    <Package size={18} /> Langganan {sub.frekuensi}
-                  </div>
-                  <div className="text-sm text-gray-500">Status: {sub.status}</div>
-                  <div className="text-sm text-gray-500">
-                    Seterusnya: {new Date(sub.tarikhSeterusnya).toLocaleDateString('ms-MY')}
-                    {sub.skipSeterusnya && ' (dilangkau)'}
+                  <h3 className="font-bold text-white text-base">{s.urunAd}</h3>
+                  <div className="text-xs text-white/60 font-mono mt-1 space-y-0.5">
+                    <div>Penghantaran Seterusnya: <strong className="text-emerald-400">{s.sonrakiTarih || '-'}</strong></div>
+                    <div>Status: <span className="text-white font-bold">{s.durum}</span></div>
                   </div>
                 </div>
-                <div className="text-left sm:text-right">
-                  <div className="font-black text-lg">RM {Number(sub.jumlahAkhir).toFixed(2)}</div>
-                  {sub.diskaunPeratus > 0 && (
-                    <div className="text-xs text-green-600">{sub.diskaunPeratus}% off</div>
-                  )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => action(s.id, 'skip')}
+                    disabled={loading}
+                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-xs text-white font-mono font-bold flex items-center gap-1.5 transition"
+                  >
+                    <SkipForward size={14} /> Langkau Bulan Ini
+                  </button>
+                  <button
+                    onClick={() => action(s.id, 'cancel')}
+                    disabled={loading}
+                    className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs text-rose-400 font-mono font-bold flex items-center gap-1.5 transition"
+                  >
+                    <XCircle size={14} /> Batalkan
+                  </button>
                 </div>
               </div>
-
-              <div className="text-sm mb-4 space-y-1">
-                {sub.items?.map(item => (
-                  <div key={item.id} className="flex justify-between">
-                    <span className="truncate flex-1">{item.urun?.ad || 'Produk'} × {item.kuantiti}</span>
-                    <span>RM {(item.harga * item.kuantiti).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => action(sub.id, 'skip')}
-                  disabled={loading || sub.skipSeterusnya}
-                  className="flex-1 border border-amber-500 text-amber-700 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-1 disabled:opacity-50"
-                >
-                  <SkipForward size={14} /> Skip
-                </button>
-                <button
-                  onClick={() => action(sub.id, 'cancel')}
-                  disabled={loading}
-                  className="flex-1 border border-red-300 text-red-600 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-1"
-                >
-                  <XCircle size={14} /> Batal
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+export default MySubscriptionsPage;

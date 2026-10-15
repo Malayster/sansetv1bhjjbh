@@ -3,7 +3,7 @@ import { PointsRedeem } from '../components/PointsRedeem';
 import { useCart } from '../context/CartContext';
 import api from '../lib/axios';
 import malaysiaStates from '../data/malaysiaStates.json';
-import { MapPin, CreditCard, CheckCircle, ChevronRight, Truck, ShieldCheck, Lock, ArrowLeft, Building2 } from 'lucide-react';
+import { MapPin, CreditCard, CheckCircle, ChevronRight, Truck, ShieldCheck, Lock, ArrowLeft, Building2, Sparkles } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { useSettings } from '../context/SettingsContext';
 import { calculateShippingFee } from '../utils/shippingCalculator';
@@ -18,25 +18,25 @@ function StepIndicator({ currentStep }) {
     ];
 
     return (
-        <div className="mb-8">
+        <div className="mb-10">
             <div className="flex items-center justify-center">
                 {steps.map((step, index) => (
                     <div key={step.id} className="flex items-center">
                         <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
                             currentStep >= step.id
-                                ? 'bg-brand-primary border-amber-600 text-corporate-black font-bold'
-                                : 'bg-white border-gray-300 text-gray-400'
+                                ? 'bg-emerald-500 border-emerald-400 text-black font-black shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                : 'bg-[#060d11] border-white/15 text-white/40'
                         }`}>
-                            <step.icon size={20} />
+                            <step.icon size={18} />
                         </div>
-                        <span className={`ml-2 font-bold text-sm hidden sm:block ${
-                            currentStep >= step.id ? 'text-corporate-black' : 'text-gray-400'
+                        <span className={`ml-2 font-mono font-bold text-xs uppercase tracking-wider hidden sm:block ${
+                            currentStep >= step.id ? 'text-white' : 'text-white/40'
                         }`}>
                             {step.label}
                         </span>
                         {index < steps.length - 1 && (
-                            <div className={`w-12 sm:w-24 h-1 mx-2 sm:mx-4 rounded transition-all duration-300 ${
-                                currentStep > step.id ? 'bg-brand-primary' : 'bg-gray-200'
+                            <div className={`w-12 sm:w-24 h-0.5 mx-2 sm:mx-4 rounded transition-all duration-300 ${
+                                currentStep > step.id ? 'bg-emerald-500' : 'bg-white/10'
                             }`} />
                         )}
                     </div>
@@ -58,7 +58,6 @@ export function CheckoutPage() {
     const [errors, setErrors] = useState({});
     const [agreements, setAgreements] = useState({ salesAgreement: false });
     const { settings } = useSettings();
-    const [showModal, setShowModal] = useState(null);
     const [appliedPoints, setAppliedPoints] = useState(0);
 
     useEffect(() => {
@@ -70,7 +69,7 @@ export function CheckoutPage() {
     const subTotal = cartItems.reduce((acc, item) => acc + (Number(item.indirimliFiyat || item.fiyat) * item.quantity), 0);
     const totalWeight = cartItems.reduce((acc, item) => acc + (Number(item.agirlik || 1) * item.quantity), 0);
 
-    const { shippingFee, isFreeShipping, weightError } = calculateShippingFee({
+    const { shippingFee, isFreeShipping } = calculateShippingFee({
         cartTotal: subTotal,
         totalWeight: totalWeight,
         settings: settings || {},
@@ -96,26 +95,35 @@ export function CheckoutPage() {
 
     const validateStep2 = () => {
         const newErrors = {};
-        if (!agreements.salesAgreement) newErrors.salesAgreement = 'Sila tandakan persetujuan.';
+        if (!agreements.salesAgreement) newErrors.salesAgreement = 'Sila tandakan persetujuan terma jualan.';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-        if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: null });
-    };
-
-    const handlePhoneChange = (e) => {
-        setFormData({ ...formData, phone: formatPhone(e.target.value) });
-        if (errors.phone) setErrors({ ...errors, phone: null });
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };
 
     const handleCityChange = (e) => {
         const selectedState = e.target.value;
-        setFormData({ ...formData, city: selectedState, district: '' });
-        setDistricts(selectedState && malaysiaStates[selectedState] ? malaysiaStates[selectedState] : []);
-        if (errors.city) setErrors({ ...errors, city: null });
+        setFormData(prev => ({ ...prev, city: selectedState, district: '' }));
+        if (selectedState && malaysiaStates[selectedState]) {
+            setDistricts(malaysiaStates[selectedState]);
+        } else {
+            setDistricts([]);
+        }
+        if (errors.city) setErrors(prev => ({ ...prev, city: null }));
+    };
+
+    const handlePhoneChange = (e) => {
+        const formatted = formatPhone(e.target.value);
+        setFormData(prev => ({ ...prev, phone: formatted }));
+        if (errors.phone) setErrors(prev => ({ ...prev, phone: null }));
     };
 
     const nextStep = () => {
@@ -129,22 +137,11 @@ export function CheckoutPage() {
     };
 
     const prevStep = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        setCurrentStep(prev => Math.max(1, prev - 1));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleSubmit = async (e) => {
-        if (e) e.preventDefault();
-        if (weightError) {
-            alert('Berat melebihi had. Sila hubungi kami.');
-            return;
-        }
-        if (!agreements.salesAgreement) {
-            alert('Sila tandakan persetujuan.');
-            return;
-        }
+    const handleSubmit = async () => {
         setLoading(true);
         try {
             const orderResponse = await api.post('/api/v1/orders/checkout', {
@@ -200,24 +197,37 @@ export function CheckoutPage() {
 
     if (cartItems.length === 0) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-                <CreditCard size={64} className="mx-auto text-gray-300 mb-4" />
-                <h2 className="text-2xl font-bold text-gray-700 mb-2">Beg Anda Kosong</h2>
-                <a href="/kedai" className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-full font-bold">
-                    <ArrowLeft size={18} /> Mula Membeli-belah
+            <div className="bg-[#020507] text-white min-h-[70vh] flex flex-col items-center justify-center px-4 py-16 text-center font-sans">
+                <CreditCard size={64} className="mx-auto text-white/30 mb-4" />
+                <h2 className="text-2xl font-black text-white mb-2">Beg Belian Anda Masih Kosong</h2>
+                <p className="text-white/60 mb-6 text-sm max-w-md">
+                    Sila pilih produk berkualiti kilang pilihan anda terlebih dahulu sebelum membuat pembayaran.
+                </p>
+                <a
+                    href="/kedai"
+                    className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-3 rounded-full font-black text-xs uppercase font-mono tracking-wider transition shadow-[0_0_20px_rgba(16,185,129,0.35)]"
+                >
+                    <ArrowLeft size={16} /> Mula Membeli-belah Sekarang
                 </a>
             </div>
         );
     }
 
     return (
-        <div className="bg-bg-soft min-h-screen relative pb-16">
-            <div className="py-8 max-w-6xl mx-auto px-4">
+        <div className="bg-[#020507] text-white min-h-screen relative pb-20 font-sans">
+            <div className="py-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-black text-corporate-black mb-2">Pembayaran Selamat FPX</h1>
-                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                        <Lock size={14} className="text-emerald-600" />
-                        <span>Disulitkan dengan teknologi SSL 256-bit & ToyyibPay</span>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider mb-2">
+                        <Lock size={12} />
+                        GERBANG PEMBAYARAN KILANG SELAMAT
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
+                        Pembayaran Selamat FPX
+                    </h1>
+                    <div className="flex items-center justify-center gap-2 text-xs text-white/50 font-mono">
+                        <ShieldCheck size={14} className="text-emerald-400" />
+                        <span>Disulitkan dengan teknologi SSL 256-bit & ToyyibPay FPX Bank Negara Malaysia</span>
                     </div>
                 </div>
 
@@ -225,98 +235,234 @@ export function CheckoutPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                        <div className="bg-[#060d11] rounded-2xl border border-white/10 p-6 md:p-8 shadow-2xl">
                             {currentStep === 1 && (
                                 <div className="space-y-6">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
-                                        <MapPin size={24} className="text-amber-600" /> Maklumat Penghantaran
+                                    <h2 className="text-lg font-black text-white flex items-center gap-2 pb-3 border-b border-white/10 font-mono">
+                                        <MapPin size={20} className="text-emerald-400" /> Maklumat Penghantaran Penerima
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">Nama Penuh *</label>
-                                            <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.fullName ? 'border-red-500' : 'border-gray-200'}`} />
-                                            {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Nama Penuh *</label>
+                                            <input
+                                                type="text"
+                                                name="fullName"
+                                                value={formData.fullName}
+                                                onChange={handleInputChange}
+                                                placeholder="cth: Ahmad Zulkifli"
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none transition ${
+                                                    errors.fullName ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            />
+                                            {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">E-mel *</label>
-                                            <input type="email" name="email" value={formData.email} onChange={handleInputChange}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.email ? 'border-red-500' : 'border-gray-200'}`} />
-                                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Alamat E-mel *</label>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                                placeholder="email@domain.com"
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none transition ${
+                                                    errors.email ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            />
+                                            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium mb-1">Telefon *</label>
-                                            <input type="tel" name="phone" value={formData.phone} onChange={handlePhoneChange}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.phone ? 'border-red-500' : 'border-gray-200'}`} />
-                                            {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Nombor Telefon / WhatsApp *</label>
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handlePhoneChange}
+                                                placeholder="cth: 012-345 6789"
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none transition ${
+                                                    errors.phone ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            />
+                                            {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium mb-1">Alamat *</label>
-                                            <textarea name="address" value={formData.address} rows={3} onChange={handleInputChange}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.address ? 'border-red-500' : 'border-gray-200'}`} />
-                                            {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Alamat Lengkap Penghantaran *</label>
+                                            <textarea
+                                                name="address"
+                                                value={formData.address}
+                                                rows={3}
+                                                onChange={handleInputChange}
+                                                placeholder="No rumah, jalan, taman perumahan..."
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none resize-none transition ${
+                                                    errors.address ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            />
+                                            {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">Negeri *</label>
-                                            <select name="city" value={formData.city} onChange={handleCityChange}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.city ? 'border-red-500' : 'border-gray-200'}`}>
-                                                <option value="">-- Pilih Negeri --</option>
-                                                {Object.keys(malaysiaStates).map(s => <option key={s} value={s}>{s}</option>)}
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Negeri *</label>
+                                            <select
+                                                name="city"
+                                                value={formData.city}
+                                                onChange={handleCityChange}
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white text-sm focus:outline-none transition ${
+                                                    errors.city ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            >
+                                                <option value="" className="bg-[#060d11] text-white">-- Pilih Negeri --</option>
+                                                {Object.keys(malaysiaStates).map(s => (
+                                                    <option key={s} value={s} className="bg-[#060d11] text-white">{s}</option>
+                                                ))}
                                             </select>
-                                            {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+                                            {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">Daerah *</label>
-                                            <select name="district" value={formData.district} onChange={handleInputChange} disabled={!formData.city}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.district ? 'border-red-500' : 'border-gray-200'}`}>
-                                                <option value="">-- Pilih Daerah --</option>
-                                                {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Daerah *</label>
+                                            <select
+                                                name="district"
+                                                value={formData.district}
+                                                onChange={handleInputChange}
+                                                disabled={!formData.city}
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white text-sm focus:outline-none transition disabled:opacity-40 ${
+                                                    errors.district ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            >
+                                                <option value="" className="bg-[#060d11] text-white">-- Pilih Daerah --</option>
+                                                {districts.map(d => (
+                                                    <option key={d} value={d} className="bg-[#060d11] text-white">{d}</option>
+                                                ))}
                                             </select>
-                                            {errors.district && <p className="text-red-500 text-xs mt-1">{errors.district}</p>}
+                                            {errors.district && <p className="text-red-400 text-xs mt-1">{errors.district}</p>}
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium mb-1">Poskod *</label>
-                                            <input type="text" name="zipCode" value={formData.zipCode} onChange={handleInputChange}
-                                                className={`w-full border-2 p-3 rounded-xl ${errors.zipCode ? 'border-red-500' : 'border-gray-200'}`} />
-                                            {errors.zipCode && <p className="text-red-500 text-xs mt-1">{errors.zipCode}</p>}
+                                        <div className="md:col-span-2">
+                                            <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Poskod *</label>
+                                            <input
+                                                type="text"
+                                                name="zipCode"
+                                                value={formData.zipCode}
+                                                onChange={handleInputChange}
+                                                placeholder="cth: 09300"
+                                                className={`w-full bg-black/60 border p-3 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none transition ${
+                                                    errors.zipCode ? 'border-red-500' : 'border-white/15 focus:border-emerald-400'
+                                                }`}
+                                            />
+                                            {errors.zipCode && <p className="text-red-400 text-xs mt-1">{errors.zipCode}</p>}
                                         </div>
                                     </div>
-                                    <button onClick={nextStep} className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl">Teruskan</button>
+
+                                    <button
+                                        type="button"
+                                        onClick={nextStep}
+                                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider py-4 rounded-xl transition duration-200 shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer active:scale-98"
+                                    >
+                                        Teruskan ke Pengesahan Pesanan &rarr;
+                                    </button>
                                 </div>
                             )}
 
                             {currentStep === 2 && (
                                 <div className="space-y-6">
-                                    <h2 className="text-xl font-bold">Pengesahan Pesanan</h2>
-                                    <label className="flex items-start gap-2">
-                                        <input type="checkbox" checked={agreements.salesAgreement}
-                                            onChange={e => setAgreements({ salesAgreement: e.target.checked })} />
-                                        <span className="text-sm">Saya setuju dengan Terma & Syarat</span>
+                                    <h2 className="text-lg font-black text-white pb-3 border-b border-white/10 font-mono">
+                                        Pengesahan Butiran Pesanan
+                                    </h2>
+
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2 text-xs text-white/80">
+                                        <div><strong className="text-white">Penerima:</strong> {formData.fullName} ({formData.phone})</div>
+                                        <div><strong className="text-white">E-mel:</strong> {formData.email}</div>
+                                        <div><strong className="text-white">Alamat:</strong> {formData.address}, {formData.zipCode} {formData.district}, {formData.city}</div>
+                                    </div>
+
+                                    <label className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/10 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={agreements.salesAgreement}
+                                            onChange={e => setAgreements({ salesAgreement: e.target.checked })}
+                                            className="mt-1 accent-emerald-500 rounded"
+                                        />
+                                        <span className="text-xs text-white/80 leading-relaxed">
+                                            Saya mengesahkan bahawa butiran di atas adalah tepat dan saya bersetuju dengan{' '}
+                                            <a href="/terma-syarat" target="_blank" className="text-emerald-400 underline font-bold">Terma Jualan</a>{' '}
+                                            serta{' '}
+                                            <a href="/pulangan" target="_blank" className="text-emerald-400 underline font-bold">Syarat Pemulangan</a> DIN'O EMPIRE.
+                                        </span>
                                     </label>
-                                    {errors.salesAgreement && <p className="text-red-500 text-xs">{errors.salesAgreement}</p>}
-                                    <div className="flex gap-2">
-                                        <button onClick={prevStep} className="flex-1 border py-3 rounded-xl">Kembali</button>
-                                        <button onClick={nextStep} className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl">Teruskan</button>
+                                    {errors.salesAgreement && <p className="text-red-400 text-xs">{errors.salesAgreement}</p>}
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={prevStep}
+                                            className="flex-1 border border-white/20 hover:bg-white/5 text-white font-mono font-bold py-3.5 rounded-xl transition cursor-pointer"
+                                        >
+                                            &larr; Kembali
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={nextStep}
+                                            className="flex-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider py-3.5 rounded-xl transition shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer active:scale-98"
+                                        >
+                                            Teruskan ke FPX &rarr;
+                                        </button>
                                     </div>
                                 </div>
                             )}
 
                             {currentStep === 3 && (
                                 <div className="space-y-6">
-                                    <h2 className="text-xl font-bold">Pembayaran</h2>
-                                    <button onClick={handleSubmit} disabled={loading}
-                                        className="w-full bg-amber-500 text-white font-bold py-4 rounded-xl disabled:opacity-50">
-                                        {loading ? 'Memproses...' : `Bayar RM ${displayTotal.toFixed(2)}`}
+                                    <h2 className="text-lg font-black text-white pb-3 border-b border-white/10 font-mono">
+                                        Pembayaran Terus FPX Bank Negara
+                                    </h2>
+
+                                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-white/80 space-y-2">
+                                        <p className="font-bold text-emerald-300">
+                                            Anda akan dihalakan ke gerbang ToyyibPay FPX rasmi untuk memilih bank perbankan dalam talian anda (Maybank2u, CIMB, Bank Islam, dsb.).
+                                        </p>
+                                        <p className="text-white/60">
+                                            Selepas pembayaran berjaya, status pesanan dan resit penjejakan kurier akan dikemukakan serta-merta.
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleSubmit}
+                                        disabled={loading}
+                                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider py-4 rounded-xl transition shadow-[0_0_25px_rgba(16,185,129,0.4)] disabled:opacity-50 cursor-pointer active:scale-98"
+                                    >
+                                        {loading ? 'Memproses Pindahan FPX...' : `Bayar Sekarang RM ${displayTotal.toFixed(2)}`}
                                     </button>
-                                    <button onClick={prevStep} className="w-full border py-3 rounded-xl">Kembali</button>
+
+                                    <button
+                                        type="button"
+                                        onClick={prevStep}
+                                        className="w-full border border-white/20 hover:bg-white/5 text-white/70 font-mono font-bold py-3 rounded-xl transition cursor-pointer"
+                                    >
+                                        &larr; Tukar Maklumat
+                                    </button>
                                 </div>
                             )}
                         </div>
                     </div>
 
+                    {/* Order Summary Sidebar */}
                     <div>
-                        <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-                            <h3 className="font-black text-lg mb-4">Ringkasan Pesanan</h3>
+                        <div className="bg-[#060d11] rounded-2xl border border-white/10 p-6 sticky top-28 shadow-2xl">
+                            <h3 className="font-mono font-black text-sm uppercase tracking-wider text-emerald-400 mb-4 pb-2 border-b border-white/10">
+                                Ringkasan Pesanan Kilang
+                            </h3>
+
+                            {/* Item List Preview */}
+                            <div className="space-y-3 mb-6 max-h-60 overflow-y-auto pr-1">
+                                {cartItems.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-xs py-1.5 border-b border-white/5">
+                                        <div className="min-w-0 pr-2">
+                                            <div className="font-bold text-white truncate">{item.ad}</div>
+                                            <div className="text-[10px] text-white/50 font-mono">x{item.quantity} unit</div>
+                                        </div>
+                                        <div className="font-mono font-bold text-emerald-400 shrink-0">
+                                            RM {(Number(item.indirimliFiyat || item.fiyat) * item.quantity).toFixed(2)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
 
                             <PointsRedeem
                                 email={formData.email}
@@ -324,25 +470,37 @@ export function CheckoutPage() {
                                 onRedeem={(pts) => setAppliedPoints(prev => prev + pts)}
                             />
 
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span>Jumlah Kecil</span><span>RM {subTotal.toFixed(2)}</span></div>
+                            <div className="space-y-2.5 text-xs text-white/70 pt-4">
                                 <div className="flex justify-between">
-                                    <span>Penghantaran</span>
-                                    <span>{shippingFee === 0 ? 'Percuma' : `RM ${shippingFee.toFixed(2)}`}</span>
+                                    <span>Jumlah Kecil</span>
+                                    <span className="font-mono font-bold text-white">RM {subTotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Kadar Pos Kurier</span>
+                                    <span className="font-mono font-bold text-white">
+                                        {shippingFee === 0 ? <span className="text-emerald-400">PERCUMA</span> : `RM ${shippingFee.toFixed(2)}`}
+                                    </span>
                                 </div>
                                 {appliedPoints > 0 && (
-                                    <div className="flex justify-between text-green-600">
-                                        <span>Points</span><span>- RM {appliedPoints.toFixed(2)}</span>
+                                    <div className="flex justify-between text-emerald-400">
+                                        <span>Points Ditebus</span>
+                                        <span className="font-mono font-bold">- RM {appliedPoints.toFixed(2)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between font-black text-base pt-2 border-t">
-                                    <span>Jumlah</span><span className="text-amber-600">RM {displayTotal.toFixed(2)}</span>
+                                <div className="flex justify-between font-black text-base pt-3 border-t border-white/10 text-white">
+                                    <span>Jumlah Bersih</span>
+                                    <span className="text-emerald-400 font-mono tracking-tight text-xl">
+                                        RM {displayTotal.toFixed(2)}
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <FeaturesSection />
         </div>
     );
 }
+
+export default CheckoutPage;

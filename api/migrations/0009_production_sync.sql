@@ -1,32 +1,33 @@
 -- AlterTable: urunler (kisaAciklama & boyutSecenekleri already added in 0002)
 -- ALTER TABLE "urunler" ADD COLUMN "kisaAciklama" TEXT;
 -- ALTER TABLE "urunler" ADD COLUMN "boyutSecenekleri" TEXT NOT NULL DEFAULT '[]';
-ALTER TABLE "urunler" DROP COLUMN "kartelaIcCephe";
-ALTER TABLE "urunler" DROP COLUMN "kartelaDisCephe";
+-- AlterTable: urunler (already dropped in 0002)
+-- ALTER TABLE "urunler" DROP COLUMN "kartelaIcCephe";
+-- ALTER TABLE "urunler" DROP COLUMN "kartelaDisCephe";
 
 -- Drop deprecated table if it exists
 DROP TABLE IF EXISTS "renk_kartelasi";
 
--- AlterTable: sistem_ayarlari
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "siteAdi" TEXT NOT NULL DEFAULT 'DIN''O EMPIRE';
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "iletisimEmail" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "whatsappNumarasi" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "telefon" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "adres" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "instagramUrl" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "facebookUrl" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "twitterUrl" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "youtubeUrl" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "hakkindaMetni" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "metaPixelId" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "googleMerchantToken" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "kargoPolitikaTuru" TEXT NOT NULL DEFAULT 'SABIT_UCRET';
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "kargoSabitUcret" REAL NOT NULL DEFAULT 8.00;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "gtmContainerId" TEXT;
-ALTER TABLE "sistem_ayarlari" ADD COLUMN "ga4MeasurementId" TEXT;
+-- AlterTable: sistem_ayarlari (already added in 0002 / 0005 except googleMerchantToken)
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "siteAdi" TEXT NOT NULL DEFAULT 'DIN''O EMPIRE';
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "iletisimEmail" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "whatsappNumarasi" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "telefon" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "adres" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "instagramUrl" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "facebookUrl" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "twitterUrl" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "youtubeUrl" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "hakkindaMetni" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "metaPixelId" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "googleMerchantToken" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "kargoPolitikaTuru" TEXT NOT NULL DEFAULT 'SABIT_UCRET';
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "kargoSabitUcret" REAL NOT NULL DEFAULT 8.00;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "gtmContainerId" TEXT;
+-- ALTER TABLE "sistem_ayarlari" ADD COLUMN "ga4MeasurementId" TEXT;
 
--- Rename siparis_gecmisi to islem_gecmisi
-ALTER TABLE "siparis_gecmisi" RENAME TO "islem_gecmisi";
+-- Rename siparis_gecmisi to islem_gecmisi (already done in 0005)
+-- ALTER TABLE "siparis_gecmisi" RENAME TO "islem_gecmisi";
 
 -- Extra Tables
 CREATE TABLE IF NOT EXISTS cms_kandungan (

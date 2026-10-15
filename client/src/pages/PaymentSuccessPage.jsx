@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Truck, ArrowRight } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { trackPurchase } from '../utils/analytics';
+import SEO from '../components/SEO';
 
 export function PaymentSuccessPage() {
     const [searchParams] = useSearchParams();
@@ -20,32 +21,36 @@ export function PaymentSuccessPage() {
     }, [orderNumber, clearCart]);
 
     return (
-        <div className="bg-gray-50 min-h-[calc(100vh-400px)] flex flex-col justify-between">
+        <div className="bg-[#020507] text-white min-h-[calc(100vh-200px)] flex flex-col justify-between font-sans">
+            <SEO
+                title="Pembayaran Berjaya - DIN'O EMPIRE"
+                description="Pengesahan pembayaran FPX ToyyibPay pesanan kilang DIN'O EMPIRE berjaya."
+            />
             <div className="max-w-2xl mx-auto px-4 py-16 text-center">
                 <div className="flex justify-center mb-6">
-                    <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <CheckCircle size={44} className="text-emerald-600" />
+                    <div className="w-20 h-20 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.35)]">
+                        <CheckCircle size={44} className="text-emerald-400" />
                     </div>
                 </div>
-                <h1 className="text-3xl font-black mb-4 text-corporate-black">Pembayaran Berjaya!</h1>
-                <p className="text-gray-600 mb-8 text-lg">
-                    Terima kasih! Pembayaran anda telah berjaya diterima dan disahkan oleh pihak ToyyibPay. <br />
-                    <span className="font-bold text-amber-600 block mt-2">Nombor Pesanan: #{orderNumber}</span>
+                <h1 className="text-3xl sm:text-4xl font-black mb-3 text-white tracking-tight">Pembayaran FPX Berjaya!</h1>
+                <p className="text-white/70 mb-8 text-base leading-relaxed max-w-lg mx-auto">
+                    Terima kasih! Pembayaran anda telah berjaya diterima dan disahkan oleh pihak ToyyibPay. Pesanan anda kini sedang diproses terus di fasiliti Kilang Kuala Ketil. <br />
+                    <span className="font-mono font-bold text-emerald-400 text-lg block mt-3">Nombor Pesanan: #{orderNumber}</span>
                 </p>
 
-                <div className="flex flex-col gap-4 justify-center items-center sm:flex-row">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                     {trackingToken && (
                         <button
                             onClick={() => navigate(`/jejak-pesanan?token=${trackingToken}`)}
-                            className="bg-corporate-black text-white px-8 py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-all w-full sm:w-auto cursor-pointer"
+                            className="bg-emerald-500 hover:bg-emerald-400 text-black px-8 py-4 rounded-xl font-black uppercase font-mono tracking-wider transition-all duration-200 shadow-[0_0_20px_rgba(16,185,129,0.35)] w-full sm:w-auto cursor-pointer"
                         >
-                            Jejak Pesanan Saya
+                            Jejak Bungkusan Kilang &rarr;
                         </button>
                     )}
 
                     <button
                         onClick={() => navigate('/kedai')}
-                        className="bg-brand-primary text-white px-8 py-3.5 rounded-xl font-bold hover:bg-amber-600 transition-all w-full sm:w-auto cursor-pointer"
+                        className="bg-white/5 hover:bg-white/10 border border-white/15 text-white px-8 py-4 rounded-xl font-mono font-bold text-xs uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer"
                     >
                         Teruskan Membeli-belah
                     </button>

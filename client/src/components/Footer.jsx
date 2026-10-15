@@ -21,6 +21,12 @@ const WhatsAppIcon = () => (
     </svg>
 );
 
+const TikTokIcon = () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.98v8.63c-.02 2.07-.72 4.1-2.11 5.64-1.61 1.79-3.98 2.76-6.39 2.67-2.34-.09-4.57-1.14-6.07-2.92-1.74-2.07-2.33-4.88-1.57-7.51.74-2.58 2.65-4.68 5.18-5.59 1.13-.41 2.33-.59 3.53-.55v4.12c-.79-.08-1.59.04-2.33.36-1.12.49-1.99 1.44-2.35 2.61-.39 1.28-.15 2.7.63 3.76.78 1.05 2.04 1.65 3.34 1.57 1.35-.08 2.58-.8 3.25-1.96.42-.73.61-1.57.6-2.42V.02z" />
+    </svg>
+);
+
 const VisaIcon = () => (
     <svg viewBox="0 0 48 48" fill="currentColor" className="h-8">
         <path fill="#1565C0" d="M45,35c0,2.209-1.791,4-4,4H7c-2.209,0-4-1.791-4-4V13c0-2.209,1.791-4,4-4h34c2.209,0,4,1.791,4,4V35z" />
@@ -71,6 +77,9 @@ export function Footer() {
                                 <span className="text-base font-medium">{email}</span>
                             </a>
                             <div className="flex gap-3">
+                                <a href="https://www.tiktok.com/@lemunikualaketil" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 hover:bg-black hover:text-pink-400 border border-white/10 hover:border-pink-500/50 transition-all hover:scale-110 shadow" aria-label="TikTok @lemunikualaketil" title="TikTok @lemunikualaketil">
+                                    <TikTokIcon />
+                                </a>
                                 <a href={instagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 hover:bg-linear-to-tr hover:from-purple-600 hover:to-pink-600 hover:text-white transition-all hover:scale-110" aria-label="Instagram">
                                     <InstagramIcon />
                                 </a>

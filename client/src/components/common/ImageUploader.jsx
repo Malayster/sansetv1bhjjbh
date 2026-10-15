@@ -91,8 +91,8 @@ export default function ImageUploader({
 
     // Proses fail imej (sama ada dari drop, input, atau paste)
     const processAndUploadFile = useCallback(async (file) => {
-        if (!file || !file.type.startsWith('image/')) {
-            setErrorMsg('Sila pilih fail imej yang sah (PNG, JPG, WEBP).');
+        if (!file || (!file.type.startsWith('image/') && !file.name?.match(/\.(ico|svg|png|jpg|jpeg|webp)$/i))) {
+            setErrorMsg('Sila pilih fail imej yang sah (PNG, JPG, WEBP, SVG, ICO).');
             return;
         }
 
@@ -101,18 +101,37 @@ export default function ImageUploader({
         setStats(null);
 
         try {
-            // 1. Mampatkan imej di sisi klien
-            const compressed = await compressToWebP(file, 1200, 1200, 0.85);
-            setStats({
-                originalKb: compressed.originalSizeKb,
-                compressedKb: compressed.compressedSizeKb,
-                savings: compressed.savings
-            });
+            const formData = new FormData();
+            const isSvgOrIco = file.type === 'image/svg+xml' || file.name?.endsWith('.svg') || file.name?.endsWith('.ico');
 
-            // 2. Muat naik ke pelayan (devServer SQLite tempatan / Cloudflare R2)
-            const res = await api.post('/api/v1/admin/upload', {
-                file: compressed.base64,
-                folder: folder
+            if (isSvgOrIco) {
+                formData.append('file', file);
+            } else {
+                // 1. Mampatkan imej di sisi klien
+                const compressed = await compressToWebP(file, 1200, 1200, 0.85);
+                setStats({
+                    originalKb: compressed.originalSizeKb,
+                    compressedKb: compressed.compressedSizeKb,
+                    savings: compressed.savings
+                });
+
+                // Tukar data base64 ke Blob
+                const byteString = atob(compressed.base64.split(',')[1]);
+                const mimeString = compressed.base64.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                const blob = new Blob([ab], { type: mimeString });
+                formData.append('file', blob, 'image.webp');
+            }
+
+            formData.append('folder', folder);
+
+            // 2. Muat naik ke pelayan (Cloudflare R2)
+            const res = await api.post('/api/v1/admin/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             if (res.data?.status === 'success' && res.data?.url) {

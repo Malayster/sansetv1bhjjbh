@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, MessageCircle, Send, Sparkles } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
 
@@ -11,80 +11,86 @@ export function ContactPage() {
     const address = settings.adres || 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah, Malaysia';
     const rawNum = settings.whatsappNumarasi || '60166911020';
     const cleanNum = rawNum.replace(/[^0-9]/g, '') || '60166911020';
-    const waText = encodeURIComponent(`Salam ${siteTitle}, saya ingin bertanyakan mengenai pesanan atau barangan.`);
+    const waText = encodeURIComponent(`Salam ${siteTitle}, saya ingin bertanyakan mengenai pesanan atau barangan kilang.`);
 
     return (
-        <div className="bg-bg-soft min-h-screen py-10">
+        <div className="bg-[#020507] text-white min-h-screen py-12 md:py-16 font-sans">
             <SEO
-                title={`Hubungi Kami - ${siteTitle}`}
-                description={`Hubungi pasukan khidmat pelanggan ${siteTitle}. Telefon, e-mel dan WhatsApp sedia membantu anda.`}
+                title={`Hubungi Kilang - ${siteTitle}`}
+                description={`Hubungi pasukan khidmat pelanggan ${siteTitle} di Kuala Ketil, Kedah. Telefon, e-mel dan WhatsApp sedia membantu anda.`}
                 keywords={`${siteTitle.toLowerCase()} hubungi, telefon, whatsapp, kuala ketil, kedah`}
             />
 
-            <div className="max-w-6xl mx-auto px-4">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black text-corporate-black mb-2">Hubungi Kami</h1>
-                    <div className="w-24 h-1 bg-amber-500 mx-auto rounded-full" />
-                    <p className="text-gray-600 mt-3 text-sm">
-                        Kami sedia membantu anda. Hubungi kami melalui saluran di bawah atau hantarkan mesej terus.
+                <div className="text-center mb-12">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider mb-3">
+                        <Sparkles size={13} />
+                        FASILITI KILANG KUALA KETIL
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black text-white mb-3 tracking-tight">
+                        Hubungi Khidmat Pelanggan Kami
+                    </h1>
+                    <div className="w-20 h-1 bg-emerald-500 mx-auto rounded-full mb-4" />
+                    <p className="text-white/60 max-w-xl mx-auto text-sm leading-relaxed">
+                        Kami sedia membantu sebarang pertanyaan pesanan, tempahan pukal atau maklumat produk kilang.
                     </p>
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Contact Info Cards */}
                     <div className="space-y-4 lg:col-span-1">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4 hover:border-amber-400 transition-all">
-                            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                        <div className="bg-[#060d11] p-6 rounded-2xl border border-white/10 flex items-start gap-4 hover:border-emerald-500/40 transition-all shadow-xl">
+                            <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center shrink-0 border border-amber-500/20">
                                 <Phone size={22} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900 text-sm">Talian Telefon</h3>
-                                <p className="text-xs text-gray-500 mt-0.5">Isnin - Sabtu (9:00 Pagi - 6:00 Petang)</p>
-                                <a href={`tel:${phone.replace(/[^0-9]/g, '')}`} className="text-amber-600 font-bold text-sm mt-1 inline-block hover:underline">
+                                <h3 className="font-bold text-white text-sm">Talian Telefon</h3>
+                                <p className="text-xs text-white/50 mt-0.5">Isnin - Sabtu (9:00 Pagi - 6:00 Petang)</p>
+                                <a href={`tel:${phone.replace(/[^0-9]/g, '')}`} className="text-emerald-400 font-bold text-sm mt-1 inline-block hover:underline font-mono">
                                     {phone}
                                 </a>
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4 hover:border-emerald-400 transition-all">
-                            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                        <div className="bg-[#060d11] p-6 rounded-2xl border border-white/10 flex items-start gap-4 hover:border-emerald-500/40 transition-all shadow-xl">
+                            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center shrink-0 border border-emerald-500/20">
                                 <MessageCircle size={22} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900 text-sm">Sokongan WhatsApp</h3>
-                                <p className="text-xs text-gray-500 mt-0.5">Balasan pantas & bantuan pesanan</p>
+                                <h3 className="font-bold text-white text-sm">Sokongan WhatsApp</h3>
+                                <p className="text-xs text-white/50 mt-0.5">Balasan pantas & bantuan pesanan</p>
                                 <a
                                     href={`https://wa.me/${cleanNum}?text=${waText}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-emerald-600 font-bold text-sm mt-1 inline-block hover:underline"
+                                    className="text-emerald-400 font-bold text-sm mt-1 inline-block hover:underline font-mono"
                                 >
-                                    WhatsApp Kami
+                                    WhatsApp Khidmat Pelanggan &rarr;
                                 </a>
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4 hover:border-blue-400 transition-all">
-                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                        <div className="bg-[#060d11] p-6 rounded-2xl border border-white/10 flex items-start gap-4 hover:border-emerald-500/40 transition-all shadow-xl">
+                            <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center shrink-0 border border-blue-500/20">
                                 <Mail size={22} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900 text-sm">E-mel Rasmi</h3>
-                                <p className="text-xs text-gray-500 mt-0.5">Sebarang pertanyaan korporat & pesanan</p>
-                                <a href={`mailto:${email}`} className="text-blue-600 font-bold text-sm mt-1 inline-block hover:underline break-all">
+                                <h3 className="font-bold text-white text-sm">E-mel Rasmi</h3>
+                                <p className="text-xs text-white/50 mt-0.5">Pertanyaan borong & sokongan</p>
+                                <a href={`mailto:${email}`} className="text-blue-400 font-bold text-sm mt-1 inline-block hover:underline break-all font-mono">
                                     {email}
                                 </a>
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4 hover:border-purple-400 transition-all">
-                            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
+                        <div className="bg-[#060d11] p-6 rounded-2xl border border-white/10 flex items-start gap-4 hover:border-emerald-500/40 transition-all shadow-xl">
+                            <div className="w-12 h-12 bg-purple-500/10 text-purple-400 rounded-xl flex items-center justify-center shrink-0 border border-purple-500/20">
                                 <MapPin size={22} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900 text-sm">Lokasi Kilang & Operasi</h3>
-                                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                                <h3 className="font-bold text-white text-sm">Fasiliti Kilang & Pengeluaran</h3>
+                                <p className="text-xs text-white/60 mt-1 leading-relaxed">
                                     {address}
                                 </p>
                             </div>
@@ -92,10 +98,10 @@ export function ContactPage() {
                     </div>
 
                     {/* Quick Inquiry Form */}
-                    <div className="bg-white p-8 rounded-2xl shadow-md border border-gray-100 lg:col-span-2">
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Hantarkan Pertanyaan Anda</h2>
-                        <p className="text-xs text-gray-500 mb-6">
-                            Isi borang di bawah dan pasukan kami akan menghubungi anda melalui WhatsApp atau e-mel secepat mungkin.
+                    <div className="bg-[#060d11] p-8 rounded-2xl border border-white/10 shadow-2xl lg:col-span-2">
+                        <h2 className="text-xl font-black text-white mb-2">Hantarkan Pertanyaan Anda</h2>
+                        <p className="text-xs text-white/50 mb-6 leading-relaxed">
+                            Isi borang di bawah dan mesej akan dihantar terus ke talian WhatsApp khidmat pelanggan rasmi kami untuk tindakan pantas.
                         </p>
 
                         <form
@@ -111,54 +117,54 @@ export function ContactPage() {
                         >
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Nama Penuh *</label>
+                                    <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Nama Penuh *</label>
                                     <input
                                         type="text"
                                         name="name"
                                         required
-                                        placeholder="Nama anda"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:outline-hidden text-sm"
+                                        placeholder="cth: Ahmad Zulkifli"
+                                        className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-white/30 focus:border-emerald-400 focus:outline-none text-sm transition"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Nombor Telefon / WhatsApp *</label>
+                                    <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Nombor Telefon / WhatsApp *</label>
                                     <input
                                         type="tel"
                                         name="phone"
                                         required
                                         placeholder="cth: 0123456789"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:outline-hidden text-sm"
+                                        className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-white/30 focus:border-emerald-400 focus:outline-none text-sm transition"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Alamat E-mel</label>
+                                <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Alamat E-mel</label>
                                 <input
                                     type="email"
                                     name="email"
                                     placeholder="alamat.emel@contoh.com"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:outline-hidden text-sm"
+                                    className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-white/30 focus:border-emerald-400 focus:outline-none text-sm transition"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Mesej / Pertanyaan *</label>
+                                <label className="block text-xs font-bold text-white/80 mb-1.5 uppercase font-mono">Mesej / Pertanyaan *</label>
                                 <textarea
                                     name="message"
                                     required
                                     rows="4"
-                                    placeholder="Tuliskan pertanyaan atau nombor pesanan anda di sini..."
-                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:outline-hidden text-sm resize-none"
+                                    placeholder="Tuliskan pertanyaan anda atau nombor pesanan di sini..."
+                                    className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-white/30 focus:border-emerald-400 focus:outline-none text-sm resize-none transition"
                                 />
                             </div>
 
                             <button
                                 type="submit"
-                                className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm"
+                                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider rounded-xl transition duration-200 shadow-[0_0_20px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 text-sm cursor-pointer active:scale-98"
                             >
                                 <Send size={16} />
-                                Hantar Terus ke WhatsApp
+                                <span>Hantar Terus ke WhatsApp Kilang</span>
                             </button>
                         </form>
                     </div>

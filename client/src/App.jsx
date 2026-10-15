@@ -1,4 +1,5 @@
 import { HomePage } from './pages/HomePage';
+import { RetailHomePage } from './pages/RetailHomePage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
@@ -37,7 +38,7 @@ function AppLayout() {
 
     if (isAdminDomain) {
         return (
-            <div className="min-h-screen bg-white flex flex-col">
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
                 <main className="flex-1 min-h-0">
                     <Routes>
                         <Route path="/" element={<AdminDashboardPage />} />
@@ -52,11 +53,13 @@ function AppLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-[#020507] text-white flex flex-col">
             {!isCustomLayout && <Header />}
-            <main className={isCustomLayout ? "flex-1 min-h-0" : "pt-20 md:pt-48 flex-1 min-h-0"}>
+            <main className="flex-1 min-h-0">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/enterprise" element={<HomePage />} />
+                    <Route path="/runcit" element={<RetailHomePage />} />
                     <Route path="/tt" element={<TikTokBioPage />} />
                     <Route path="/bio" element={<TikTokBioPage />} />
 

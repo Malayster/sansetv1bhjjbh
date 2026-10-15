@@ -75,10 +75,28 @@ export function AdminDashboardPage() {
 
     // Semak pengesahan admin
     useEffect(() => {
-        const isAuth = localStorage.getItem('dino_admin_auth');
-        if (!isAuth) {
+        const checkAuth = async () => {
+            const isAuth = localStorage.getItem('dino_admin_auth');
+            if (isAuth) return;
+
+            // Jika di domain Cloudflare Access (admin.dinoempire.my), semak sesi Access
+            if (window.location.hostname === 'admin.dinoempire.my') {
+                try {
+                    const res = await api.get('/api/v1/admin/me');
+                    if (res?.data?.status === 'success') {
+                        localStorage.setItem('dino_admin_auth', 'true');
+                        localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
+                        return;
+                    }
+                } catch {
+                    // Access assertion belum sah
+                }
+            }
+
             navigate('/admin/login');
-        }
+        };
+
+        checkAuth();
     }, [navigate]);
 
     // Data sebenar daripada API & Database
@@ -387,6 +405,31 @@ export function AdminDashboardPage() {
             alert(error.response?.data?.errorMessage || 'Gagal mengemas kini pesanan.');
         } finally {
             setIsSavingOrder(false);
+        }
+    };
+
+    const [isBookingCourier, setIsBookingCourier] = useState(false);
+
+    const handleEasyParcelBook = async () => {
+        if (!selectedOrder) return;
+        setIsBookingCourier(true);
+        try {
+            const res = await api.post(`/api/v1/admin/orders/${selectedOrder.id}/easyparcel-book`);
+            if (res.data.status === 'success') {
+                const data = res.data.data;
+                setTrackingNumber(data.trackingNo || '');
+                setCourierName(data.courier || 'J&T Express');
+                setOrderStatus('KARGOLANDI');
+                showNotif(data.message || 'Tempahan kurier EasyParcel berjaya!');
+                loadAllData();
+            } else {
+                alert(res.data.errorMessage || 'Gagal tempah kurier.');
+            }
+        } catch (err) {
+            console.error('Ralat EasyParcel:', err);
+            alert(err.response?.data?.errorMessage || 'Gagal menyambung ke EasyParcel API.');
+        } finally {
+            setIsBookingCourier(false);
         }
     };
 
@@ -2502,6 +2545,26 @@ export function AdminDashboardPage() {
                                 <p className="text-[11px] text-slate-400 mt-1">
                                     Nombor ini akan dipaparkan serta-merta apabila pelanggan menyemak di halaman Jejak Pesanan.
                                 </p>
+                            </div>
+
+                            {/* EasyParcel Auto-Pilot 1-Click Booking */}
+                            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                                        <Truck size={13} />
+                                        EasyParcel Auto-Pilot Gateway
+                                    </span>
+                                    <span className="text-[10px] text-white/50 font-mono">Kilang Kuala Ketil</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={isBookingCourier}
+                                    onClick={handleEasyParcelBook}
+                                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl font-black font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition active:scale-98 cursor-pointer disabled:opacity-50"
+                                >
+                                    {isBookingCourier ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />}
+                                    <span>{isBookingCourier ? 'Sedang Memproses Tempahan...' : 'Tempah Kurier Auto-Pilot (EasyParcel API)'}</span>
+                                </button>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-slate-800 mt-6">

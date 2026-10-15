@@ -26,6 +26,24 @@ const ADMIN_API_URL = isLocalhost ? 'http://localhost:8787' : 'https://api.dinoe
 const config = { cdnUrl: 'https://cdn.dinoempire.my' };
 
 export default function App() {
+  useEffect(() => {
+    if (isLocalhost && window.location.port !== '8000') {
+      window.location.replace('http://localhost:8000/admin');
+    }
+  }, []);
+
+  if (isLocalhost && window.location.port !== '8000') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#020617', color: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif', padding: '20px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '10px' }}>Dialihkan ke Dashboard Pentadbir Sebenar...</h2>
+        <p style={{ color: '#94a3b8', marginBottom: '20px' }}>Sila gunakan dashboard rasmi DIN'O EMPIRE di port 8000.</p>
+        <a href="http://localhost:8000/admin" style={{ padding: '10px 20px', background: '#f59e0b', color: '#000', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+          Klik Sini untuk Buka Dashboard Pentadbir
+        </a>
+      </div>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('admin_theme') || 'dark');
   const [loading, setLoading] = useState(false);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import api from '../lib/axios';
-import { CheckCircle, Clock, Package, AlertCircle, Phone, XCircle, MapPin, Truck, MessageCircle } from 'lucide-react';
+import { CheckCircle, Clock, Package, AlertCircle, Phone, XCircle, MapPin, Truck, MessageCircle, Sparkles } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
 import SEO from '../components/SEO';
 
@@ -29,7 +29,6 @@ export function OrderTrackingPage() {
             });
             alert('Permohonan pemulangan anda telah diterima! Pihak kami akan menghubungi anda dalam tempoh 1-2 hari bekerja.');
             setIsReturnModalOpen(false);
-            // Refresh
             const response = await api.get(`/api/v1/orders/track?token=${token}`);
             if (response.data.status === 'success') setOrder(response.data.data);
         } catch (err) {
@@ -79,56 +78,49 @@ export function OrderTrackingPage() {
                 setCancelReason("");
             }
         } catch (err) {
-            alert(err.response?.data?.errorMessage || 'Pesanan tidak dapat dibatalkan. Sila hubungi khidmat pelanggan.');
+            alert(err.response?.data?.errorMessage || 'Ralat berlaku semasa membatalkan pesanan.');
         } finally {
             setLoading(false);
         }
     };
 
-    const whatsappLink = order
-        ? `https://wa.me/60166911020?text=${encodeURIComponent(`Salam DIN'O EMPIRE, saya ingin menyemak status Pesanan No: #${order.siparisNumarasi}`)}`
-        : 'https://wa.me/60166911020';
-
-    const getStatusLabel = (durum) => {
-        switch (durum) {
-            case 'TAMAMLANDI':
-            case 'DELIVERED':
-                return 'Selesai';
-            case 'HAZIRLANIYOR':
-            case 'PREPARING':
-                return 'Sedang Disediakan';
-            case 'KARGOLANDI':
-            case 'SHIPPED':
-                return 'Dalam Penghantaran';
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'BEKLEMEDE': return 'Menunggu Pembayaran';
+            case 'ODENDİ':
+            case 'HAZIRLANIYOR': return 'Sedang Dibungkus di Kilang';
+            case 'KARGOLANDI': return 'Diserahkan Kepada Kurier';
             case 'TESLIM_EDILDI':
-                return 'Telah Dihantar';
-            case 'IPTAL_EDILDI':
-            case 'CANCELLED':
-                return 'Dibatalkan';
-            case 'BEKLEMEDE':
-            case 'PENDING':
-                return 'Menunggu Pembayaran';
-            default: return durum || 'Sedang Diproses';
+            case 'TAMAMLANDI': return 'Selesai & Diterima';
+            case 'IPTAL_EDILDI': return 'Pesanan Dibatalkan';
+            default: return status || 'Diproses';
         }
     };
+
+    const whatsappLink = `https://wa.me/60166911020?text=${encodeURIComponent(
+        `Salam DIN'O EMPIRE, saya ingin bertanya status pesanan saya #${order?.siparisNumarasi || ''}`
+    )}`;
 
     const renderContent = () => {
         if (loading) {
             return (
-                <div className="flex flex-col justify-center items-center h-64 gap-3">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-600 border-t-transparent"></div>
-                    <p className="text-gray-500 font-medium text-sm">Memuatkan maklumat pesanan...</p>
+                <div className="max-w-2xl mx-auto my-16 p-8 text-center text-white font-sans">
+                    <Clock className="w-12 h-12 text-emerald-400 mx-auto animate-spin mb-4" />
+                    <p className="text-white/60 font-mono text-sm">Memuatkan maklumat pesanan kilang...</p>
                 </div>
             );
         }
 
         if (error) {
             return (
-                <div className="max-w-2xl mx-auto my-12 p-8 bg-white rounded-2xl shadow-md border border-gray-100 text-center">
-                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-black text-gray-800 mb-2">Maklumat Tidak Dijumpai</h2>
-                    <p className="text-gray-600 mb-6">{error}</p>
-                    <Link to="/" className="inline-block bg-amber-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-amber-700 transition">
+                <div className="max-w-2xl mx-auto my-16 p-8 bg-[#060d11] rounded-2xl border border-white/10 text-center text-white font-sans shadow-2xl">
+                    <AlertCircle className="w-16 h-16 text-rose-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-black text-white mb-2">Maklumat Tidak Dijumpai</h2>
+                    <p className="text-white/60 mb-6 text-sm">{error}</p>
+                    <Link
+                        to="/"
+                        className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider px-6 py-3 rounded-xl transition shadow-[0_0_15px_rgba(16,185,129,0.35)]"
+                    >
                         Kembali ke Laman Utama
                     </Link>
                 </div>
@@ -136,21 +128,25 @@ export function OrderTrackingPage() {
         }
 
         return (
-            <div className="max-w-6xl mx-auto px-4 py-10 relative">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative font-sans">
                 <SEO
                     title={`Penjejakan Pesanan #${order.siparisNumarasi} - DIN'O EMPIRE`}
                     description="Semak status dan butiran penghantaran pesanan DIN'O EMPIRE anda."
                 />
 
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                <div className="bg-[#060d11] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
                     {/* Header */}
-                    <div className="bg-linear-to-r from-gray-900 via-gray-800 to-amber-950 text-white p-6 md:p-8">
+                    <div className="bg-gradient-to-r from-emerald-950 via-[#06151a] to-emerald-950 text-white p-6 md:p-8 border-b border-white/10">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Penjejakan Pesanan</span>
-                                <h1 className="text-2xl md:text-3xl font-black mt-1">Pesanan #{order.siparisNumarasi}</h1>
-                                <p className="text-gray-300 text-sm mt-1">
-                                    Tarikh Pesanan: {order.olusturulmaTarihi ? new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                                <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
+                                    PENJEJAKAN PESANAN KILANG
+                                </span>
+                                <h1 className="text-2xl md:text-3xl font-black mt-1 text-white font-mono">
+                                    Pesanan #{order.siparisNumarasi}
+                                </h1>
+                                <p className="text-white/60 text-xs mt-1 font-mono">
+                                    Tarikh: {order.olusturulmaTarihi ? new Date(order.olusturulmaTarihi).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -158,10 +154,10 @@ export function OrderTrackingPage() {
                                     href={whatsappLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition"
+                                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2.5 rounded-xl text-xs font-black uppercase font-mono tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.3)] transition"
                                     title="Hubungi Khidmat Pelanggan WhatsApp"
                                 >
-                                    <MessageCircle size={18} />
+                                    <MessageCircle size={16} />
                                     <span>Bantuan WhatsApp</span>
                                 </a>
                             </div>
@@ -169,22 +165,22 @@ export function OrderTrackingPage() {
                     </div>
 
                     {/* Status Bar */}
-                    <div className="p-6 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-4">
+                    <div className="p-6 border-b border-white/10 bg-white/[0.02] flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <span className="font-bold text-gray-700 text-sm">Status Pesanan:</span>
-                            <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                                order.durum === 'TAMAMLANDI' || order.durum === 'TESLIM_EDILDI' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                                order.iadeTalebi ? 'bg-orange-100 text-orange-800 border border-orange-300' :
-                                order.durum === 'KARGOLANDI' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
-                                order.durum === 'HAZIRLANIYOR' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                                order.durum === 'IPTAL_EDILDI' ? 'bg-red-100 text-red-800 border border-red-300' :
-                                'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                            <span className="font-mono text-xs text-white/60 uppercase font-bold">Status:</span>
+                            <span className={`px-4 py-1.5 rounded-full text-xs font-mono font-black uppercase tracking-wider ${
+                                order.durum === 'TAMAMLANDI' || order.durum === 'TESLIM_EDILDI' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
+                                order.iadeTalebi ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40' :
+                                order.durum === 'KARGOLANDI' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' :
+                                order.durum === 'HAZIRLANIYOR' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' :
+                                order.durum === 'IPTAL_EDILDI' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' :
+                                'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
                             }`}>
                                 {getStatusLabel(order.durum)}
                             </span>
 
                             {order.kargoTakipNo && (
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
                                     <Truck size={14} />
                                     <span>Tracking: {order.kargoFirmasi || 'Kurier'} - {order.kargoTakipNo}</span>
                                 </div>
@@ -195,7 +191,7 @@ export function OrderTrackingPage() {
                             {(order.durum === 'BEKLEMEDE' || order.durum === 'HAZIRLANIYOR') && (
                                 <button
                                     onClick={handleCancelClick}
-                                    className="flex items-center gap-1.5 text-red-600 hover:text-red-800 text-xs font-bold border border-red-200 px-3.5 py-1.5 rounded-full hover:bg-red-50 transition"
+                                    className="flex items-center gap-1.5 text-rose-400 hover:text-rose-300 text-xs font-bold border border-rose-500/30 px-3.5 py-1.5 rounded-full hover:bg-rose-500/10 transition cursor-pointer"
                                 >
                                     <XCircle size={14} /> Batalkan Pesanan
                                 </button>
@@ -204,14 +200,14 @@ export function OrderTrackingPage() {
                             {order.durum === 'TESLIM_EDILDI' && !order.iadeTalebi && (
                                 <button
                                     onClick={() => setIsReturnModalOpen(true)}
-                                    className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-bold border border-blue-200 px-3.5 py-1.5 rounded-full hover:bg-blue-50 transition"
+                                    className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-xs font-bold border border-blue-500/30 px-3.5 py-1.5 rounded-full hover:bg-blue-500/10 transition cursor-pointer"
                                 >
                                     <Package size={14} /> Mohon Pemulangan
                                 </button>
                             )}
 
                             {order.iadeTalebi && (
-                                <div className="text-xs font-bold text-orange-700 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
+                                <div className="text-xs font-bold text-orange-400 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/30">
                                     Status Pemulangan: {order.iadeTalebi.durum}
                                 </div>
                             )}
@@ -219,20 +215,20 @@ export function OrderTrackingPage() {
                     </div>
 
                     {/* Order Details Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-150">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-white/10">
                         {/* Left Side: Order Items */}
                         <div className="p-6 md:p-8 lg:col-span-2 space-y-6">
-                            <h2 className="text-lg font-bold text-gray-900 border-b pb-3 flex items-center gap-2">
-                                <Package className="text-amber-600" size={20} />
+                            <h2 className="text-base font-black text-white border-b border-white/10 pb-3 flex items-center gap-2 font-mono uppercase">
+                                <Package className="text-emerald-400" size={18} />
                                 Senarai Barangan Dipesan
                             </h2>
 
-                            <div className="divide-y divide-gray-100 space-y-4">
+                            <div className="divide-y divide-white/10 space-y-4">
                                 {(order.kalemler || []).map((item, index) => (
                                     <div key={index} className="flex justify-between items-center py-4 first:pt-0 last:pb-0">
                                         <div className="flex items-center space-x-4">
                                             {item.resimUrl ? (
-                                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-100 shrink-0 bg-white shadow-xs">
+                                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-black shadow-xs">
                                                     <img
                                                         src={item.resimUrl}
                                                         alt={item.urunAd}
@@ -240,23 +236,23 @@ export function OrderTrackingPage() {
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="bg-gray-100 p-4 rounded-xl text-gray-400 shrink-0">
+                                                <div className="bg-white/5 p-4 rounded-xl text-white/40 shrink-0">
                                                     <Package size={24} />
                                                 </div>
                                             )}
                                             <div>
-                                                <p className="font-bold text-gray-900">{item.urunAd || item.urunAdSnapshot || item.name || 'Produk'}</p>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <p className="font-bold text-white text-sm">{item.urunAd || item.urunAdSnapshot || item.name || 'Produk'}</p>
+                                                <p className="text-xs text-white/50 mt-1 font-mono">
                                                     {item.adet || item.quantity || 1} Unit x RM {Number(item.birimFiyat || item.fiyat || item.price || 0).toFixed(2)}
                                                 </p>
                                                 {item.secilenRenk && (
-                                                    <span className="text-[11px] text-gray-600 mt-1.5 bg-gray-100 px-2.5 py-0.5 rounded-full inline-block font-semibold">
+                                                    <span className="text-[11px] text-emerald-400 mt-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full inline-block font-mono font-semibold">
                                                         Varian: {item.secilenRenk}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <span className="font-black text-gray-900">
+                                        <span className="font-mono font-bold text-emerald-400">
                                             RM {(Number(item.birimFiyat || item.fiyat || item.price || 0) * (item.adet || item.quantity || 1)).toFixed(2)}
                                         </span>
                                     </div>
@@ -265,54 +261,56 @@ export function OrderTrackingPage() {
                         </div>
 
                         {/* Right Side: Order Summary & Shipping */}
-                        <div className="p-6 md:p-8 bg-gray-50/50 flex flex-col justify-between space-y-6">
+                        <div className="p-6 md:p-8 bg-black/40 flex flex-col justify-between space-y-6">
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-900 border-b pb-3">Ringkasan Pembayaran</h3>
+                                    <h3 className="text-sm font-mono font-black uppercase text-emerald-400 border-b border-white/10 pb-3">
+                                        Ringkasan Pembayaran
+                                    </h3>
 
-                                    <div className="mt-4 space-y-3 text-sm">
-                                        <div className="flex justify-between items-center text-gray-600">
+                                    <div className="mt-4 space-y-3 text-xs">
+                                        <div className="flex justify-between items-center text-white/70">
                                             <span>Jumlah Barangan</span>
-                                            <span className="font-semibold text-gray-900">
+                                            <span className="font-mono font-bold text-white">
                                                 RM {(Number(order.toplamTutar) - Number(order.kargoUcreti || 0)).toFixed(2)}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between items-center text-gray-600">
-                                            <span>Kadar Penghantaran Pos</span>
-                                            <span className="font-semibold text-gray-900">
+                                        <div className="flex justify-between items-center text-white/70">
+                                            <span>Kadar Pos Kurier</span>
+                                            <span className="font-mono font-bold text-white">
                                                 {Number(order.kargoUcreti || 0) === 0 ? (
-                                                    <span className="text-emerald-600 font-bold">PERCUMA</span>
+                                                    <span className="text-emerald-400 font-bold">PERCUMA</span>
                                                 ) : (
                                                     `RM ${Number(order.kargoUcreti).toFixed(2)}`
                                                 )}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between items-center text-lg font-black text-gray-900 border-t pt-3 mt-3">
+                                        <div className="flex justify-between items-center text-base font-black text-white border-t border-white/10 pt-3 mt-3">
                                             <span>Jumlah Keseluruhan</span>
-                                            <span className="text-amber-600">RM {Number(order.toplamTutar).toFixed(2)}</span>
+                                            <span className="text-emerald-400 font-mono text-xl">RM {Number(order.toplamTutar).toFixed(2)}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-amber-50/70 p-5 rounded-2xl border border-amber-200/60">
-                                    <h4 className="font-bold text-amber-950 mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                                        <MapPin size={15} className="text-amber-600" /> Alamat Penghantaran
+                                <div className="bg-white/[0.03] p-5 rounded-2xl border border-white/10">
+                                    <h4 className="font-mono font-bold text-emerald-400 mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                                        <MapPin size={14} /> Alamat Penghantaran
                                     </h4>
-                                    <p className="text-gray-800 font-semibold text-sm">
+                                    <p className="text-white font-semibold text-sm">
                                         {order.teslimatAdresi?.adSoyad || ''}
                                     </p>
-                                    <p className="text-gray-600 text-xs mt-1">
+                                    <p className="text-white/60 text-xs mt-1">
                                         {order.teslimatAdresi?.sehir || ''}, {order.teslimatAdresi?.ilce || ''}
                                     </p>
-                                    <p className="text-[11px] text-gray-500 mt-2 italic">
+                                    <p className="text-[11px] text-white/40 mt-2 italic">
                                         * Alamat lengkap dilindungi demi privasi pelanggan mengikut PDPA.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-200 text-center">
-                                <Link to="/kedai" className="text-amber-600 hover:text-amber-700 font-bold text-sm hover:underline">
-                                    ← Teruskan Membeli-belah
+                            <div className="pt-4 border-t border-white/10 text-center">
+                                <Link to="/kedai" className="text-emerald-400 hover:text-emerald-300 font-mono text-xs font-bold hover:underline">
+                                    &larr; Kembali Membeli-belah di Kedai
                                 </Link>
                             </div>
                         </div>
@@ -321,34 +319,34 @@ export function OrderTrackingPage() {
 
                 {/* Cancel Order Modal */}
                 {isCancelModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                        <div className="bg-[#090e11] border border-white/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-white animate-in zoom-in-95 duration-200">
                             <div className="p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                        <AlertCircle className="w-6 h-6 text-red-500" />
+                                    <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                        <AlertCircle className="w-5 h-5 text-rose-400" />
                                         Batalkan Pesanan
                                     </h3>
                                     <button
                                         onClick={() => setIsCancelModalOpen(false)}
-                                        className="text-gray-400 hover:text-gray-500 transition-colors"
+                                        className="text-white/50 hover:text-white transition-colors"
                                     >
-                                        <XCircle size={24} />
+                                        <XCircle size={20} />
                                     </button>
                                 </div>
 
-                                <p className="text-gray-600 mb-4 text-sm">
+                                <p className="text-white/70 mb-4 text-xs leading-relaxed">
                                     Adakah anda pasti ingin membatalkan pesanan ini? Pembatalan hanya dibenarkan jika pesanan belum diserahkan kepada pihak kurier.
                                 </p>
 
                                 <div className="mb-6">
-                                    <label className="block text-xs font-bold text-gray-700 mb-2">
-                                        Sebab Pembatalan (Pilihan)
+                                    <label className="block text-xs font-bold text-white/80 mb-2 font-mono uppercase">
+                                        Sebab Pembatalan
                                     </label>
                                     <textarea
                                         value={cancelReason}
                                         onChange={(e) => setCancelReason(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[90px] resize-none text-sm"
+                                        className="w-full px-3 py-2 bg-black/60 border border-white/15 rounded-xl text-white placeholder-white/30 text-xs focus:border-rose-400 focus:outline-none min-h-[90px] resize-none"
                                         placeholder="Sila nyatakan sebab pembatalan..."
                                     />
                                 </div>
@@ -356,13 +354,13 @@ export function OrderTrackingPage() {
                                 <div className="flex gap-3 justify-end">
                                     <button
                                         onClick={() => setIsCancelModalOpen(false)}
-                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-sm transition-colors"
+                                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs transition-colors"
                                     >
                                         Kembali
                                     </button>
                                     <button
                                         onClick={confirmCancel}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-all"
+                                        className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs shadow-md transition-all"
                                     >
                                         Sahkan Pembatalan
                                     </button>
@@ -374,27 +372,27 @@ export function OrderTrackingPage() {
 
                 {/* Return Request Modal */}
                 {isReturnModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                        <div className="bg-[#090e11] border border-white/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-white animate-in zoom-in-95 duration-200">
                             <div className="p-6">
-                                <h3 className="text-xl font-bold text-gray-900 mb-4">Mohon Pemulangan Barangan</h3>
+                                <h3 className="text-lg font-black text-white mb-4">Mohon Pemulangan Barangan</h3>
 
                                 <div className="mb-4">
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Sebab Pemulangan</label>
+                                    <label className="block text-xs font-bold text-white/80 mb-1 font-mono uppercase">Sebab Pemulangan</label>
                                     <select
-                                        className="w-full border border-gray-300 rounded-xl p-2.5 text-sm font-medium"
+                                        className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none"
                                         value={returnType}
                                         onChange={(e) => setReturnType(e.target.value)}
                                     >
-                                        <option value="KUSURLU_URUN">Barangan Rosak / Cacat</option>
-                                        <option value="KEYFI_IADE">Tersalah Pesan / Tukar Fikiran</option>
+                                        <option value="KUSURLU_URUN" className="bg-[#090e11]">Barangan Rosak / Cacat</option>
+                                        <option value="KEYFI_IADE" className="bg-[#090e11]">Tersalah Pesan / Tukar Fikiran</option>
                                     </select>
                                 </div>
 
                                 <div className="mb-4">
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Penerangan Terperinci</label>
+                                    <label className="block text-xs font-bold text-white/80 mb-1 font-mono uppercase">Penerangan Terperinci</label>
                                     <textarea
-                                        className="w-full border border-gray-300 rounded-xl p-2.5 text-sm min-h-[90px]"
+                                        className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-white/30 min-h-[90px] focus:border-emerald-400 focus:outline-none"
                                         placeholder="Sila terangkan kerosakan atau sebab pemulangan..."
                                         value={returnReason}
                                         onChange={(e) => setReturnReason(e.target.value)}
@@ -402,21 +400,21 @@ export function OrderTrackingPage() {
                                 </div>
 
                                 <div className="mb-6">
-                                    <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                                        💡 Sila hantarkan bukti gambar barangan yang rosak ke WhatsApp kami di <strong>016-6911020</strong> untuk pemprosesan segera.
+                                    <p className="text-xs text-white/60 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                                        💡 Sila hantarkan bukti gambar barangan yang rosak ke WhatsApp kami di <strong className="text-emerald-400">016-6911020</strong> untuk pemprosesan segera.
                                     </p>
                                 </div>
 
                                 <div className="flex justify-end gap-2">
                                     <button
                                         onClick={() => setIsReturnModalOpen(false)}
-                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl text-sm font-bold"
+                                        className="px-4 py-2 text-white/60 hover:bg-white/10 rounded-xl text-xs font-bold"
                                     >
                                         Batal
                                     </button>
                                     <button
                                         onClick={submitReturnRequest}
-                                        className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 shadow-md"
+                                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-black uppercase font-mono shadow-md"
                                     >
                                         Hantar Permohonan
                                     </button>
@@ -430,7 +428,7 @@ export function OrderTrackingPage() {
     };
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-0 flex flex-col justify-between">
+        <div className="bg-[#020507] text-white min-h-screen pb-0 flex flex-col justify-between font-sans">
             {renderContent()}
             <FeaturesSection />
         </div>

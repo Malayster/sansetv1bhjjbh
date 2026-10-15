@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, ShieldCheck, ArrowRight, Store, KeyRound, AlertCircle, Eye, EyeOff, CheckCircle2, RefreshCw } from 'lucide-react';
 import SEO from '../../components/SEO';
@@ -15,6 +15,19 @@ export function AdminLoginPage() {
     const [error, setError] = useState('');
     const [infoMessage, setInfoMessage] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Semak jika pengguna sudah diautentikasi oleh Cloudflare Access
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
+            api.get('/api/v1/admin/me').then((res) => {
+                if (res?.data?.status === 'success') {
+                    localStorage.setItem('dino_admin_auth', 'true');
+                    localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
+                    navigate('/');
+                }
+            }).catch(() => {});
+        }
+    }, [navigate]);
 
     // Langkah 1: Mohon Kod OTP ke E-mel Pentadbir
     const handleRequestOtp = async (e) => {

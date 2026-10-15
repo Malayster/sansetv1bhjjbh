@@ -1,298 +1,259 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, ChevronDown, ChevronRight, Phone, Truck, Lock, Sparkles, Package } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, Sparkles, Lock, Truck, Phone } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useCategories } from '../hooks/useCategories';
 import { useSettings } from '../context/SettingsContext';
 
 export function Header() {
-    const { toggleSidebar, cartCount } = useCart();
+    const { toggleSidebar, setIsSidebarOpen, cartCount } = useCart();
     const { settings, cms } = useSettings();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
+    const [showSearch, setShowSearch] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [activeDropdown, setActiveDropdown] = useState(null);
-
-    const { categories: allCategories } = useCategories(false);
-    const categories = allCategories.sort((a, b) => (a.sira || 0) - (b.sira || 0));
 
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/kedai?search=${encodeURIComponent(searchQuery)}`);
+            navigate(`/kedai?search=${encodeURIComponent(searchQuery.trim())}`);
+            setShowSearch(false);
             setMobileMenuOpen(false);
         }
     };
 
-    const handleCategoryClick = (cat) => {
-        navigate(`/kedai?kategori=${cat.slug}`);
-        setActiveDropdown(null);
-        setMobileMenuOpen(false);
+    const openCart = () => {
+        if (typeof setIsSidebarOpen === 'function') {
+            setIsSidebarOpen(true);
+        } else if (typeof toggleSidebar === 'function') {
+            toggleSidebar();
+        }
     };
 
     const phoneNo = settings?.telefon || cms?.info_kedai?.telefon || '016-6911020';
 
     return (
-        <>
-            <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
-                {cms?.announcement_bar?.active && cms?.announcement_bar?.text && (
-                    <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-white text-xs font-bold py-2 px-4 text-center tracking-wide flex items-center justify-center gap-2 shadow-inner">
-                        <Sparkles size={14} className="shrink-0 animate-pulse text-amber-200" />
-                        {cms.announcement_bar.link ? (
-                            <Link to={cms.announcement_bar.link} className="hover:underline flex items-center gap-1">
-                                <span>{cms.announcement_bar.text}</span>
-                            </Link>
-                        ) : (
-                            <span>{cms.announcement_bar.text}</span>
-                        )}
-                    </div>
-                )}
+        <header className="sticky top-0 left-0 right-0 z-50 font-sans shadow-2xl">
+            {/* ── TOP ANNOUNCEMENT BAR ── */}
+            <div className="bg-gradient-to-r from-emerald-950 via-emerald-800 to-emerald-950 text-white text-[11px] font-bold py-2 px-4 text-center tracking-wide flex items-center justify-center gap-2 border-b border-emerald-500/20">
+                <Truck className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span>
+                    {cms?.announcement_bar?.text || "PENGHANTARAN PERCUMA ke seluruh Semenanjung untuk pesanan atas RM100 • 100% Halal Kilang Kuala Ketil"}
+                </span>
+            </div>
 
-                <div className="bg-white border-b border-gray-100 hidden md:block">
-                    <div className="container mx-auto px-4 h-10 flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
-                        <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-1.5 text-amber-600 font-extrabold">
-                                <Truck size={14} />
-                                Terus Dari Kilang Kuala Ketil, Kedah
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <Link to="/soalan-lazim" className="hover:text-action-red transition-colors">Soalan Lazim</Link>
-                            <Link to="/hubungi" className="hover:text-action-red transition-colors">Hubungi Kami</Link>
-                            <a href={`tel:${phoneNo.replace(/[^0-9]/g, '')}`} className="flex items-center gap-1 hover:text-action-red transition-colors">
-                                <Phone size={14} />
-                                {phoneNo}
-                            </a>
-                            <span className="text-gray-300">|</span>
-                            <Link to="/login" className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold transition-colors" title="Log Masuk Pentadbir">
-                                <Lock size={12} />
-                                <span>Log Masuk Pentadbir</span>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                <nav className="bg-white border-b border-gray-100">
-                    <div className="container mx-auto px-4 h-20 md:h-24 flex items-center justify-between gap-4">
-                        <button
-                            className="md:hidden p-2 text-corporate-black hover:bg-slate-100 rounded-lg transition-colors"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        >
-                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
-
-                        <Link to="/" className="shrink-0 flex items-center gap-2">
-                            {settings?.logoUrl && settings?.logoMode !== 'text' ? (
-                                <img
-                                    src={settings.logoUrl}
-                                    alt={settings?.siteTitle || "DIN'O EMPIRE"}
-                                    className="h-10 md:h-12 w-auto max-w-[200px] object-contain"
-                                />
-                            ) : (
-                                <span className="text-2xl md:text-3xl font-black text-amber-600 tracking-wider">
-                                    {settings?.siteTitle || "DIN'O EMPIRE"}
+            {/* ── MAIN LUXURY NAVIGATION BAR ── */}
+            <nav className="bg-[#020507]/95 backdrop-blur-xl border-b border-white/10 transition-all">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+                    
+                    {/* Brand Logo & Tagline */}
+                    <div className="flex items-center gap-8">
+                        <Link to="/" className="flex items-center gap-3 group">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-105 transition">
+                                <span className="font-extrabold text-black font-mono text-lg tracking-tighter">D•E</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-extrabold text-base tracking-wider text-white font-mono flex items-center gap-1.5">
+                                    DIN'O EMPIRE
+                                    <span className="px-1.5 py-0.2 text-[9px] bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 uppercase font-mono">
+                                        KILANG KUALA KETIL
+                                    </span>
                                 </span>
-                            )}
+                                <span className="text-[10px] text-white/50 tracking-wide font-sans">Kualiti Terjamin Terus Dari Kilang</span>
+                            </div>
                         </Link>
 
-                        <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:block relative group">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Cari barangan terpilih DIN'O EMPIRE..."
-                                className="w-full bg-slate-50 border border-slate-200 text-corporate-black placeholder-gray-400 px-6 py-3.5 rounded-lg focus:border-indigo-600 focus:bg-white focus:outline-hidden shadow-xs transition-all"
-                            />
-                            <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 p-1 hover:scale-110 transition-transform">
-                                <Search size={24} />
-                            </button>
-                        </form>
-
-                        <div className="flex items-center gap-3">
-                            <Link
-                                to="/bina-box"
-                                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-400 transition-all shadow-xs"
-                            >
-                                <Package size={15} />
-                                <span>Bina Box</span>
+                        {/* Desktop Navigation Links */}
+                        <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-white/80">
+                            <Link to="/kedai" className="hover:text-emerald-400 transition-colors">
+                                Koleksi Produk
                             </Link>
-
-                            <Link
-                                to="/login"
-                                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg border border-gray-200 hover:border-amber-300 transition-all shadow-xs"
-                                title="Log Masuk Pentadbir"
-                            >
-                                <Lock size={15} className="text-amber-600" />
-                                <span>Admin</span>
+                            <Link to="/bina-box" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-amber-300 font-semibold">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Bina Box Sendiri</span>
                             </Link>
-
-                            <button
-                                className="flex items-center gap-1.5 md:gap-3 bg-action-red text-white px-3 md:px-5 py-2 md:py-2.5 rounded-lg hover:bg-red-700 transition-all shadow-md transform hover:scale-105 active:scale-95 group relative overflow-hidden"
-                                onClick={toggleSidebar}
-                            >
-                                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                <ShoppingCart size={20} className="relative z-10 shrink-0" />
-                                <div className="text-left leading-none relative z-10 flex flex-col justify-center">
-                                    <span className="text-[9px] md:text-[10px] font-bold opacity-80 mb-0.5 hidden md:block">Beg Saya</span>
-                                    <span className="text-xs md:text-sm font-black whitespace-nowrap">{cartCount} Barangan</span>
-                                </div>
-                            </button>
-                        </div>
-
-                        <button className="md:hidden p-2 text-corporate-black" onClick={() => navigate('/search')}>
-                            <Search size={24} />
-                        </button>
-                    </div>
-                </nav>
-
-                <div className="hidden md:block bg-corporate-black py-0 border-t border-white/5">
-                    <div className="container mx-auto px-4 relative">
-                        <div className="flex items-center justify-between gap-1 h-14 whitespace-nowrap text-[13px] font-black uppercase tracking-tight text-white/90">
-                            <button
-                                className="px-4 h-full cursor-pointer hover:bg-white/10 transition-all flex items-center gap-1.5"
-                                onClick={() => navigate('/kedai')}
-                            >
-                                <span>SEMUA BARANGAN</span>
-                            </button>
-
-                            <button
-                                className="px-4 h-full cursor-pointer hover:bg-amber-500/20 text-amber-300 transition-all flex items-center gap-1.5"
-                                onClick={() => navigate('/bina-box')}
-                            >
-                                <Package size={14} />
-                                <span>BINA BOX</span>
-                            </button>
-
-                            {categories.map((cat) => (
-                                <div
-                                    key={cat.id}
-                                    className="group/cat h-full flex items-center"
-                                    onMouseEnter={() => setActiveDropdown(cat.id)}
-                                    onMouseLeave={() => setActiveDropdown(null)}
-                                >
-                                    <button
-                                        className={`px-4 h-full cursor-pointer hover:bg-white/10 transition-all flex items-center gap-1.5 ${activeDropdown === cat.id ? 'bg-white/10 text-indigo-600' : ''}`}
-                                        onClick={() => handleCategoryClick(cat)}
-                                    >
-                                        <span>{cat.ad}</span>
-                                        {cat.altKategoriler && cat.altKategoriler.length > 0 && (
-                                            <ChevronDown size={14} className={`transition-transform duration-300 ${activeDropdown === cat.id ? 'rotate-180' : ''}`} />
-                                        )}
-                                    </button>
-
-                                    {cat.altKategoriler && cat.altKategoriler.length > 0 && activeDropdown === cat.id && (
-                                        <div className="absolute top-full left-0 bg-white text-corporate-black shadow-2xl rounded-b-xl p-10 w-full border-t-4 border-indigo-600 animate-in fade-in slide-in-from-top-4 duration-500 z-50">
-                                            <div className="grid grid-cols-4 gap-8">
-                                                {cat.altKategoriler.map((sub) => (
-                                                    <button
-                                                        key={sub.id}
-                                                        onClick={() => handleCategoryClick(sub)}
-                                                        className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-all text-left group/item border border-transparent hover:border-gray-100"
-                                                    >
-                                                        {sub.resim && (
-                                                            <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-white">
-                                                                <img src={sub.resim} alt={sub.ad} className="w-full h-full object-cover transition-transform group-hover/item:scale-110" />
-                                                            </div>
-                                                        )}
-                                                        <div className="flex-1">
-                                                            <div className="font-black text-sm group-hover/item:text-action-red transition-colors">{sub.ad}</div>
-                                                            <div className="text-[10px] text-gray-400 font-bold uppercase">Lihat Barangan</div>
-                                                        </div>
-                                                        <ChevronRight size={16} className="text-gray-300 group-hover/item:translate-x-1 transition-transform" />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                            <Link to="/langganan" className="hover:text-emerald-400 transition-colors">
+                                Pelan Jimat Langganan
+                            </Link>
+                            <Link to="/jejak-pesanan" className="hover:text-emerald-400 transition-colors">
+                                Jejak Pesanan
+                            </Link>
+                            <Link to="/hubungi" className="hover:text-emerald-400 transition-colors">
+                                Hubungi Kilang
+                            </Link>
                         </div>
                     </div>
-                </div>
-            </header>
 
-            {mobileMenuOpen && (
-                <div className="fixed inset-0 z-40 md:hidden">
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-xs"
-                        onClick={() => setMobileMenuOpen(false)}
-                    />
-                    <div className="absolute top-20 left-0 right-0 bg-white shadow-xl max-h-[calc(100vh-80px)] overflow-y-auto animate-in slide-in-from-top duration-300">
-                        <form onSubmit={handleSearch} className="p-4 border-b">
-                            <div className="relative">
+                    {/* Right Side Actions: Search, Cart, Pentadbir, Mobile Toggle */}
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Expandable Search Input / Button */}
+                        {showSearch ? (
+                            <form onSubmit={handleSearch} className="relative flex items-center animate-in fade-in zoom-in-95 duration-200">
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Cari barangan..."
-                                    className="w-full bg-gray-100 text-corporate-black placeholder-gray-500 px-4 py-3 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Cari produk kilang..."
+                                    className="bg-black/80 border border-emerald-500/50 text-white text-xs px-3 py-2 pr-8 rounded-full focus:outline-none focus:ring-1 focus:ring-emerald-400 w-44 sm:w-60 placeholder-white/40"
+                                    autoFocus
                                 />
-                                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-corporate-black p-1">
-                                    <Search size={20} />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowSearch(false)}
+                                    className="absolute right-2 text-white/50 hover:text-white"
+                                >
+                                    <X size={14} />
                                 </button>
-                            </div>
+                            </form>
+                        ) : (
+                            <button
+                                onClick={() => setShowSearch(true)}
+                                className="p-2 text-white/70 hover:text-emerald-400 hover:bg-white/5 rounded-full transition cursor-pointer"
+                                title="Cari Barangan"
+                            >
+                                <Search size={18} />
+                            </button>
+                        )}
+
+                        {/* Beg Belian (Cart Button) */}
+                        <button
+                            onClick={openCart}
+                            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black text-xs font-black tracking-wide transition duration-200 shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer"
+                            title="Troli Belian"
+                        >
+                            <ShoppingBag className="w-4 h-4 fill-black" />
+                            <span className="hidden sm:inline">Beg Belian</span>
+                            <span className="px-1.5 py-0.5 rounded-full bg-black text-emerald-300 text-[10px] font-mono font-bold">
+                                {cartCount}
+                            </span>
+                        </button>
+
+                        {/* Pentadbir Button */}
+                        {typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname) ? (
+                            <Link
+                                to="/admin"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs border border-white/10 transition cursor-pointer"
+                                title="Papan Pemuka Pentadbir"
+                            >
+                                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                                <span className="font-semibold">Pentadbir</span>
+                            </Link>
+                        ) : (
+                            <a
+                                href="https://admin.dinoempire.my"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs border border-white/10 transition cursor-pointer"
+                                title="Papan Pemuka Pentadbir"
+                            >
+                                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                                <span className="font-semibold">Pentadbir</span>
+                            </a>
+                        )}
+
+                        {/* Mobile Menu Toggle */}
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="lg:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer"
+                            aria-label="Menu"
+                        >
+                            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Dropdown Drawer */}
+                {mobileMenuOpen && (
+                    <div className="lg:hidden bg-[#060d11] border-b border-white/10 px-4 py-5 space-y-4 animate-in slide-in-from-top duration-300">
+                        {/* Mobile Search Form */}
+                        <form onSubmit={handleSearch} className="relative">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari produk kilang..."
+                                className="w-full bg-black/60 border border-white/15 text-white text-xs px-4 py-2.5 rounded-xl focus:border-emerald-400 focus:outline-none placeholder-white/40"
+                            />
+                            <button type="submit" className="absolute right-3 top-2.5 text-white/50 hover:text-emerald-400">
+                                <Search size={16} />
+                            </button>
                         </form>
 
-                        <div className="p-4 border-b">
+                        {/* Mobile Navigation List */}
+                        <nav className="flex flex-col space-y-2 text-sm font-semibold text-white/80">
+                            <Link
+                                to="/kedai"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
+                            >
+                                Koleksi Produk
+                            </Link>
                             <Link
                                 to="/bina-box"
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="w-full py-3 px-4 bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                                className="px-3 py-2 rounded-lg hover:bg-white/5 text-amber-300 flex items-center gap-2 transition"
                             >
-                                <Package size={18} /> Bina Box Anda
+                                <Sparkles size={14} className="text-amber-400" />
+                                <span>Bina Box Sendiri (Jimat 15%)</span>
                             </Link>
-                        </div>
-
-                        <div className="py-2">
-                            {categories.map((cat) => (
-                                <div key={cat.id} className="border-b border-gray-100">
-                                    <button
-                                        className="w-full px-4 py-3 flex items-center justify-between text-left font-bold text-corporate-black hover:bg-gray-50 transition-colors"
-                                        onClick={() => setActiveDropdown(activeDropdown === cat.id ? null : cat.id)}
-                                    >
-                                        <span>{cat.ad}</span>
-                                        {cat.altKategoriler && cat.altKategoriler.length > 0 && (
-                                            <ChevronDown size={20} className={`transition-transform ${activeDropdown === cat.id ? 'rotate-180' : ''}`} />
-                                        )}
-                                    </button>
-
-                                    {activeDropdown === cat.id && cat.altKategoriler && cat.altKategoriler.length > 0 && (
-                                        <div className="bg-gray-50 px-4 py-2">
-                                            {cat.altKategoriler.map((sub) => (
-                                                <button
-                                                    key={sub.id}
-                                                    onClick={() => handleCategoryClick(sub)}
-                                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:text-action-red transition-colors flex items-center gap-2"
-                                                >
-                                                    <ChevronRight size={14} />
-                                                    {sub.ad}
-                                                </button>
-                                            ))}
-                                            <button
-                                                onClick={() => handleCategoryClick(cat)}
-                                                className="w-full px-4 py-2 text-left text-sm font-bold text-action-red"
-                                            >
-                                                Lihat Semua →
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="p-4 border-t border-gray-100 bg-slate-50 space-y-2">
                             <Link
-                                to="/login"
+                                to="/langganan"
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="w-full py-3 px-4 bg-amber-500/10 border border-amber-500/30 text-amber-700 font-bold rounded-xl flex items-center justify-center gap-2 text-sm hover:bg-amber-500/20 transition-colors"
+                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
                             >
-                                <Lock size={16} />
-                                Log Masuk Pentadbir
+                                Pelan Jimat Langganan
                             </Link>
+                            <Link
+                                to="/jejak-pesanan"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
+                            >
+                                Jejak Pesanan
+                            </Link>
+                            <Link
+                                to="/hubungi"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
+                            >
+                                Hubungi Kilang
+                            </Link>
+                        </nav>
+
+                        {/* Mobile Action Footer */}
+                        <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                            {typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname) ? (
+                                <Link
+                                    to="/admin"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white border border-white/10 font-bold"
+                                >
+                                    <Lock size={13} className="text-amber-400" />
+                                    <span>Pentadbir</span>
+                                </Link>
+                            ) : (
+                                <a
+                                    href="https://admin.dinoempire.my"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white border border-white/10 font-bold"
+                                >
+                                    <Lock size={13} className="text-amber-400" />
+                                    <span>Pentadbir</span>
+                                </a>
+                            )}
+
+                            <a
+                                href={`tel:${phoneNo.replace(/[^0-9]/g, '')}`}
+                                className="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-emerald-400"
+                            >
+                                <Phone size={13} />
+                                <span>{phoneNo}</span>
+                            </a>
                         </div>
                     </div>
-                </div>
-            )}
-        </>
+                )}
+            </nav>
+        </header>
     );
 }
+
+export default Header;

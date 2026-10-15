@@ -216,12 +216,12 @@ export function ProductDetailPage() {
     );
 
     if (error || !product) return (
-        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-            <Package size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-700 mb-2">{error || 'Barangan tidak dijumpai'}</h2>
+        <div className="max-w-7xl mx-auto px-4 py-16 text-center text-white">
+            <Package size={64} className="mx-auto text-white/30 mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">{error || 'Barangan tidak dijumpai'}</h2>
             <button
                 onClick={() => navigate('/kedai')}
-                className="mt-4 text-action-red hover:underline flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                className="mt-4 text-emerald-400 hover:underline flex items-center justify-center gap-2 mx-auto cursor-pointer font-bold"
             >
                 <ArrowLeft size={16} /> Kembali ke Senarai Barangan
             </button>
@@ -229,7 +229,7 @@ export function ProductDetailPage() {
     );
 
     return (
-        <div className="bg-white min-h-screen pb-20">
+        <div className="bg-[#020507] text-white min-h-screen pb-20">
             <SEO
                 title={product.ad}
                 description={seoDescription}
@@ -241,31 +241,31 @@ export function ProductDetailPage() {
             />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Breadcrumb */}
-                <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-                    <Link to="/" className="hover:text-corporate-black transition-colors">Laman Utama</Link>
-                    <ChevronRight size={14} />
+                <nav className="flex items-center gap-2 text-sm text-white/60 mb-8 font-medium">
+                    <Link to="/" className="hover:text-emerald-400 transition-colors">Laman Utama</Link>
+                    <ChevronRight size={14} className="text-white/30" />
                     {product.kategori && (
                         <>
-                            <Link to={`/kedai?kategori=${product.kategori.slug || product.kategori.id}`} className="hover:text-corporate-black transition-colors">
+                            <Link to={`/kedai?kategori=${product.kategori.slug || product.kategori.id}`} className="hover:text-emerald-400 transition-colors">
                                 {product.kategori.ad}
                             </Link>
-                            <ChevronRight size={14} />
+                            <ChevronRight size={14} className="text-white/30" />
                         </>
                     )}
-                    <span className="text-corporate-black font-medium truncate max-w-[200px]">{product.ad}</span>
+                    <span className="text-white font-bold truncate max-w-[200px]">{product.ad}</span>
                 </nav>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-12">
                     {/* Image Gallery */}
                     <div className="lg:col-span-6 space-y-4">
                         {/* Main Image */}
-                        <div className="relative bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden aspect-square lg:aspect-4/5 max-h-[550px] group">
+                        <div className="relative bg-[#060d11] rounded-2xl shadow-xl border border-white/10 overflow-hidden aspect-square lg:aspect-4/5 max-h-[550px] group">
                             {images[selectedImageIndex] ? (
                                 <>
                                     <img
                                         src={images[selectedImageIndex]}
                                         alt={product.ad}
-                                        className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                                        className="w-full h-full object-contain p-8 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:scale-105"
                                         onError={(e) => {
                                             e.target.onerror = null;
                                             e.target.style.display = 'none';
@@ -273,26 +273,26 @@ export function ProductDetailPage() {
                                             if (fallback) fallback.style.display = 'flex';
                                         }}
                                     />
-                                    <div className="image-fallback w-full h-full hidden items-center justify-center bg-gray-100">
-                                        <Package size={120} className="text-gray-300" />
+                                    <div className="image-fallback w-full h-full hidden items-center justify-center bg-black/40">
+                                        <Package size={120} className="text-white/20" />
                                     </div>
                                 </>
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                    <Package size={120} className="text-gray-300" />
+                                <div className="w-full h-full flex items-center justify-center bg-black/40">
+                                    <Package size={120} className="text-white/20" />
                                 </div>
                             )}
 
                             {/* Top-left badges */}
                             <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
                                 {discountPercentage > 0 && (
-                                    <div className="bg-brand-primary text-white px-4 py-2 rounded-xs shadow-xl flex flex-col items-center leading-none">
-                                        <span className="text-[10px] font-black uppercase tracking-widest">DISKAUN</span>
-                                        <span className="text-lg font-black tracking-tighter">Diskaun {discountPercentage}%</span>
+                                    <div className="bg-emerald-500 text-black px-3.5 py-1.5 rounded-md shadow-[0_0_15px_rgba(16,185,129,0.4)] flex flex-col items-center leading-none">
+                                        <span className="text-[10px] font-black uppercase tracking-widest font-mono">DISKAUN KILANG</span>
+                                        <span className="text-base font-black tracking-tighter font-mono">Jimat {discountPercentage}%</span>
                                     </div>
                                 )}
                                 {product.iadeImkaniVar === false && (
-                                    <div className="bg-black/85 text-white px-3 py-2 rounded-xs shadow-xl text-[11px] font-bold uppercase tracking-wide">
+                                    <div className="bg-black/85 border border-white/20 text-white px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wide font-mono">
                                         Tiada Pemulangan
                                     </div>
                                 )}
@@ -303,13 +303,13 @@ export function ProductDetailPage() {
                                 <>
                                     <button
                                         onClick={() => setSelectedImageIndex(prev => prev === 0 ? images.length - 1 : prev - 1)}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 border border-white/15 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-black/90 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
                                     >
                                         <ChevronLeft size={20} />
                                     </button>
                                     <button
                                         onClick={() => setSelectedImageIndex(prev => prev === images.length - 1 ? 0 : prev + 1)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 border border-white/15 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-black/90 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
                                     >
                                         <ChevronRight size={20} />
                                     </button>
@@ -320,14 +320,14 @@ export function ProductDetailPage() {
                             <div className="absolute top-4 right-4 flex flex-col gap-2">
                                 <button
                                     onClick={() => setIsWishlisted(!isWishlisted)}
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${isWishlisted ? 'bg-action-red text-white' : 'bg-white text-gray-600 hover:bg-action-red hover:text-white'
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer ${isWishlisted ? 'bg-rose-500 text-white' : 'bg-black/60 border border-white/15 text-white hover:bg-rose-500'
                                         }`}
                                 >
                                     <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
                                 </button>
                                 <button
                                     onClick={handleShare}
-                                    className="w-10 h-10 rounded-full bg-white text-gray-600 flex items-center justify-center shadow-lg hover:bg-corporate-black hover:text-white transition-all"
+                                    className="w-10 h-10 rounded-full bg-black/60 border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-white/10 transition-all cursor-pointer"
                                 >
                                     <Share2 size={18} />
                                 </button>
@@ -341,16 +341,16 @@ export function ProductDetailPage() {
                                     <button
                                         key={index}
                                         onClick={() => setSelectedImageIndex(index)}
-                                        className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImageIndex === index
-                                            ? 'border-indigo-600 shadow-lg'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                        className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${selectedImageIndex === index
+                                            ? 'border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                                            : 'border-white/10 hover:border-white/30 bg-[#060d11]'
                                             }`}
                                     >
                                         {img ? (
                                             <img src={img} alt="" className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                                <Package size={24} className="text-gray-300" />
+                                            <div className="w-full h-full bg-black/40 flex items-center justify-center">
+                                                <Package size={24} className="text-white/20" />
                                             </div>
                                         )}
                                     </button>
@@ -363,12 +363,12 @@ export function ProductDetailPage() {
                     <div className="lg:col-span-6 flex flex-col justify-center">
                         {/* Brand */}
                         {product.marka && (
-                            <span className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-4">
+                            <span className="text-xs text-emerald-400 font-mono font-bold uppercase tracking-widest mb-3">
                                 {product.marka.ad}
                             </span>
                         )}
 
-                        <h1 className="text-2xl md:text-3xl font-bold text-corporate-black mb-4 leading-tight">
+                        <h1 className="text-2xl md:text-4xl font-extrabold text-white mb-4 leading-tight tracking-tight">
                             {product.ad}
                         </h1>
 
@@ -376,20 +376,20 @@ export function ProductDetailPage() {
                         <div className="flex flex-col gap-1 mb-6">
                             {product.indirimliFiyat ? (
                                  <>
-                                     <div className="flex items-end gap-3">
-                                         <span className="text-3xl md:text-4xl font-black text-corporate-black tracking-tighter">
+                                     <div className="flex items-end gap-3 font-mono">
+                                         <span className="text-3xl md:text-4xl font-black text-emerald-400 tracking-tighter">
                                              RM {Number(product.indirimliFiyat).toFixed(2)}
                                          </span>
-                                         <div className="bg-action-red/10 text-action-red text-[10px] font-black px-2 py-1 rounded-sm uppercase tracking-widest mb-1">
-                                             Harga Khas
+                                         <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider mb-1">
+                                             Harga Kilang
                                          </div>
                                      </div>
-                                     <span className="text-lg text-gray-400 line-through opacity-60 font-medium">
+                                     <span className="text-lg text-white/40 line-through font-mono">
                                          RM {Number(product.fiyat).toFixed(2)}
                                      </span>
                                  </>
                             ) : (
-                                <span className="text-3xl md:text-4xl font-black text-corporate-black tracking-tighter">
+                                <span className="text-3xl md:text-4xl font-black text-white tracking-tighter font-mono">
                                     RM {Number(product.fiyat).toFixed(2)}
                                 </span>
                             )}
@@ -397,33 +397,33 @@ export function ProductDetailPage() {
 
                         {/* Stock Status */}
                         <div className="flex flex-wrap items-center gap-3 mb-6">
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${inStock ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono font-bold border ${inStock ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'}`}>
                                 {inStock ? <Check size={16} strokeWidth={3} /> : <XCircle size={16} strokeWidth={3} />}
-                                {inStock ? 'Stok Tersedia' : 'Habis Stok'}
+                                {inStock ? 'Stok Kilang Tersedia' : 'Habis Stok'}
                             </div>
                             {inStock && stockCount < 10 && (
-                                <span className="text-xs font-bold text-action-red animate-pulse uppercase tracking-wider">
+                                <span className="text-xs font-mono font-bold text-amber-400 animate-pulse uppercase tracking-wider">
                                     Tinggal {stockCount} unit sahaja!
                                 </span>
                             )}
                         </div>
 
                         {/* Purchase Actions */}
-                        <div className="py-6 border-y border-gray-100 mb-6">
+                        <div className="py-6 border-y border-white/10 mb-6">
                             <div className="flex flex-col sm:flex-row gap-4">
                                 {/* Quantity Selector */}
-                                <div className="flex items-center border-2 border-gray-100 rounded-xl overflow-hidden bg-gray-50/50 h-14">
+                                <div className="flex items-center border border-white/15 rounded-xl overflow-hidden bg-black/60 h-14">
                                     <button
                                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                        className="w-12 h-full flex items-center justify-center hover:bg-white hover:text-action-red transition-all cursor-pointer"
+                                        className="w-12 h-full flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
                                         disabled={!inStock || quantity <= 1}
                                     >
                                         <Minus size={18} strokeWidth={2} />
                                     </button>
-                                    <span className="w-12 text-center font-bold text-lg text-corporate-black">{quantity}</span>
+                                    <span className="w-12 text-center font-bold text-lg text-white font-mono">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(q => q + 1)}
-                                        className="w-12 h-full flex items-center justify-center hover:bg-white hover:text-green-600 transition-all cursor-pointer"
+                                        className="w-12 h-full flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
                                         disabled={!inStock}
                                     >
                                         <Plus size={18} strokeWidth={2} />
@@ -434,38 +434,38 @@ export function ProductDetailPage() {
                                 <button
                                     onClick={handleAddToCart}
                                     disabled={!inStock || isAdding}
-                                    className={`flex-1 flex items-center justify-center gap-3 px-8 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg active:scale-95 h-14 cursor-pointer ${isAdding
-                                        ? 'bg-green-600 text-white'
+                                    className={`flex-1 flex items-center justify-center gap-3 px-8 rounded-xl font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-[0_0_25px_rgba(16,185,129,0.35)] active:scale-95 h-14 cursor-pointer ${isAdding
+                                        ? 'bg-emerald-600 text-white'
                                         : inStock
-                                            ? 'bg-action-red text-white hover:bg-corporate-black shadow-action-red/10'
-                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
+                                            : 'bg-white/5 border border-white/10 text-white/40 cursor-not-allowed'
                                         }`}
                                 >
                                     {isAdding ? (
                                         <>
-                                            <Check size={22} strokeWidth={3} />
+                                            <Check size={20} strokeWidth={3} />
                                             Ditambah ke Beg
                                         </>
                                     ) : inStock ? (
                                         <>
-                                            <ShoppingCart size={22} strokeWidth={2} />
-                                            Tambah ke Beg
+                                            <ShoppingCart size={20} strokeWidth={2} className="fill-black" />
+                                            Tambah ke Beg Belian
                                         </>
                                     ) : (
                                         <>
-                                            <XCircle size={22} strokeWidth={2} />
+                                            <XCircle size={20} strokeWidth={2} />
                                             Habis Stok
                                         </>
                                     )}
                                 </button>
                             </div>
-                            <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-gray-100 text-gray-500 text-sm">
-                                <span className="font-bold text-xs uppercase tracking-wider">Kongsi:</span>
+                            <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-white/10 text-white/60 text-sm">
+                                <span className="font-bold text-xs uppercase tracking-wider font-mono">Kongsi:</span>
                                 <a
                                     href={`https://api.whatsapp.com/send?text=${encodeURIComponent(product.ad + ' - ' + window.location.href)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500 hover:text-white text-green-600 font-bold text-xs transition-all"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500 hover:text-black text-emerald-400 font-bold text-xs transition-all"
                                 >
                                     WhatsApp
                                 </a>
@@ -473,7 +473,7 @@ export function ProductDetailPage() {
                                     href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs transition-all"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600 hover:text-white text-blue-400 font-bold text-xs transition-all"
                                 >
                                     Facebook
                                 </a>
@@ -481,38 +481,38 @@ export function ProductDetailPage() {
                         </div>
 
                         {/* Quick Trust Badges */}
-                        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50/50 rounded-2xl border border-gray-100 mb-6">
+                        <div className="grid grid-cols-3 gap-4 p-4 bg-[#060d11] rounded-2xl border border-white/10 mb-6 font-mono">
                             <div className="flex items-center justify-center gap-2">
-                                <Truck size={20} className="text-gray-600" />
-                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Pos Pantas</span>
+                                <Truck size={18} className="text-emerald-400" />
+                                <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider">Pos Pantas</span>
                             </div>
-                            <div className="flex items-center justify-center gap-2 border-x border-gray-200">
-                                <Shield size={20} className="text-gray-600" />
-                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Bayaran Selamat FPX</span>
+                            <div className="flex items-center justify-center gap-2 border-x border-white/10">
+                                <Shield size={18} className="text-emerald-400" />
+                                <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider">FPX Selamat</span>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <Package size={20} className="text-gray-600" />
-                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Jaminan Kepuasan</span>
+                                <Package size={18} className="text-emerald-400" />
+                                <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider">Jaminan Kilang</span>
                             </div>
                         </div>
 
                         {/* Bulk Order Info */}
-                        <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-2xl">
-                            <p className="text-amber-900 text-[11px] font-medium leading-relaxed">
-                                <strong>Pesanan Pukal atau Borong?</strong> Untuk tempahan kuantiti besar terus dari kilang Kuala Ketil, sila hubungi kami di <a href="mailto:dinoempire.my@gmail.com" className="underline font-bold hover:text-amber-700">dinoempire.my@gmail.com</a> atau WhatsApp.
+                        <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
+                            <p className="text-white/70 text-[11px] font-medium leading-relaxed">
+                                <strong className="text-emerald-400">Pesanan Pukal atau Borong?</strong> Untuk tempahan kuantiti besar terus dari kilang Kuala Ketil, hubungi kami di <a href="mailto:dinoempire.my@gmail.com" className="underline font-bold text-emerald-300 hover:text-emerald-200">dinoempire.my@gmail.com</a> atau WhatsApp.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Full Width Attribute Sections (Color Palette) */}
-                <div className="space-y-12 py-12 border-t border-gray-100">
+                <div className="space-y-12 py-12 border-t border-white/10">
                     {Array.isArray(product.renkKartelasi) && product.renkKartelasi.length > 0 && (
                         <div>
                             <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-2xl font-black text-corporate-black flex items-center gap-3">
+                                <h2 className="text-2xl font-black text-white flex items-center gap-3">
                                     {product.varyantBasligi || 'Pilihan Warna'}
-                                    <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                                    <span className="text-xs font-mono font-bold bg-white/10 text-emerald-400 px-3 py-1 rounded-full border border-white/10">
                                         {product.renkKartelasi.length} Pilihan Warna
                                     </span>
                                 </h2>
@@ -529,19 +529,19 @@ export function ProductDetailPage() {
                                             title={color.name}
                                         >
                                             <div className={`w-full aspect-square rounded-2xl border-4 transition-all duration-300 shadow-xs ${selectedColor === color.name
-                                                ? 'border-corporate-black shadow-xl ring-4 ring-corporate-black/5'
-                                                : 'border-transparent group-hover:border-gray-200'
+                                                ? 'border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                                : 'border-white/10 group-hover:border-white/30'
                                                 }`}
                                                 style={{ backgroundColor: color.hex || resolveColorHex(color.name) }}
                                             />
                                             <div className="w-full text-center mt-3">
-                                                <span className={`text-[11px] font-bold leading-tight line-clamp-2 w-full uppercase tracking-tight ${selectedColor === color.name ? 'text-corporate-black' : 'text-gray-500'
+                                                <span className={`text-[11px] font-bold leading-tight line-clamp-2 w-full uppercase tracking-tight ${selectedColor === color.name ? 'text-emerald-400 font-black' : 'text-white/60'
                                                     }`}>
                                                     {color.name}
                                                 </span>
                                             </div>
                                             {selectedColor === color.name && (
-                                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-corporate-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-in zoom-in duration-300">
+                                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black animate-in zoom-in duration-300">
                                                     <Check size={14} strokeWidth={4} />
                                                 </div>
                                             )}
@@ -554,9 +554,9 @@ export function ProductDetailPage() {
                     {(!Array.isArray(product.renkKartelasi) || product.renkKartelasi.length === 0) && Array.isArray(product.renkSecenekleri) && product.renkSecenekleri.length > 0 && (
                         <div>
                             <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-2xl font-black text-corporate-black flex items-center gap-3">
+                                <h2 className="text-2xl font-black text-white flex items-center gap-3">
                                     {product.varyantBasligi || 'Pilihan Warna'}
-                                    <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                                    <span className="text-xs font-mono font-bold bg-white/10 text-emerald-400 px-3 py-1 rounded-full border border-white/10">
                                         {product.renkSecenekleri.length} Pilihan
                                     </span>
                                 </h2>
@@ -569,10 +569,10 @@ export function ProductDetailPage() {
                                             key={color}
                                             onClick={() => setSelectedColor(color)}
                                             className={product.varyantBasligi
-                                                ? `px-6 py-4 rounded-2xl border-[3px] font-black text-sm transition-all duration-300 ${
+                                                ? `px-6 py-4 rounded-2xl border font-black text-sm transition-all duration-300 ${
                                                     selectedColor === color
-                                                    ? 'border-corporate-black bg-corporate-black text-white shadow-xl'
-                                                    : 'border-gray-100 text-gray-500 hover:border-gray-300 bg-gray-50/50'
+                                                    ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                                                    : 'border-white/10 text-white/60 hover:border-white/30 bg-black/40'
                                                 }`
                                                 : `group relative flex flex-col items-center transition-all duration-300 ${selectedColor === color ? 'scale-110 z-10' : 'hover:scale-105'}`
                                             }
@@ -581,19 +581,19 @@ export function ProductDetailPage() {
                                             {!product.varyantBasligi && (
                                                 <>
                                                     <div className={`w-full aspect-square rounded-2xl border-4 transition-all duration-300 shadow-xs ${selectedColor === color
-                                                        ? 'border-corporate-black shadow-xl ring-4 ring-corporate-black/5'
-                                                        : 'border-transparent group-hover:border-gray-200'
+                                                        ? 'border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                                        : 'border-white/10 group-hover:border-white/30'
                                                         }`}
                                                         style={{ backgroundColor: resolveColorHex(color) }}
                                                     />
                                                     <div className="w-full text-center mt-3">
-                                                        <span className={`text-[11px] font-bold leading-tight line-clamp-2 w-full uppercase tracking-tight ${selectedColor === color ? 'text-corporate-black' : 'text-gray-500'
+                                                        <span className={`text-[11px] font-bold leading-tight line-clamp-2 w-full uppercase tracking-tight ${selectedColor === color ? 'text-emerald-400 font-black' : 'text-white/60'
                                                             }`}>
                                                             {color}
                                                         </span>
                                                     </div>
                                                     {selectedColor === color && (
-                                                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-corporate-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-in zoom-in duration-300">
+                                                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black animate-in zoom-in duration-300">
                                                             <Check size={14} strokeWidth={4} />
                                                         </div>
                                                     )}
@@ -609,21 +609,21 @@ export function ProductDetailPage() {
                 </div>
 
                 {/* Product Description */}
-                <div className="mt-16">
-                    <h2 className="text-2xl font-black text-corporate-black mb-8">Penerangan Produk</h2>
-                    <div className="prose prose-lg max-w-none">
+                <div className="mt-16 pt-12 border-t border-white/10">
+                    <h2 className="text-2xl font-black text-white mb-8">Penerangan Produk</h2>
+                    <div className="prose prose-lg prose-invert max-w-none text-white/80">
                         {product.aciklama ? (
                             <div dangerouslySetInnerHTML={{ __html: safeDescription }} />
                         ) : (
-                            <p className="text-gray-500">Tiada penerangan lanjut untuk produk ini.</p>
+                            <p className="text-white/40">Tiada penerangan lanjut untuk produk ini.</p>
                         )}
                     </div>
                 </div>
 
                 {/* Related Products */}
                 {relatedProducts.length > 0 && (
-                    <div className="mt-16">
-                        <h2 className="text-2xl font-black text-corporate-black mb-8">Produk Berkaitan</h2>
+                    <div className="mt-16 pt-12 border-t border-white/10">
+                        <h2 className="text-2xl font-black text-white mb-8">Produk Berkaitan Terus Dari Kilang</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {filteredRelated.map(p => (
                                 <ProductCard key={p.id} product={p} />

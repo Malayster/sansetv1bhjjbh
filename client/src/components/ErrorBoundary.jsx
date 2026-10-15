@@ -58,7 +58,7 @@ class ErrorBoundary extends React.Component {
                             Maaf, ralat yang tidak dijangka telah berlaku. Sila muat semula halaman atau kembali ke laman utama.
                         </p>
 
-                        {process.env.NODE_ENV === 'development' && this.state.error && (
+                        {(import.meta.env?.DEV || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development')) && this.state.error && (
                             <details className="text-left mb-6 p-4 bg-gray-100 rounded-lg text-sm">
                                 <summary className="cursor-pointer font-medium text-gray-700 mb-2">
                                     Butiran Ralat (Mod Pembangun)

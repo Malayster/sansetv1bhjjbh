@@ -28,6 +28,16 @@ export function SettingsProvider({ children }) {
             email: "dinoempireenterprise@gmail.com",
             alamat: "Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah",
             waktuOperasi: "Isnin - Sabtu: 9:00 AM - 6:00 PM"
+        },
+        homepage_config: {
+            heroHeadline: "Kualiti kilang tanpa kompromi.",
+            heroSubtitle: "Nikmati pelbagai barangan terpilih gred eksklusif diproses bersih mengikut piawaian ketat Halal terus dari kilang pengeluaran kami. Dapatkan penjimatan sehingga 35% tanpa melalui orang tengah, dihantar terus ke depan pintu rumah anda.",
+            heroBadge: "PRODUK SEGAR HARIAN: TERUS DARI KILANG KUALA KETIL",
+            ctaPrimaryText: "Beli Pek Kilang (RM 28.00)",
+            ctaSecondaryText: "Lihat Semua Produk",
+            featuredProductId: "9c2410a7-f275-46d6-b4d7-0c44a54cedbd",
+            discountText: "Jimat 35%",
+            freeShippingThreshold: 100.00
         }
     });
     const [loading, setLoading] = useState(true);
