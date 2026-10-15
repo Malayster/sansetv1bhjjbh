@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, Search, Menu, X, Sparkles, Lock, Truck, Phone } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
+import { NavigationSidebar } from './NavigationSidebar';
 
 export function Header() {
     const { toggleSidebar, setIsSidebarOpen, cartCount } = useCart();
@@ -10,7 +11,7 @@ export function Header() {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearch, setShowSearch] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isNavSidebarOpen, setIsNavSidebarOpen] = useState(false);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -45,15 +46,32 @@ export function Header() {
             <nav className="bg-[#020507]/95 backdrop-blur-xl border-b border-white/10 transition-all">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
                     
-                    {/* Brand Logo & Tagline */}
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        {/* Menu Sidebar Trigger */}
+                        <button
+                            onClick={() => setIsNavSidebarOpen(true)}
+                            className="p-2 sm:px-3 sm:py-2 rounded-full bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 flex items-center gap-2 text-xs font-semibold transition cursor-pointer"
+                            title="Buka Menu Navigasi"
+                        >
+                            <Menu size={18} className="text-emerald-400" />
+                            <span className="hidden md:inline font-mono">Menu</span>
+                        </button>
+
                         <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-105 transition">
-                                <span className="font-extrabold text-black font-mono text-lg tracking-tighter">D•E</span>
-                            </div>
+                            {settings?.logoUrl && settings?.logoMode !== 'text' ? (
+                                <img
+                                    src={settings.logoUrl}
+                                    alt={settings?.siteAdi || "DIN'O EMPIRE"}
+                                    className="h-10 sm:h-12 w-auto max-w-[160px] sm:max-w-[200px] object-contain group-hover:scale-105 transition rounded-lg"
+                                />
+                            ) : (
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-105 transition">
+                                    <span className="font-extrabold text-black font-mono text-lg tracking-tighter">D•E</span>
+                                </div>
+                            )}
                             <div className="flex flex-col">
                                 <span className="font-extrabold text-base tracking-wider text-white font-mono flex items-center gap-1.5">
-                                    DIN'O EMPIRE
+                                    {settings?.siteAdi || "DIN'O EMPIRE"}
                                     <span className="px-1.5 py-0.2 text-[9px] bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 uppercase font-mono">
                                         KILANG KUALA KETIL
                                     </span>
@@ -152,106 +170,21 @@ export function Header() {
 
                         {/* Mobile Menu Toggle */}
                         <button
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            onClick={() => setIsNavSidebarOpen(true)}
                             className="lg:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer"
                             aria-label="Menu"
                         >
-                            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                            <Menu size={22} />
                         </button>
                     </div>
                 </div>
-
-                {/* Mobile Dropdown Drawer */}
-                {mobileMenuOpen && (
-                    <div className="lg:hidden bg-[#060d11] border-b border-white/10 px-4 py-5 space-y-4 animate-in slide-in-from-top duration-300">
-                        {/* Mobile Search Form */}
-                        <form onSubmit={handleSearch} className="relative">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Cari produk kilang..."
-                                className="w-full bg-black/60 border border-white/15 text-white text-xs px-4 py-2.5 rounded-xl focus:border-emerald-400 focus:outline-none placeholder-white/40"
-                            />
-                            <button type="submit" className="absolute right-3 top-2.5 text-white/50 hover:text-emerald-400">
-                                <Search size={16} />
-                            </button>
-                        </form>
-
-                        {/* Mobile Navigation List */}
-                        <nav className="flex flex-col space-y-2 text-sm font-semibold text-white/80">
-                            <Link
-                                to="/kedai"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
-                            >
-                                Koleksi Produk
-                            </Link>
-                            <Link
-                                to="/bina-box"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-white/5 text-amber-300 flex items-center gap-2 transition"
-                            >
-                                <Sparkles size={14} className="text-amber-400" />
-                                <span>Bina Box Sendiri (Jimat 15%)</span>
-                            </Link>
-                            <Link
-                                to="/langganan"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
-                            >
-                                Pelan Jimat Langganan
-                            </Link>
-                            <Link
-                                to="/jejak-pesanan"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
-                            >
-                                Jejak Pesanan
-                            </Link>
-                            <Link
-                                to="/hubungi"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-emerald-400 transition"
-                            >
-                                Hubungi Kilang
-                            </Link>
-                        </nav>
-
-                        {/* Mobile Action Footer */}
-                        <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                            {typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname) ? (
-                                <Link
-                                    to="/admin"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white border border-white/10 font-bold"
-                                >
-                                    <Lock size={13} className="text-amber-400" />
-                                    <span>Pentadbir</span>
-                                </Link>
-                            ) : (
-                                <a
-                                    href="https://admin.dinoempire.my"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white border border-white/10 font-bold"
-                                >
-                                    <Lock size={13} className="text-amber-400" />
-                                    <span>Pentadbir</span>
-                                </a>
-                            )}
-
-                            <a
-                                href={`tel:${phoneNo.replace(/[^0-9]/g, '')}`}
-                                className="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-emerald-400"
-                            >
-                                <Phone size={13} />
-                                <span>{phoneNo}</span>
-                            </a>
-                        </div>
-                    </div>
-                )}
             </nav>
+
+            {/* Premium Slide-over Navigation Sidebar Drawer */}
+            <NavigationSidebar
+                isOpen={isNavSidebarOpen}
+                onClose={() => setIsNavSidebarOpen(false)}
+            />
         </header>
     );
 }

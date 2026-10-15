@@ -22,6 +22,7 @@ import {
 import api from '../../lib/axios';
 import ImageUploader from '../common/ImageUploader';
 import { parseTikTokInput, getTikTokEmbedUrl } from '../../utils/tiktokParser';
+import { parseYouTubeId } from '../../utils/youtubeParser';
 
 export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
     // Slaid Hero State
@@ -182,19 +183,26 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
     // Simpan Borang Video TikTok Tempatan
     const handleSaveVideoForm = (e) => {
         e.preventDefault();
-        const extractedId = parseTikTokInput(videoForm.videoInput) || videoForm.videoId;
+        const ytId = parseYouTubeId(videoForm.videoInput);
+        const ttId = parseTikTokInput(videoForm.videoInput);
+        const extractedId = ytId || ttId || videoForm.videoId;
+
         if (!extractedId) {
-            alert('Sila masukkan pautan atau kod embed TikTok yang sah (nombor ID video diperlukan).');
+            alert('Sila masukkan pautan YouTube (video / Shorts) atau TikTok yang sah.');
             return;
         }
 
         const newVideo = {
-            id: videoForm.id || 'tt_' + Math.random().toString(36).substring(2, 7),
+            id: videoForm.id || 'vid_' + Math.random().toString(36).substring(2, 7),
             title: videoForm.title,
             videoId: extractedId,
+            youtubeId: ytId || (extractedId.length === 11 ? extractedId : null),
+            youtubeUrl: ytId ? `https://www.youtube.com/watch?v=${ytId}` : null,
+            videoInput: videoForm.videoInput,
+            platform: ytId ? 'youtube' : 'tiktok',
             videoUrl: videoForm.videoInput,
             productId: videoForm.productId || null,
-            badge: videoForm.badge || 'Viral Kilang',
+            badge: videoForm.badge || 'Pilihan Kilang',
             active: videoForm.active
         };
 
@@ -209,8 +217,8 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
         setVideoModalOpen(false);
 
         // Auto-simpan ke pangkalan data terus
-        api.put('/api/v1/admin/cms', { tiktok_videos: updated }).then(() => {
-            if (showNotif) showNotif('Video TikTok berjaya disimpan dan dikemas kini!');
+        api.put('/api/v1/admin/cms', { tiktok_videos: updated, youtube_videos: updated }).then(() => {
+            if (showNotif) showNotif('Video media kilang berjaya disimpan dan dikemas kini!');
             if (onSaveSuccess) onSaveSuccess();
         }).catch(err => {
             console.error('Ralat auto-simpan video:', err);
@@ -240,6 +248,7 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                 announcement_bar: announcement,
                 info_kedai: infoKedai,
                 tiktok_videos: tiktokVideos,
+                youtube_videos: tiktokVideos,
                 bio_links: bioData,
                 homepage_config: homepageConfig
             });
@@ -805,7 +814,7 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                         <form onSubmit={handleSaveVideoForm} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                                    Pautan / Kod Embed TikTok <span className="text-rose-400">*</span>
+                                    Pautan Video YouTube (Shorts / Video) atau TikTok <span className="text-rose-400">*</span>
                                 </label>
                                 <textarea
                                     rows="3"
@@ -813,25 +822,31 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                                     value={videoForm.videoInput}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        const parsed = parseTikTokInput(val);
+                                        const yt = parseYouTubeId(val);
+                                        const tt = parseTikTokInput(val);
                                         setVideoForm({
                                             ...videoForm,
                                             videoInput: val,
-                                            videoId: parsed || ''
+                                            videoId: yt || tt || '',
+                                            platform: yt ? 'youtube' : (tt ? 'tiktok' : '')
                                         });
                                     }}
-                                    placeholder="https://www.tiktok.com/@dinoempire/video/7123456789012345678 atau tampal kod embed blockquote"
+                                    placeholder="Contoh: https://www.youtube.com/watch?v=ScMzIvxBSi4 atau https://www.youtube.com/shorts/... atau pautan TikTok"
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
                                 />
 
                                 {videoForm.videoId ? (
                                     <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
                                         <Check size={13} />
-                                        <span>ID Video Dikesan: {videoForm.videoId}</span>
+                                        <span>
+                                            {videoForm.platform === 'youtube' || videoForm.videoId.length === 11
+                                                ? `ID YouTube Dikesan: ${videoForm.videoId}`
+                                                : `ID Video Dikesan: ${videoForm.videoId}`}
+                                        </span>
                                     </div>
                                 ) : (
                                     <div className="mt-1.5 text-[10px] text-slate-400">
-                                        Sistem akan mengekstrak ID video secara automatik daripada pautan atau kod embed.
+                                        Tampal sebarang pautan YouTube Shorts, video YouTube, atau pautan TikTok.
                                     </div>
                                 )}
                             </div>

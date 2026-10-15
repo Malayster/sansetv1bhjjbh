@@ -45,7 +45,9 @@ import {
     Boxes,
     Sparkles,
     ChevronRight,
-    SlidersHorizontal
+    SlidersHorizontal,
+    Share2,
+    PhoneCall
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
@@ -54,6 +56,8 @@ import api from '../../lib/axios';
 import { FinancialTrajectoryTab } from '../../components/admin/FinancialTrajectoryTab';
 import { AnalyticsTab } from '../../components/admin/AnalyticsTab';
 import { CmsManagerTab } from '../../components/admin/CmsManagerTab';
+import { BioSettingsTab } from '../../components/admin/BioSettingsTab';
+import { ContactInfoTab } from '../../components/admin/ContactInfoTab';
 import { InventoryHealthTab } from '../../components/admin/InventoryHealthTab';
 import { AuditLogsTab } from '../../components/admin/AuditLogsTab';
 import { SalesAnalyticsCharts } from '../../components/admin/SalesAnalyticsCharts';
@@ -76,6 +80,12 @@ export function AdminDashboardPage() {
     // Semak pengesahan admin
     useEffect(() => {
         const checkAuth = async () => {
+            // Jika pengguna baru sahaja log keluar, elakkan daripada auto-login semula
+            if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
+                navigate('/admin/login');
+                return;
+            }
+
             const isAuth = localStorage.getItem('dino_admin_auth');
             if (isAuth) return;
 
@@ -252,13 +262,27 @@ export function AdminDashboardPage() {
         loadAllData();
     }, [loadAllData]);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        // 1. Bersihkan semua auth state di client browser
         localStorage.removeItem('dino_admin_auth');
         localStorage.removeItem('dino_admin_email');
         localStorage.removeItem('token');
         localStorage.removeItem('dino_admin_login_time');
+        sessionStorage.setItem('dino_admin_logged_out', 'true');
+
+        // 2. Beri maklum balas visual kepada admin
+        showNotif('Melog keluar daripada sistem pentadbir...');
+
+        // 3. Maklumkan backend API untuk hapus kuki
+        try {
+            await api.post('/api/v1/admin/logout');
+        } catch {
+            // abaikan jika ralat rangkaian
+        }
+
+        // 4. Arahkan pengguna keluar daripada admin
         if (window.location.hostname === 'admin.dinoempire.my') {
-            window.location.assign('/cdn-cgi/access/logout');
+            window.location.href = '/logout';
         } else {
             window.location.href = 'https://dinoempire.my';
         }
@@ -830,6 +854,8 @@ export function AdminDashboardPage() {
                                     { id: 'trajectory', label: 'Unjuran Kewangan', icon: TrendingUp },
                                     { id: 'analytics', label: 'Analitik & Pasaran', icon: BarChart3 },
                                     { id: 'cms', label: 'Pengurusan CMS', icon: Globe },
+                                    { id: 'bio', label: 'Tetapan Bio (TikTok)', icon: Share2 },
+                                    { id: 'contact', label: 'Maklumat Hubungan Kedai', icon: PhoneCall },
                                     { id: 'inventory', label: 'Amaran & Stok', icon: AlertTriangle, badge: inventoryHealth?.kiraan?.tipis > 0 ? `${inventoryHealth.kiraan.tipis} Tipis` : null },
                                     { id: 'orders', label: 'Pesanan Pelanggan', icon: ShoppingBag, badge: pendingOrdersCount > 0 ? pendingOrdersCount : null },
                                     { id: 'products', label: 'Barangan (Produk)', icon: Package, badge: products.length },
@@ -920,6 +946,8 @@ export function AdminDashboardPage() {
                         { id: 'trajectory', label: 'Unjuran Kewangan', icon: TrendingUp },
                         { id: 'analytics', label: 'Analitik & Pasaran', icon: BarChart3 },
                         { id: 'cms', label: 'Pengurusan CMS', icon: Globe },
+                        { id: 'bio', label: 'Tetapan Bio (TikTok)', icon: Share2 },
+                        { id: 'contact', label: 'Maklumat Hubungan Kedai', icon: PhoneCall },
                         { id: 'inventory', label: 'Amaran & Stok', icon: AlertTriangle, badge: inventoryHealth?.kiraan?.tipis > 0 ? `${inventoryHealth.kiraan.tipis} Tipis` : null },
                         { id: 'orders', label: 'Pesanan Pelanggan', icon: ShoppingBag, badge: pendingOrdersCount > 0 ? pendingOrdersCount : null },
                         { id: 'products', label: 'Barangan (Produk)', icon: Package, badge: products.length },
@@ -1312,6 +1340,25 @@ export function AdminDashboardPage() {
                 {/* Tab Pengurusan Kandungan (CMS) */}
                 {activeTab === 'cms' && (
                     <CmsManagerTab
+                        cmsData={cmsContent}
+                        onSaveSuccess={loadAllData}
+                        showNotif={showNotif}
+                    />
+                )}
+
+                {/* Tab Tetapan Bio (TikTok /tt) */}
+                {activeTab === 'bio' && (
+                    <BioSettingsTab
+                        cmsData={cmsContent}
+                        onSaveSuccess={loadAllData}
+                        showNotif={showNotif}
+                    />
+                )}
+
+                {/* Tab Maklumat Hubungan & Komunikasi Kedai */}
+                {activeTab === 'contact' && (
+                    <ContactInfoTab
+                        settingsData={settings}
                         cmsData={cmsContent}
                         onSaveSuccess={loadAllData}
                         showNotif={showNotif}

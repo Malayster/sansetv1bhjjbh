@@ -14,13 +14,30 @@ import {
     ArrowRight,
     Play,
     X,
-    ShieldCheck
+    ShieldCheck,
+    Flame,
+    Star,
+    Tag
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import api from '../lib/axios';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { getTikTokEmbedUrl, getTikTokDirectUrl } from '../utils/tiktokParser';
+
+const renderLinkIcon = (iconId, size = 18) => {
+    switch (iconId) {
+        case 'shopping-bag': return <ShoppingBag size={size} />;
+        case 'truck': return <Truck size={size} />;
+        case 'message-circle': return <MessageCircle size={size} />;
+        case 'sparkles': return <Sparkles size={size} />;
+        case 'flame': return <Flame size={size} />;
+        case 'star': return <Star size={size} />;
+        case 'tag': return <Tag size={size} />;
+        case 'package':
+        default: return <Package size={size} />;
+    }
+};
 
 export function TikTokBioPage() {
     const navigate = useNavigate();
@@ -127,7 +144,7 @@ export function TikTokBioPage() {
                         <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-500 via-amber-600 to-amber-400 p-1 shadow-xl shadow-amber-500/20 mx-auto">
                             <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden flex items-center justify-center p-2 border border-slate-800">
                                 <img
-                                    src="/images/logo-light.svg"
+                                    src={bioData?.profileAvatarUrl || "/images/logo-light.svg"}
                                     alt="DIN'O EMPIRE"
                                     className="w-full h-full object-contain"
                                     onError={(e) => { e.target.src = '/favicon.svg'; }}
@@ -146,7 +163,7 @@ export function TikTokBioPage() {
                             {bioData?.profileTitle || "DIN'O EMPIRE"}
                         </h1>
                         <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                            KILANG KEDAH
+                            {bioData?.factoryBadgeText || "KILANG KEDAH"}
                         </span>
                     </div>
 
@@ -205,100 +222,185 @@ export function TikTokBioPage() {
 
                 {/* 4. 🔗 Butang Tindakan Pantas Berimpak Tinggi (Link-in-Bio Style) */}
                 <div className="space-y-3 pt-1">
-                    {/* Butang Utama Berkilau: Bina Box Sendiri */}
-                    <Link
-                        to="/bina-box"
-                        className="group relative block w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 bg-[length:200%_auto] hover:bg-right text-slate-950 shadow-xl shadow-amber-500/20 transition-all duration-500 hover:scale-[1.02] active:scale-98"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-slate-950/20 flex items-center justify-center text-slate-950 font-black">
-                                    <Package size={22} />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-sm font-black leading-tight">
-                                        Bina Box Anda Sendiri & Jimat 15%
-                                    </div>
-                                    <div className="text-[11px] font-bold text-slate-950/80 mt-0.5">
-                                        Campur barangan kegemaran kilang
-                                    </div>
-                                </div>
-                            </div>
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </div>
-                    </Link>
+                    {(bioData?.customLinks && bioData.customLinks.length > 0) ? (
+                        bioData.customLinks.filter(l => l.active !== false).map((btn, idx) => {
+                            const isExternal = btn.url?.startsWith('http') || btn.url?.startsWith('wa.me') || btn.url?.startsWith('//');
+                            const isGold = btn.style === 'gold';
+                            const isEmerald = btn.style === 'emerald';
 
-                    {/* Butang Katalog Lengkap Kedai */}
-                    <Link
-                        to="/kedai"
-                        className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-amber-400">
-                                    <ShoppingBag size={18} />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-xs font-bold text-white">
-                                        Katalog Penuh Kilang Kuala Ketil
+                            const content = (
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                            isGold
+                                                ? 'bg-slate-950/20 text-slate-950 font-black'
+                                                : isEmerald
+                                                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                                                    : 'bg-slate-800 text-amber-400'
+                                        }`}>
+                                            {renderLinkIcon(btn.icon, 20)}
+                                        </div>
+                                        <div className="text-left min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`text-sm font-black leading-tight truncate ${
+                                                    isGold ? 'text-slate-950' : 'text-white'
+                                                }`}>
+                                                    {btn.title}
+                                                </div>
+                                                {btn.badge && (
+                                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                                                        isGold
+                                                            ? 'bg-slate-950 text-amber-400'
+                                                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                    }`}>
+                                                        {btn.badge}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {btn.subtitle && (
+                                                <div className={`text-[11px] truncate mt-0.5 ${
+                                                    isGold ? 'text-slate-950/80 font-bold' : 'text-slate-400'
+                                                }`}>
+                                                    {btn.subtitle}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="text-[10px] text-slate-400">
-                                        Lihat semua jersi, kain, dan koleksi kilang
-                                    </div>
+                                    {isExternal ? (
+                                        <ExternalLink size={16} className={isGold ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400 transition-colors shrink-0'} />
+                                    ) : (
+                                        <ArrowRight size={18} className={`${isGold ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400'} group-hover:translate-x-1 transition-all shrink-0`} />
+                                    )}
                                 </div>
-                            </div>
-                            <ArrowRight size={16} className="text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-                        </div>
-                    </Link>
+                            );
 
-                    {/* Butang Jejak Bungkusan Pos */}
-                    <Link
-                        to="/jejak-pesanan"
-                        className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-sky-400">
-                                    <Truck size={18} />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-xs font-bold text-white">
-                                        Semak Status Tracking Pesanan
-                                    </div>
-                                    <div className="text-[10px] text-slate-400">
-                                        Ketahui kedudukan terkini bungkusan pos anda
-                                    </div>
-                                </div>
-                            </div>
-                            <ArrowRight size={16} className="text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-                        </div>
-                    </Link>
+                            const buttonClasses = `group block w-full p-3.5 rounded-2xl transition-all duration-300 hover:scale-[1.01] active:scale-98 shadow-sm ${
+                                isGold
+                                    ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 bg-[length:200%_auto] hover:bg-right text-slate-950 shadow-xl shadow-amber-500/20'
+                                    : isEmerald
+                                        ? 'bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-emerald-500/50 text-white'
+                                        : 'bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white'
+                            }`;
 
-                    {/* Butang WhatsApp Khidmat Pelanggan Kilang */}
-                    <a
-                        href="https://wa.me/60132359647?text=Hai%20Admin%20DIN'O%20EMPIRE,%20saya%20dari%20TikTok%20nak%20tanya%20produk%20kilang"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-emerald-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                                    <MessageCircle size={18} />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                                        <span>WhatsApp Customer Service Kilang</span>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            if (isExternal) {
+                                return (
+                                    <a
+                                        key={btn.id || idx}
+                                        href={btn.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={buttonClasses}
+                                    >
+                                        {content}
+                                    </a>
+                                );
+                            }
+
+                            return (
+                                <Link
+                                    key={btn.id || idx}
+                                    to={btn.url}
+                                    className={buttonClasses}
+                                >
+                                    {content}
+                                </Link>
+                            );
+                        })
+                    ) : (
+                        <>
+                            {/* Fallback Default Links */}
+                            <Link
+                                to="/bina-box"
+                                className="group relative block w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 bg-[length:200%_auto] hover:bg-right text-slate-950 shadow-xl shadow-amber-500/20 transition-all duration-500 hover:scale-[1.02] active:scale-98"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-950/20 flex items-center justify-center text-slate-950 font-black">
+                                            <Package size={22} />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-sm font-black leading-tight">
+                                                Bina Box Anda Sendiri & Jimat 15%
+                                            </div>
+                                            <div className="text-[11px] font-bold text-slate-950/80 mt-0.5">
+                                                Campur barangan kegemaran kilang
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-[10px] text-slate-400">
-                                        Respons pantas untuk pertanyaan stok & borong
-                                    </div>
+                                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </div>
-                            </div>
-                            <ExternalLink size={16} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
-                        </div>
-                    </a>
+                            </Link>
+
+                            <Link
+                                to="/kedai"
+                                className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-amber-400">
+                                            <ShoppingBag size={18} />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-xs font-bold text-white">
+                                                Katalog Penuh Kilang Kuala Ketil
+                                            </div>
+                                            <div className="text-[10px] text-slate-400">
+                                                Lihat semua jersi, kain, dan koleksi kilang
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={16} className="text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+                                </div>
+                            </Link>
+
+                            <Link
+                                to="/jejak-pesanan"
+                                className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-sky-400">
+                                            <Truck size={18} />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-xs font-bold text-white">
+                                                Semak Status Tracking Pesanan
+                                            </div>
+                                            <div className="text-[10px] text-slate-400">
+                                                Ketahui kedudukan terkini bungkusan pos anda
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={16} className="text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+                                </div>
+                            </Link>
+
+                            <a
+                                href="https://wa.me/60132359647?text=Hai%20Admin%20DIN'O%20EMPIRE,%20saya%20dari%20TikTok%20nak%20tanya%20produk%20kilang"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-emerald-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                            <MessageCircle size={18} />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                                <span>WhatsApp Customer Service Kilang</span>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                            </div>
+                                            <div className="text-[10px] text-slate-400">
+                                                Respons pantas untuk pertanyaan stok & borong
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ExternalLink size={16} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                </div>
+                            </a>
+                        </>
+                    )}
                 </div>
 
                 {/* 5. 🔥 Bahagian "Produk Viral Dalam Video TikTok" (As Seen on TikTok) */}

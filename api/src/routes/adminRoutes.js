@@ -166,6 +166,22 @@ router.post('/login', async (c) => {
     return c.json({ status: 'success', token: session, user: { email, role: getUserRole(email, c.env) } });
 });
 
+router.post('/logout', async (c) => {
+    c.header('Set-Cookie', 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    c.header('Set-Cookie', 'CF_Authorization=; Path=/; Domain=.dinoempire.my; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    c.header('Set-Cookie', 'CF_Authorization=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    c.header('Set-Cookie', 'CF_AppSession=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    return c.json({ status: 'success', message: 'Berjaya log keluar.' });
+});
+
+router.get('/logout', async (c) => {
+    c.header('Set-Cookie', 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    c.header('Set-Cookie', 'CF_Authorization=; Path=/; Domain=.dinoempire.my; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    c.header('Set-Cookie', 'CF_Authorization=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    c.header('Set-Cookie', 'CF_AppSession=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax', { append: true });
+    return c.redirect('https://dinoempire.my');
+});
+
 // ── Semua laluan di bawah memerlukan sesi pentadbir yang sah ──
 router.use('*', adminAuth);
 

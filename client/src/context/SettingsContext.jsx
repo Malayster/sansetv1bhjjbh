@@ -49,15 +49,21 @@ export function SettingsProvider({ children }) {
                 api.get('/api/v1/cms').catch(() => ({ data: { data: {} } }))
             ]);
 
-            if (setRes.data) {
-                setSettings({
-                    ...setRes.data,
-                    siteTitle: setRes.data.siteAdi || "DIN'O EMPIRE",
-                    companyName: setRes.data.siteAdi || "DIN'O EMPIRE Enterprise",
+            const rawSettings = setRes.data?.data || setRes.data || {};
+
+            if (rawSettings && typeof rawSettings === 'object') {
+                setSettings(prev => ({
+                    ...prev,
+                    ...rawSettings,
+                    siteTitle: rawSettings.siteAdi || prev.siteTitle || "DIN'O EMPIRE",
+                    companyName: rawSettings.siteAdi || prev.companyName || "DIN'O EMPIRE Enterprise",
                     currency: 'MYR',
-                    kargoSabitUcret: Number(setRes.data.kargoSabitUcret || 8.00),
-                    ucretsizKargoAltLimit: Number(setRes.data.ucretsizKargoAltLimit || 100.00)
-                });
+                    kargoSabitUcret: Number(rawSettings.kargoSabitUcret ?? prev.kargoSabitUcret ?? 8.00),
+                    ucretsizKargoAltLimit: Number(rawSettings.ucretsizKargoAltLimit ?? prev.ucretsizKargoAltLimit ?? 100.00),
+                    logoUrl: rawSettings.logoUrl || prev.logoUrl || null,
+                    logoMode: rawSettings.logoMode || prev.logoMode || 'image',
+                    faviconUrl: rawSettings.faviconUrl || prev.faviconUrl || null
+                }));
             }
 
             if (cmsRes.data?.data) {
@@ -74,16 +80,24 @@ export function SettingsProvider({ children }) {
         refreshSettingsAndCMS();
     }, []);
 
-    // Kemas kini dinamik Favicon Browser
+    // Kemas kini dinamik Favicon Browser untuk semua tag icon
     useEffect(() => {
         if (settings?.faviconUrl) {
-            let link = document.querySelector("link[rel*='icon']");
-            if (!link) {
-                link = document.createElement('link');
+            const iconLinks = document.querySelectorAll("link[rel*='icon']");
+            if (iconLinks.length > 0) {
+                iconLinks.forEach(link => {
+                    link.href = settings.faviconUrl;
+                });
+            } else {
+                const link = document.createElement('link');
                 link.rel = 'icon';
+                link.href = settings.faviconUrl;
                 document.getElementsByTagName('head')[0].appendChild(link);
             }
-            link.href = settings.faviconUrl;
+            const appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+            if (appleIcon) {
+                appleIcon.href = settings.faviconUrl;
+            }
         }
     }, [settings?.faviconUrl]);
 

@@ -16,8 +16,14 @@ export function AdminLoginPage() {
     const [infoMessage, setInfoMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const isExplicitlyLoggedOut = sessionStorage.getItem('dino_admin_logged_out') === 'true';
+
     // Semak jika pengguna sudah diautentikasi oleh Cloudflare Access
     useEffect(() => {
+        if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
+            return;
+        }
+
         if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
             api.get('/api/v1/admin/me').then((res) => {
                 if (res?.data?.status === 'success') {
@@ -28,6 +34,11 @@ export function AdminLoginPage() {
             }).catch(() => {});
         }
     }, [navigate]);
+
+    const handleReAuthenticateAccess = () => {
+        sessionStorage.removeItem('dino_admin_logged_out');
+        window.location.href = '/';
+    };
 
     // Langkah 1: Mohon Kod OTP ke E-mel Pentadbir
     const handleRequestOtp = async (e) => {
@@ -71,6 +82,7 @@ export function AdminLoginPage() {
             });
 
             if (res?.data?.status === 'success' && res?.data?.token) {
+                sessionStorage.removeItem('dino_admin_logged_out');
                 localStorage.setItem('dino_admin_auth', 'true');
                 localStorage.setItem('dino_admin_email', email.trim());
                 localStorage.setItem('token', res.data.token);
@@ -99,6 +111,7 @@ export function AdminLoginPage() {
             });
 
             if (res?.data?.status === 'success' && res?.data?.token) {
+                sessionStorage.removeItem('dino_admin_logged_out');
                 localStorage.setItem('dino_admin_auth', 'true');
                 localStorage.setItem('dino_admin_email', res.data.user?.email || email.trim() || 'admin@dinoempire.my');
                 localStorage.setItem('token', res.data.token);
@@ -162,6 +175,26 @@ export function AdminLoginPage() {
                             {loginMode === 'otp' ? 'Guna PIN' : 'Guna OTP'}
                         </button>
                     </div>
+
+                    {isExplicitlyLoggedOut && (
+                        <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs space-y-2">
+                            <div className="flex items-center gap-2 font-bold">
+                                <CheckCircle2 size={16} />
+                                <span>Anda telah berjaya log keluar daripada sesi pentadbir.</span>
+                            </div>
+                            <p className="text-slate-300">
+                                Sesi anda telah ditamatkan dengan selamat. Klik butang di bawah jika anda ingin mengakses semula.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={handleReAuthenticateAccess}
+                                className="w-full mt-2 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                                <RefreshCw size={13} />
+                                <span>Log Masuk Semula ke Dashboard</span>
+                            </button>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 text-red-400 text-xs animate-in fade-in duration-200">

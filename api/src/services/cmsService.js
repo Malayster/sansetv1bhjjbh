@@ -3,7 +3,7 @@
  * Disimpan dalam jadual `cms_kandungan` dengan kunci berawalan `cms:`.
  */
 
-export const CMS_KEYS = ['hero_slides', 'announcement_bar', 'info_kedai', 'tiktok_videos', 'bio_links', 'admin_quick_links', 'homepage_config'];
+export const CMS_KEYS = ['hero_slides', 'announcement_bar', 'info_kedai', 'tiktok_videos', 'youtube_videos', 'bio_links', 'admin_quick_links', 'homepage_config'];
 const PRIVATE_KEYS = new Set(['admin_quick_links']);
 const PREFIX = 'cms:';
 

@@ -287,7 +287,13 @@ export class OrderService {
             const buyer = {
                 name: siparis.ad,
                 surname: siparis.soyad,
-                phone: siparis.telefon,
+                ad: siparis.ad,
+                soyad: siparis.soyad,
+                fullName: `${siparis.ad || ''} ${siparis.soyad || ''}`.trim() || buyerInfo?.fullName || 'Pelanggan',
+                email: siparis.eposta || buyerInfo?.email,
+                eposta: siparis.eposta || buyerInfo?.email,
+                phone: siparis.telefon || buyerInfo?.phone,
+                telefon: siparis.telefon || buyerInfo?.phone,
                 cardNumber: cardInfo?.cardNumber,
                 cardExpMonth: cardInfo?.cardExpMonth,
                 cardExpYear: cardInfo?.cardExpYear,
@@ -297,6 +303,13 @@ export class OrderService {
             };
 
             const paymentResult = await this.paymentService.startPaymentProcess(siparis, siparis.kalemler || [], buyer);
+
+            if (paymentResult.status !== 'success') {
+                return {
+                    status: 'failure',
+                    errorMessage: paymentResult.errorMessage || 'Pembayaran gagal dimulakan.'
+                };
+            }
 
             const tokenValue = paymentResult.dekontId || paymentResult.paymentId;
             if (tokenValue) {

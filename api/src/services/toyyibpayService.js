@@ -9,12 +9,20 @@ export class ToyyibPayService {
         this.config = config;
     }
 
+    getUserSecretKey() {
+        return this.config?.toyyibpay?.userSecretKey || this.config?.toyyibpayUserSecretKey || this.config?.userSecretKey || '';
+    }
+
+    getCategoryCode() {
+        return this.config?.toyyibpay?.categoryCode || this.config?.toyyibpayCategoryCode || this.config?.categoryCode || '';
+    }
+
     getBaseUrl() {
-        return this.config.toyyibpayBaseUrl || 'https://toyyibpay.com';
+        return this.config?.toyyibpay?.baseUrl || this.config?.toyyibpayBaseUrl || this.config?.baseUrl || 'https://toyyibpay.com';
     }
 
     async createCategory(name = 'DIN\'O EMPIRE', description = 'Pesanan e-dagang') {
-        const secretKey = this.config.toyyibpayUserSecretKey || '';
+        const secretKey = this.getUserSecretKey();
         const form = new URLSearchParams();
         form.append('catname', name);
         form.append('catdescription', description);
@@ -30,12 +38,24 @@ export class ToyyibPayService {
     }
 
     async startPaymentProcess(order, basketItems, buyer) {
-        const secretKey = this.config.toyyibpayUserSecretKey || '';
-        const categoryCode = this.config.toyyibpayCategoryCode || '';
+        const secretKey = this.getUserSecretKey();
+        const categoryCode = this.getCategoryCode();
         const baseUrl = this.getBaseUrl();
-        const apiReturnUrl = `${this.config.apiUrl}/api/v1/payment/toyyibpay/callback`;
+        const apiReturnUrl = `${this.config.apiUrl || 'https://api.dinoempire.my'}/api/v1/payment/toyyibpay/callback`;
 
         const amountInCents = Math.round(Number(order.toplamTutar || order.amount || 0) * 100);
+
+        // Sanitize phone to digits only (e.g. 0123456789)
+        let phone = String(buyer?.phone || buyer?.telefon || order?.telefon || '0123456789').replace(/\D/g, '');
+        if (phone.startsWith('60')) {
+            phone = '0' + phone.substring(2);
+        }
+        if (!phone || phone.length < 9) {
+            phone = '0123456789';
+        }
+
+        const customerName = (buyer?.fullName || `${buyer?.name || buyer?.ad || ''} ${buyer?.surname || buyer?.soyad || ''}`.trim() || order?.ad || 'Pelanggan').trim();
+        const customerEmail = buyer?.email || buyer?.eposta || order?.eposta || 'customer@dinoempire.my';
 
         const formData = new URLSearchParams();
         formData.append('userSecretKey', secretKey);
@@ -48,13 +68,14 @@ export class ToyyibPayService {
         formData.append('billReturnUrl', apiReturnUrl);
         formData.append('billCallbackUrl', apiReturnUrl);
         formData.append('billExternalReferenceNo', order.siparisNumarasi);
-        formData.append('billTo', `${buyer.ad || ''} ${buyer.soyad || ''}`.trim() || 'Pelanggan');
-        formData.append('billEmail', buyer.eposta || buyer.email || 'customer@dinoempire.my');
-        formData.append('billPhone', buyer.telefon || buyer.phone || '0100000000');
-        formData.append('billPaymentChannel', '2');
+        formData.append('billTo', customerName.slice(0, 50));
+        formData.append('billEmail', customerEmail);
+        formData.append('billPhone', phone.slice(0, 15));
+        formData.append('billPaymentChannel', '2'); // 2 = FPX & Card, 0 = FPX
         formData.append('billChargeToCustomer', '1');
 
         try {
+            console.log('[ToyyibPay] Creating bill for order:', order.siparisNumarasi, 'amount cents:', amountInCents);
             const response = await fetch(`${baseUrl}/index.php/api/createBill`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -62,6 +83,7 @@ export class ToyyibPayService {
             });
 
             const text = await response.text();
+            console.log('[ToyyibPay] createBill raw response:', text);
             let result;
             try { result = JSON.parse(text); } catch { result = text; }
 
@@ -78,7 +100,7 @@ export class ToyyibPayService {
                 };
             }
 
-            const msg = typeof result === 'object' ? (result.msg || result.reason) : String(result);
+            const msg = typeof result === 'object' ? (result.msg || result.reason || JSON.stringify(result)) : String(result);
             return {
                 status: 'failure',
                 errorMessage: msg || 'Gagal mencipta bil ToyyibPay.'

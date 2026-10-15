@@ -90,6 +90,9 @@ export function initConfig(env) {
     categoryCode: env.TOYYIBPAY_CATEGORY_CODE || '',
     baseUrl: env.TOYYIBPAY_BASE_URL || 'https://toyyibpay.com'
   });
+  config.toyyibpayUserSecretKey = env.TOYYIBPAY_USER_SECRET_KEY || '';
+  config.toyyibpayCategoryCode = env.TOYYIBPAY_CATEGORY_CODE || '';
+  config.toyyibpayBaseUrl = env.TOYYIBPAY_BASE_URL || 'https://toyyibpay.com';
   config.apiUrl = env.API_URL || 'https://api.dinoempire.my';
 
   Object.assign(config.email, {
