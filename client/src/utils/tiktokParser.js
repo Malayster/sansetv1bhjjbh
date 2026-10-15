@@ -51,20 +51,24 @@ export function parseTikTokInput(input) {
 
 /**
  * Menjana URL embed rasmi TikTok yang selamat dan responsif
- * @param {string} videoId - ID Video TikTok
+ * @param {string} input - ID Video TikTok atau URL
  * @returns {string} - URL iframe bersedia dimainkan
  */
-export function getTikTokEmbedUrl(videoId) {
+export function getTikTokEmbedUrl(input) {
+    if (!input) return '';
+    const videoId = parseTikTokInput(String(input)) || (typeof input === 'string' && /^\d+$/.test(input.trim()) ? input.trim() : null);
     if (!videoId) return '';
     return `https://www.tiktok.com/embed/v2/${videoId}?lang=ms-MY`;
 }
 
 /**
  * Menjana pautan web langsung ke TikTok
- * @param {string} videoId 
+ * @param {string} input 
  * @returns {string}
  */
-export function getTikTokDirectUrl(videoId) {
-    if (!videoId) return 'https://www.tiktok.com';
-    return `https://www.tiktok.com/@dinoempire/video/${videoId}`;
+export function getTikTokDirectUrl(input) {
+    if (!input) return 'https://www.tiktok.com/@lemunikualaketil';
+    const videoId = parseTikTokInput(String(input)) || (typeof input === 'string' && /^\d+$/.test(input.trim()) ? input.trim() : null);
+    if (!videoId) return 'https://www.tiktok.com/@lemunikualaketil';
+    return `https://www.tiktok.com/@lemunikualaketil/video/${videoId}`;
 }

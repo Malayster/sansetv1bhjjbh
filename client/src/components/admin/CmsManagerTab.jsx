@@ -207,12 +207,27 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
 
         setTiktokVideos(updated);
         setVideoModalOpen(false);
+
+        // Auto-simpan ke pangkalan data terus
+        api.put('/api/v1/admin/cms', { tiktok_videos: updated }).then(() => {
+            if (showNotif) showNotif('Video TikTok berjaya disimpan dan dikemas kini!');
+            if (onSaveSuccess) onSaveSuccess();
+        }).catch(err => {
+            console.error('Ralat auto-simpan video:', err);
+        });
     };
 
     // Padam Video TikTok
     const handleDeleteVideo = (idx) => {
         if (window.confirm('Padam video TikTok ini dari paparan?')) {
-            setTiktokVideos(tiktokVideos.filter((_, i) => i !== idx));
+            const updated = tiktokVideos.filter((_, i) => i !== idx);
+            setTiktokVideos(updated);
+            api.put('/api/v1/admin/cms', { tiktok_videos: updated }).then(() => {
+                if (showNotif) showNotif('Video TikTok berjaya dipadam!');
+                if (onSaveSuccess) onSaveSuccess();
+            }).catch(err => {
+                console.error('Ralat padam video:', err);
+            });
         }
     };
 

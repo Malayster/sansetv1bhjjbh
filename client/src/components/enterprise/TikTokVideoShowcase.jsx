@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, ShoppingBag, X, ExternalLink, Sparkles, Star } from 'lucide-react';
-import { getTikTokEmbedUrl } from '../../utils/tiktokParser';
+import api from '../../lib/axios';
+import { getTikTokEmbedUrl, getTikTokDirectUrl } from '../../utils/tiktokParser';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -13,9 +14,11 @@ export function TikTokVideoShowcase({ products }) {
     // Default curated TikTok reels for DIN'O EMPIRE
     const fallbackVideos = [
         {
-            id: 'v1',
-            tiktokUrl: 'https://www.tiktok.com/@lemunikualaketil',
-            videoId: '7345678901234567890',
+            id: 'v_7696138312989297940',
+            tiktokUrl: 'https://www.tiktok.com/@lemunikualaketil/video/7696138312989297940',
+            videoId: '7696138312989297940',
+            title: 'Din O empire',
+            badge: 'Viral Kilang',
             caption: 'Proses pembungkusan segar pek kilang Kuala Ketil direct sebelum pos!',
             author: '@lemunikualaketil',
             views: '45.2K',
@@ -23,38 +26,13 @@ export function TikTokVideoShowcase({ products }) {
             productId: '9c2410a7-f275-46d6-b4d7-0c44a54cedbd',
             productTitle: "Pek Kilang DIN'O Special",
             productPrice: 28.00
-        },
-        {
-            id: 'v2',
-            tiktokUrl: 'https://www.tiktok.com/@lemunikualaketil',
-            videoId: '7345678901234567891',
-            caption: 'Unboxing Pek Jimat Keluarga untuk stok sebulan. Puas hati sangat!',
-            author: '@lemunikualaketil',
-            views: '98.5K',
-            likes: '8.4K',
-            productId: '4b75c9da-6e1d-47a1-aca8-9021d21f0f33',
-            productTitle: "Pek Keluarga DIN'O EMPIRE",
-            productPrice: 50.00
-        },
-        {
-            id: 'v3',
-            tiktokUrl: 'https://www.tiktok.com/@lemunikualaketil',
-            videoId: '7345678901234567892',
-            caption: 'T-Shirt rasmi cotton sulam DIN\'O EMPIRE. Kain tebal tak panas.',
-            author: '@lemunikualaketil',
-            views: '28.1K',
-            likes: '2.1K',
-            productId: 'a0e2c0ee-e9e4-486a-b1aa-c9f5d8b7b809',
-            productTitle: "T-Shirt Rasmi DIN'O EMPIRE",
-            productPrice: 39.00
         }
     ];
 
     useEffect(() => {
-        fetch('/api/v1/cms')
-            .then(res => res.json())
-            .then(data => {
-                const list = data?.data?.tiktok_videos || [];
+        api.get('/api/v1/cms')
+            .then(res => {
+                const list = res.data?.data?.tiktok_videos || [];
                 const active = list.filter(v => v.active !== false);
                 if (active.length > 0) {
                     setVideos(active);
@@ -66,6 +44,19 @@ export function TikTokVideoShowcase({ products }) {
                 setVideos(fallbackVideos);
             });
     }, []);
+
+    useEffect(() => {
+        const scriptId = 'tiktok-embed-script';
+        if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = 'https://www.tiktok.com/embed.js';
+            script.async = true;
+            document.body.appendChild(script);
+        } else if (window.tiktokEmbed) {
+            try { window.tiktokEmbed.reload(); } catch {}
+        }
+    }, [videos]);
 
     const handleQuickAdd = (pId, pTitle, pPrice) => {
         addToCart({
@@ -110,36 +101,58 @@ export function TikTokVideoShowcase({ products }) {
             {/* Video Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {videos.map((vid, idx) => {
-                    const embedUrl = getTikTokEmbedUrl(vid.tiktokUrl || vid.videoId);
+                    const cleanVideoId = vid.videoId || (vid.tiktokUrl ? vid.tiktokUrl.split('/video/')[1]?.split('?')[0] : null);
+                    const embedUrl = getTikTokEmbedUrl(cleanVideoId);
+                    const directUrl = getTikTokDirectUrl(cleanVideoId);
+
                     return (
                         <div
                             key={vid.id || idx}
                             className="rounded-3xl bg-gradient-to-b from-white/[0.04] to-black/60 border border-white/10 hover:border-pink-500/40 transition duration-300 overflow-hidden flex flex-col group shadow-xl"
                         >
+                            {/* Card Top Info Bar */}
+                            <div className="px-4 py-2.5 bg-black/60 border-b border-white/5 flex items-center justify-between text-xs">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                    <Sparkles size={11} />
+                                    {vid.badge || 'Viral Kilang'}
+                                </span>
+                                <a
+                                    href={directUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-white/60 hover:text-pink-400 flex items-center gap-1 font-mono text-[11px] font-bold transition"
+                                >
+                                    <span>Buka TikTok</span>
+                                    <ExternalLink size={12} />
+                                </a>
+                            </div>
+
                             {/* Video Cover / Embed Preview Frame */}
                             <div className="relative aspect-[9/14] bg-neutral-950 overflow-hidden flex items-center justify-center">
                                 {embedUrl ? (
                                     <iframe
                                         src={embedUrl}
-                                        title={`TikTok Embed ${idx}`}
+                                        title={vid.title || `TikTok Embed ${idx}`}
                                         className="w-full h-full border-0 pointer-events-auto"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                     ></iframe>
                                 ) : (
-                                    <div
-                                        onClick={() => setSelectedVideo(vid)}
-                                        className="w-full h-full cursor-pointer relative flex items-center justify-center bg-gradient-to-b from-neutral-900 to-black p-6"
+                                    <a
+                                        href={directUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="w-full h-full cursor-pointer relative flex items-center justify-center bg-gradient-to-b from-neutral-900 to-black p-6 group"
                                     >
                                         <div className="absolute inset-0 bg-radial-[at_center] from-pink-500/20 via-transparent to-transparent opacity-60"></div>
                                         <div className="w-16 h-16 rounded-full bg-pink-500/90 text-white flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.6)] group-hover:scale-110 transition duration-200">
                                             <Play className="w-7 h-7 fill-white translate-x-0.5" />
                                         </div>
                                         <div className="absolute bottom-4 inset-x-4 text-center">
-                                            <span className="text-xs font-mono text-white/70 block">{vid.author}</span>
-                                            <span className="text-xs font-bold text-white line-clamp-2 mt-1">{vid.caption}</span>
+                                            <span className="text-xs font-mono text-white/70 block">@lemunikualaketil</span>
+                                            <span className="text-xs font-bold text-white line-clamp-2 mt-1">{vid.title || vid.caption || 'Tonton di TikTok'}</span>
                                         </div>
-                                    </div>
+                                    </a>
                                 )}
                             </div>
 
