@@ -71,7 +71,9 @@ export class UploadController {
             return res.status(415).json({ status: 'error', errorMessage: 'Hanya imej WebP, JPEG atau PNG dibenarkan.' });
         }
 
-        const key = `products/${crypto.randomUUID()}.${detected.extension}`;
+        const rawFolder = req.query?.folder || (req.body && typeof req.body.folder === 'string' ? req.body.folder : '') || 'products';
+        const folder = String(rawFolder).toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'products';
+        const key = `${folder}/${crypto.randomUUID()}.${detected.extension}`;
         await env.IMAGES_BUCKET.put(key, buffer, {
             httpMetadata: { contentType: detected.contentType }
         });

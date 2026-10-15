@@ -132,12 +132,29 @@ export class OrderService {
         let totalWeight = 0;
         const indexItems = [];
 
-        const quantityByProduct = new Map();
+        // Validate box bundle discount if requested
+        let boxSubtotal = 0;
+        const resolvedProducts = new Map();
         for (const item of items) {
             const product = await this.productService.getProductById(item.id);
             if (!product || product.aktif === false) {
                 throw clientError('Produk tidak lagi dijual.');
             }
+            resolvedProducts.set(item.id, product);
+            if (item.boxDiscountPercent) {
+                const catalogPrice = Number(product.indirimliFiyat || product.fiyat);
+                boxSubtotal += catalogPrice * Number(item.quantity || 1);
+            }
+        }
+
+        let eligibleBoxDiscount = 0;
+        if (boxSubtotal >= 150) eligibleBoxDiscount = 15;
+        else if (boxSubtotal >= 100) eligibleBoxDiscount = 10;
+        else if (boxSubtotal >= 50) eligibleBoxDiscount = 5;
+
+        const quantityByProduct = new Map();
+        for (const item of items) {
+            const product = resolvedProducts.get(item.id);
 
             const requested = (quantityByProduct.get(product.id) || 0) + item.quantity;
             quantityByProduct.set(product.id, requested);
@@ -145,7 +162,13 @@ export class OrderService {
                 throw clientError(`${product.ad} stok tidak mencukupi.`);
             }
 
-            const unitPrice = Number(product.indirimliFiyat || product.fiyat);
+            const catalogPrice = Number(product.indirimliFiyat || product.fiyat);
+            let unitPrice = catalogPrice;
+            if (item.boxDiscountPercent && eligibleBoxDiscount > 0) {
+                const appliedDiscount = Math.min(Number(item.boxDiscountPercent), eligibleBoxDiscount);
+                unitPrice = Number((catalogPrice * (1 - appliedDiscount / 100)).toFixed(2));
+            }
+
             const productColors = Array.isArray(product.renkSecenekleri)
                 ? product.renkSecenekleri.filter(Boolean)
                 : [];
@@ -185,11 +208,11 @@ export class OrderService {
         const isKedah = state.includes('kedah');
         const isBorneo = state.includes('sabah') || state.includes('sarawak') || state.includes('labuan');
 
-        let shippingFee = Number(settings?.kargoSabitUcret ?? 8.00);
-        if (isKedah) shippingFee = 6.00;
-        else if (isBorneo) shippingFee = 15.00;
+        let shippingFee = Number(settings?.posSemenanjung ?? settings?.kargoSabitUcret ?? 8.00);
+        if (isKedah) shippingFee = Number(settings?.posKedah ?? 6.00);
+        else if (isBorneo) shippingFee = Number(settings?.posBorneo ?? 15.00);
 
-        const freeShippingLimit = Number(settings?.ucretsizKargoAltLimit ?? 100.00);
+        const freeShippingLimit = Number(settings?.freeShippingMin ?? settings?.ucretsizKargoAltLimit ?? 100.00);
         if (subTotal >= freeShippingLimit && !isBorneo) shippingFee = 0.00;
 
         shippingFee = Number(shippingFee.toFixed(2));

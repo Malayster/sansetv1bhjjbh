@@ -79,6 +79,6 @@ export class CategoryController {
     adminDeleteCategory = asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         await this.categoryService.deleteCategory(id);
-        res.json({ status: 'success', message: 'Kategori silindi.' });
+        res.json({ status: 'success', message: 'Kategori telah dipadam.' });
     });
 }

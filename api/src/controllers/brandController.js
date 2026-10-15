@@ -14,7 +14,7 @@ export class BrandController {
         const { id } = req.params;
         const brand = await this.brandService.getBrandById(id);
         if (!brand) {
-            return res.status(404).json({ message: 'Marka bulunamadı' });
+            return res.status(404).json({ message: 'Jenama tidak dijumpai' });
         }
         res.json(brand);
     });
@@ -23,7 +23,7 @@ export class BrandController {
         const { slug } = req.params;
         const brand = await this.brandService.getBrandBySlug(slug);
         if (!brand) {
-            return res.status(404).json({ message: 'Marka bulunamadı' });
+            return res.status(404).json({ message: 'Jenama tidak dijumpai' });
         }
         res.json(brand);
     });
@@ -82,6 +82,6 @@ export class BrandController {
     adminDeleteBrand = asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         await this.brandService.deleteBrand(id);
-        res.json({ status: 'success', message: 'Marka silindi.' });
+        res.json({ status: 'success', message: 'Jenama telah dipadam.' });
     });
 }

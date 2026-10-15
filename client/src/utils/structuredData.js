@@ -45,10 +45,10 @@ export const generateOrganizationSchema = () => ({
     logo: LOGO_URL,
     contactPoint: {
         '@type': 'ContactPoint',
-        telephone: '+90-542-182-68-55',
+        telephone: '+60-16-691-1020',
         contactType: 'Customer Service',
-        areaServed: 'TR',
-        availableLanguage: 'Turkish'
+        areaServed: 'MY',
+        availableLanguage: ['Malay', 'English']
     },
     sameAs: [
         // Add social media profiles here
@@ -92,8 +92,8 @@ export const generateProductSchema = (product) => {
         } : undefined,
         offers: {
             '@type': 'Offer',
-            url: `${SITE_URL}/${product.slug ? 'urun/' + product.slug : 'product/' + product.id}`,
-            priceCurrency: 'TRY',
+            url: `${SITE_URL}/${product.slug ? 'produk/' + product.slug : 'product/' + product.id}`,
+            priceCurrency: 'MYR',
             price: price.toFixed(2),
             availability,
             seller: {
@@ -138,11 +138,11 @@ export const generateProductListSchema = (products, listName) => ({
         item: {
             '@type': 'Product',
             name: product.ad,
-            url: `${SITE_URL}/${product.slug ? 'urun/' + product.slug : 'product/' + product.id}`,
+            url: `${SITE_URL}/${product.slug ? 'produk/' + product.slug : 'product/' + product.id}`,
             image: product.resimUrl,
             offers: {
                 '@type': 'Offer',
-                priceCurrency: 'TRY',
+                priceCurrency: 'MYR',
                 price: Number(product.indirimliFiyat || product.fiyat).toFixed(2)
             }
         }
@@ -178,7 +178,7 @@ export const generateOrderSchema = (order) => ({
         }
     })),
     price: Number(order.toplamTutar).toFixed(2),
-    priceCurrency: 'TRY'
+    priceCurrency: 'MYR'
 });
 
 /**

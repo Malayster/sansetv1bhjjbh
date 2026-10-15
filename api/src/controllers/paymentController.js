@@ -77,11 +77,11 @@ export class PaymentController {
                 return res.redirect(redirectUrl);
             }
 
-            const redirectUrl = `${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(result.errorMessage || 'Ödeme doğrulaması başarısız.')}`;
+            const redirectUrl = `${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(result.errorMessage || 'Pengesahan pembayaran gagal.')}`;
             return res.redirect(redirectUrl);
         } catch (error) {
             console.error('[Payment] Param success callback error:', error);
-            return res.redirect(`${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent('Sistem hatası oluştu.')}`);
+            return res.redirect(`${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent('Ralat sistem berlaku.')}`);
         }
     });
 
@@ -99,7 +99,7 @@ export class PaymentController {
 
         const errorMessage = req.body.md_errormessage
             || req.body.Sonuc_Str
-            || 'Ödeme işlemi başarısız oldu veya iptal edildi.';
+            || 'Pembayaran gagal atau dibatalkan.';
 
         const redirectUrl = `${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(errorMessage)}`;
         console.log('[Payment] Param error — redirecting to:', redirectUrl);
@@ -127,11 +127,11 @@ export class PaymentController {
                 return res.redirect(redirectUrl);
             }
 
-            const redirectUrl = `${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(result.errorMessage || 'iyzico ödeme başarısız.')}`;
+            const redirectUrl = `${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(result.errorMessage || 'Pembayaran iyzico gagal.')}`;
             return res.redirect(redirectUrl);
         } catch (error) {
             console.error('[Payment] iyzico callback error:', error);
-            return res.redirect(`${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(error.message || 'iyzico ödeme doğrulama hatası oluştu.')}`);
+            return res.redirect(`${config.clientUrl}/payment/failure?errorMessage=${encodeURIComponent(error.message || 'Ralat pengesahan pembayaran iyzico berlaku.')}`);
         }
     });
 
@@ -217,14 +217,14 @@ export class PaymentController {
         if (!binValue || binValue.length < 6) {
             return res.status(400).json({
                 status: 'failure',
-                message: 'Kart BIN numarası (ilk 6 hane) gereklidir.'
+                message: 'Nombor BIN kad (6 digit pertama) diperlukan.'
             });
         }
 
         if (!amount || isNaN(Number(amount))) {
             return res.status(400).json({
                 status: 'failure',
-                message: 'Geçerli bir tutar gereklidir.'
+                message: 'Jumlah bayaran yang sah diperlukan.'
             });
         }
 

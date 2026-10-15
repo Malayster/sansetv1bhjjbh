@@ -67,7 +67,7 @@ export function CheckoutPage() {
         }
     }, []);
 
-    const subTotal = cartItems.reduce((acc, item) => acc + (Number(item.fiyat) * item.quantity), 0);
+    const subTotal = cartItems.reduce((acc, item) => acc + (Number(item.indirimliFiyat || item.fiyat) * item.quantity), 0);
     const totalWeight = cartItems.reduce((acc, item) => acc + (Number(item.agirlik || 1) * item.quantity), 0);
 
     const { shippingFee, isFreeShipping, weightError } = calculateShippingFee({
@@ -149,7 +149,10 @@ export function CheckoutPage() {
         try {
             const orderResponse = await api.post('/api/v1/orders/checkout', {
                 items: cartItems.map(item => ({
-                    id: item.id, quantity: item.quantity, price: item.fiyat,
+                    id: item.id,
+                    quantity: item.quantity,
+                    price: Number(item.indirimliFiyat || item.fiyat),
+                    boxDiscountPercent: item.boxDiscountPercent || 0,
                     selectedColor: item.selectedColor || undefined
                 })),
                 guestInfo: {
@@ -200,7 +203,7 @@ export function CheckoutPage() {
             <div className="max-w-3xl mx-auto px-4 py-16 text-center">
                 <CreditCard size={64} className="mx-auto text-gray-300 mb-4" />
                 <h2 className="text-2xl font-bold text-gray-700 mb-2">Beg Anda Kosong</h2>
-                <a href="/magaza" className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-full font-bold">
+                <a href="/kedai" className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-full font-bold">
                     <ArrowLeft size={18} /> Mula Membeli-belah
                 </a>
             </div>

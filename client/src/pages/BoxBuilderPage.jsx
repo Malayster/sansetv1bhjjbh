@@ -64,9 +64,20 @@ export function BoxBuilderPage() {
 
   const addBoxToCart = () => {
     if (boxProducts.length === 0) return;
+    const discountMultiplier = current ? (1 - current.discount / 100) : 1;
+    const discountPercent = current ? current.discount : 0;
     boxProducts.forEach(item => {
+      const discountedPrice = Number((item.price * discountMultiplier).toFixed(2));
       for (let i = 0; i < item.quantity; i++) {
-        addToCart({ id: item.id, ad: item.ad, fiyat: item.price, indirimliFiyat: item.price, resimUrl: item.resimUrl, selectedColor: null });
+        addToCart({
+          id: item.id,
+          ad: current ? `${item.ad} (Box: ${current.label})` : item.ad,
+          fiyat: item.price,
+          indirimliFiyat: discountedPrice,
+          boxDiscountPercent: discountPercent,
+          resimUrl: item.resimUrl,
+          selectedColor: null
+        });
       }
     });
     setBoxItems({});

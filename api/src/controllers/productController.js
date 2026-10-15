@@ -156,7 +156,8 @@ export class ProductController {
             return res.status(400).json({ status: 'error', errorMessage: invalid });
         }
 
-        const product = await this.productService.createProduct(data);
+        const rawImages = body.resimler || body.images || (body.resimUrl ? [{ url: body.resimUrl }] : []);
+        const product = await this.productService.createProduct(data, rawImages);
         res.json({ status: 'success', data: product });
     });
 
@@ -205,7 +206,11 @@ export class ProductController {
             return res.status(400).json({ status: 'error', errorMessage: invalid });
         }
 
-        const product = await this.productService.updateProduct(id, data);
+        const rawImages = (body.resimler !== undefined || body.images !== undefined)
+            ? (body.resimler || body.images)
+            : (body.resimUrl ? [{ url: body.resimUrl }] : null);
+
+        const product = await this.productService.updateProduct(id, data, rawImages);
         res.json({ status: 'success', data: product });
     });
 

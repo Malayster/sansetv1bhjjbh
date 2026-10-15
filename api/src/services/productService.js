@@ -132,15 +132,15 @@ export class ProductService {
     /**
      * Creates a new product.
      */
-    async createProduct(data) {
-        return this.productRepository.create(data);
+    async createProduct(data, rawImages = []) {
+        return this.productRepository.createWithImages(data, rawImages);
     }
 
     /**
      * Updates an existing product.
      */
-    async updateProduct(id, data) {
-        return this.productRepository.update(id, data);
+    async updateProduct(id, data, rawImages = null) {
+        return this.productRepository.updateWithImages(id, data, rawImages);
     }
 
     /**

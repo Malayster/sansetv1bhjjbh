@@ -23,6 +23,7 @@ import easyParcelCallback from './routes/easyParcelCallback.js';
 import { feedController } from './container.js';
 import { adapt } from './utils/honoAdapter.js';
 import { processDueSubscriptions } from './services/subscriptionBillingService.js';
+import { readCms } from './services/cmsService.js';
 
 const app = new Hono();
 
@@ -65,6 +66,10 @@ app.route('/api/v1/settings', settingsRoutes);
 app.route('/api/v1/feeds', feedRoutes);
 app.route('/api/v1/subscriptions', subscriptionRoutes);
 app.route('/api/v1/points', pointsRoutes);
+app.get('/api/v1/cms', async (c) => {
+    const data = await readCms(c.env.DB, { includePrivate: false }).catch(() => ({}));
+    return c.json({ status: 'success', data });
+});
 
 app.route('/', seoRoutes);
 app.route('/api/v1', seoRoutes);

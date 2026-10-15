@@ -31,7 +31,7 @@ export class SubscriptionController {
       return res.status(400).json({ status: 'error', errorMessage: 'Maklumat tidak lengkap.' });
     }
 
-    const productIds = items.map(i => i.urunId);
+    const productIds = [...new Set(items.map(i => i.urunId))];
     const products = await this.prisma.urun.findMany({
       where: { id: { in: productIds }, aktif: true }
     });
@@ -143,6 +143,26 @@ export class SubscriptionController {
       orderBy: { olusturulmaTarihi: 'desc' },
       take: 100
     });
-    res.json({ status: 'success', data: list });
+    // Jangan dedahkan token akses pelanggan kepada panel admin.
+    res.json({ status: 'success', data: list.map(({ paymentToken, ...rest }) => rest) });
+  });
+
+  // Dipanggil dari /api/v1/admin/subscriptions/:id/* (dilindungi adminAuth).
+  adminSkip = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const existing = await this.prisma.langganan.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ status: 'error', errorMessage: 'Langganan tidak dijumpai.' });
+    const updated = await this.prisma.langganan.update({ where: { id }, data: { skipSeterusnya: true } });
+    const { paymentToken, ...data } = updated;
+    res.json({ status: 'success', data });
+  });
+
+  adminCancel = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const existing = await this.prisma.langganan.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ status: 'error', errorMessage: 'Langganan tidak dijumpai.' });
+    const updated = await this.prisma.langganan.update({ where: { id }, data: { status: 'DIBATALKAN' } });
+    const { paymentToken, ...data } = updated;
+    res.json({ status: 'success', data });
   });
 }

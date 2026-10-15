@@ -36,7 +36,7 @@ export function PaymentSuccessPage() {
                 <div className="flex flex-col gap-4 justify-center items-center sm:flex-row">
                     {trackingToken && (
                         <button
-                            onClick={() => navigate(`/siparis-takip?token=${trackingToken}`)}
+                            onClick={() => navigate(`/jejak-pesanan?token=${trackingToken}`)}
                             className="bg-corporate-black text-white px-8 py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-all w-full sm:w-auto cursor-pointer"
                         >
                             Jejak Pesanan Saya
@@ -44,7 +44,7 @@ export function PaymentSuccessPage() {
                     )}
 
                     <button
-                        onClick={() => navigate('/magaza')}
+                        onClick={() => navigate('/kedai')}
                         className="bg-brand-primary text-white px-8 py-3.5 rounded-xl font-bold hover:bg-amber-600 transition-all w-full sm:w-auto cursor-pointer"
                     >
                         Teruskan Membeli-belah

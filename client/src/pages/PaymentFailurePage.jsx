@@ -45,7 +45,7 @@ export function PaymentFailurePage() {
                     </button>
                     
                     <button
-                        onClick={() => navigate('/magaza')}
+                        onClick={() => navigate('/kedai')}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-bold px-8 py-3.5 rounded-xl hover:bg-gray-200 transition border border-gray-300"
                     >
                         <ShoppingCart size={18} />

@@ -11,11 +11,12 @@ export class ProductRepository extends BaseRepository {
      */
     constructor(dbClient) {
         super(dbClient.urun);
+        this.db = dbClient;
     }
 
     /**
      * Retrieves all products including their associated category.
-     * @returns {Promise<Array<import('../generated/prisma/client.ts').Urun & { kategori: import('../generated/prisma/client.ts').Kategori }>>} A promise that resolves to an array of products with categories.
+     * @returns {Promise<Array>} A promise that resolves to an array of products with categories.
      */
     async findAllWithCategories(filters = {}) {
         const where = { aktif: true }; // Only active products by default
@@ -23,8 +24,8 @@ export class ProductRepository extends BaseRepository {
         if (filters.markaId) where.markaId = filters.markaId;
         if (filters.kategoriId) {
             where.OR = [
-                { kategoriId: filters.kategoriId }, // Direct match (product is in this category)
-                { kategori: { ustKategoriId: filters.kategoriId } } // Indirect match (product is in a subcategory of this category)
+                { kategoriId: filters.kategoriId },
+                { kategori: { ustKategoriId: filters.kategoriId } }
             ];
         }
 
@@ -34,16 +35,14 @@ export class ProductRepository extends BaseRepository {
         if (filters.yeniUrun) where.yeniUrun = true;
         if (filters.cokSatanlar) where.cokSatanlar = true;
 
-        // Determine ordering based on filters
         let orderBy = { olusturulmaTarihi: 'desc' };
         if (filters.cokSatanlar) {
-            orderBy = { satisAdedi: 'desc' }; // Sort best sellers by sales count
+            orderBy = { satisAdedi: 'desc' };
         } else if (filters.oneCikan) {
-            orderBy = { goruntulemeSayisi: 'desc' }; // Sort featured by views
+            orderBy = { goruntulemeSayisi: 'desc' };
         }
 
-        console.log('[DEBUG] findAllWithCategories where:', where);
-        const results = await this.findAll({
+        return this.findAll({
             where,
             include: {
                 kategori: true,
@@ -54,14 +53,12 @@ export class ProductRepository extends BaseRepository {
             },
             orderBy
         });
-        console.log('[DEBUG] findAllWithCategories results count:', results?.length, results);
-        return results;
     }
 
     /**
      * Retrieves a single product by its ID with relations.
      * @param {string} id - The ID of the product.
-     * @returns {Promise<import('../generated/prisma/client.ts').Urun|null>} The product with relations.
+     * @returns {Promise<Object|null>} The product with relations.
      */
     async findById(id) {
         return this.model.findUnique({
@@ -79,7 +76,7 @@ export class ProductRepository extends BaseRepository {
     /**
      * Retrieves a single product by its Slug with relations.
      * @param {string} slug - The SEO slug of the product.
-     * @returns {Promise<import('../generated/prisma/client.ts').Urun|null>} The product with relations.
+     * @returns {Promise<Object|null>} The product with relations.
      */
     async findBySlug(slug) {
         return this.model.findUnique({
@@ -90,6 +87,79 @@ export class ProductRepository extends BaseRepository {
                 resimler: {
                     orderBy: { sira: 'asc' }
                 }
+            }
+        });
+    }
+
+    /**
+     * Create product with multiple images relation
+     */
+    async createWithImages(data, rawImages = []) {
+        let resimler = [];
+        if (Array.isArray(rawImages)) {
+            resimler = rawImages
+                .map((img, i) => ({ url: typeof img === 'string' ? img : img?.url, sira: i }))
+                .filter(img => Boolean(img.url));
+        }
+        if (data.resimUrl && !resimler.some(r => r.url === data.resimUrl)) {
+            resimler.unshift({ url: data.resimUrl, sira: 0 });
+        }
+
+        return this.model.create({
+            data: {
+                ...data,
+                resimler: resimler.length > 0 ? {
+                    create: resimler.map((r, idx) => ({ url: r.url, sira: idx }))
+                } : undefined
+            },
+            include: {
+                kategori: true,
+                marka: true,
+                resimler: { orderBy: { sira: 'asc' } }
+            }
+        });
+    }
+
+    /**
+     * Update product and synchronize images relation
+     */
+    async updateWithImages(id, data, rawImages = null) {
+        if (rawImages !== null && Array.isArray(rawImages)) {
+            let resimler = rawImages
+                .map((img, i) => ({ url: typeof img === 'string' ? img : img?.url, sira: i }))
+                .filter(img => Boolean(img.url));
+
+            if (data.resimUrl && !resimler.some(r => r.url === data.resimUrl)) {
+                resimler.unshift({ url: data.resimUrl, sira: 0 });
+            }
+
+            if (this.db?.urunResim) {
+                await this.db.urunResim.deleteMany({ where: { urunId: id } }).catch(() => {});
+            }
+
+            return this.model.update({
+                where: { id },
+                data: {
+                    ...data,
+                    resimler: resimler.length > 0 ? {
+                        create: resimler.map((r, idx) => ({ url: r.url, sira: idx }))
+                    } : undefined
+                },
+                include: {
+                    kategori: true,
+                    marka: true,
+                    resimler: { orderBy: { sira: 'asc' } }
+                }
+            });
+        }
+
+        return this.model.update({
+            where: { id },
+            data,
+            include: {
+                kategori: true,
+                marka: true,
+                resimler: { orderBy: { sira: 'asc' } }
             }
         });
     }
@@ -116,7 +186,11 @@ export class ProductRepository extends BaseRepository {
      */
     async findAllForAdmin() {
         return this.model.findMany({
-            include: { kategori: true, marka: true },
+            include: {
+                kategori: true,
+                marka: true,
+                resimler: { orderBy: { sira: 'asc' } }
+            },
             orderBy: { olusturulmaTarihi: 'desc' }
         });
     }

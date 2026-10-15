@@ -187,7 +187,7 @@ export function AdminDashboardPage() {
             }
 
             if (setRes.data) {
-                const s = setRes.data;
+                const s = setRes.data?.data || setRes.data;
                 setSettings({
                     siteAdi: s.siteAdi || "DIN'O EMPIRE",
                     telefon: s.telefon || '016-6911020',
@@ -258,6 +258,7 @@ export function AdminDashboardPage() {
         stokAdedi: 10,
         agirlik: 0.5,
         resimUrl: '',
+        resimUrl2: '',
         aciklama: '',
         aktif: true,
         oneCikan: false
@@ -284,6 +285,7 @@ export function AdminDashboardPage() {
             stokAdedi: 10,
             agirlik: 0.5,
             resimUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500&auto=format&fit=crop&q=80',
+            resimUrl2: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&auto=format&fit=crop&q=80',
             aciklama: '',
             aktif: true,
             oneCikan: false
@@ -293,6 +295,8 @@ export function AdminDashboardPage() {
 
     const openEditProductModal = (prod) => {
         setEditingProduct(prod);
+        const img1 = prod.resimUrl || (prod.resimler && prod.resimler[0]?.url) || '';
+        const img2 = (prod.resimler && prod.resimler.length > 1 ? prod.resimler[1]?.url : '') || img1;
         setProductForm({
             ad: prod.ad || '',
             fiyat: String(prod.fiyat || ''),
@@ -300,7 +304,8 @@ export function AdminDashboardPage() {
             kategoriId: prod.kategoriId || '',
             stokAdedi: Number(prod.stokAdedi || 0),
             agirlik: Number(prod.agirlik || prod.desi || 0.5),
-            resimUrl: prod.resimUrl || '',
+            resimUrl: img1,
+            resimUrl2: img2,
             aciklama: prod.aciklama || '',
             aktif: prod.aktif !== false,
             oneCikan: !!prod.oneCikan
@@ -310,8 +315,16 @@ export function AdminDashboardPage() {
 
     const handleSaveProduct = async (e) => {
         e.preventDefault();
+        if (!productForm.resimUrl || !productForm.resimUrl2) {
+            alert('Setiap produk wajib mempunyai sekurang-kurangnya 2 gambar (Gambar Utama & Gambar Tambahan).');
+            return;
+        }
         setIsSavingProduct(true);
         try {
+            const resimlerList = [
+                { url: productForm.resimUrl, sira: 0 },
+                { url: productForm.resimUrl2, sira: 1 }
+            ];
             const payload = {
                 ad: productForm.ad,
                 fiyat: Number(productForm.fiyat),
@@ -321,6 +334,7 @@ export function AdminDashboardPage() {
                 desi: Number(productForm.agirlik || 0.5),
                 agirlik: Number(productForm.agirlik || 0.5),
                 resimUrl: productForm.resimUrl,
+                resimler: resimlerList,
                 aciklama: productForm.aciklama,
                 aktif: productForm.aktif,
                 oneCikan: productForm.oneCikan
@@ -2357,14 +2371,24 @@ export function AdminDashboardPage() {
                                 </div>
                             </div>
 
-                            <ImageUploader
-                                label="Gambar Produk"
-                                value={productForm.resimUrl}
-                                onChange={(url) => setProductForm({ ...productForm, resimUrl: url })}
-                                folder="products"
-                                placeholder="https://..."
-                                required
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ImageUploader
+                                    label="Gambar 1 (Utama)"
+                                    value={productForm.resimUrl}
+                                    onChange={(url) => setProductForm({ ...productForm, resimUrl: url })}
+                                    folder="products"
+                                    placeholder="https://..."
+                                    required
+                                />
+                                <ImageUploader
+                                    label="Gambar 2 (Belakang / Sudut Lain)"
+                                    value={productForm.resimUrl2}
+                                    onChange={(url) => setProductForm({ ...productForm, resimUrl2: url })}
+                                    folder="products"
+                                    placeholder="https://..."
+                                    required
+                                />
+                            </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Penerangan Ringkas</label>

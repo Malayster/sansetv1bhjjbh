@@ -71,7 +71,7 @@ export function Shop() {
         const params = new URLSearchParams(searchParams);
         if (minPrice) params.set('minPrice', minPrice); else params.delete('minPrice');
         if (maxPrice) params.set('maxPrice', maxPrice); else params.delete('maxPrice');
-        navigate(`/magaza?${params.toString()}`);
+        navigate(`/kedai?${params.toString()}`);
     };
 
     const clearPriceFilter = () => {
@@ -80,21 +80,21 @@ export function Shop() {
         const params = new URLSearchParams(searchParams);
         params.delete('minPrice');
         params.delete('maxPrice');
-        navigate(`/magaza?${params.toString()}`);
+        navigate(`/kedai?${params.toString()}`);
     };
 
     const applyBrandFilter = (markaId) => {
         setSelectedMarkaId(markaId);
         const params = new URLSearchParams(searchParams);
         if (markaId) params.set('markaId', markaId); else params.delete('markaId');
-        navigate(`/magaza?${params.toString()}`);
+        navigate(`/kedai?${params.toString()}`);
     };
 
     const applySorting = (sort) => {
         setSortBy(sort);
         const params = new URLSearchParams(searchParams);
         if (sort && sort !== 'newest') params.set('sort', sort); else params.delete('sort');
-        navigate(`/magaza?${params.toString()}`);
+        navigate(`/kedai?${params.toString()}`);
     };
 
     // Client-side filtering (price) & sorting
@@ -149,7 +149,7 @@ export function Shop() {
                 description={seoDescription}
                 keywords={activeCategory ? `${activeCategory.ad}, beli belah, dino empire` : undefined}
                 structuredData={structuredData}
-                canonical={activeCategory ? `https://dinoempire.my/magaza?kategori=${activeCategory.slug || activeCategory.id}` : 'https://dinoempire.my/magaza'}
+                canonical={activeCategory ? `https://dinoempire.my/kedai?kategori=${activeCategory.slug || activeCategory.id}` : 'https://dinoempire.my/kedai'}
             />
 
             <div className="container mx-auto px-4 py-6 md:py-10">
@@ -158,7 +158,7 @@ export function Shop() {
                     <nav className="flex items-center gap-2 text-xs text-gray-400 font-medium">
                         <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/')}>Laman Utama</span>
                         <ChevronRight size={14} className="text-gray-300" />
-                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/magaza')}>Kedai</span>
+                        <span className="cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => navigate('/kedai')}>Kedai</span>
 
                         {activeCategory && (
                             <>
@@ -228,7 +228,7 @@ export function Shop() {
                                         <h3 className="text-lg font-black text-gray-700 mb-2">Tiada Barangan Ditemui</h3>
                                         <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Tiada barangan yang sepadan dengan gabungan penapis yang anda pilih.</p>
                                         <button
-                                            onClick={() => navigate('/magaza')}
+                                            onClick={() => navigate('/kedai')}
                                             className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-black text-sm hover:bg-amber-600 transition-colors shadow-xs cursor-pointer"
                                         >
                                             Kosongkan Penapis

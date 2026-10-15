@@ -243,7 +243,7 @@ export default function App() {
         </main>
       </div>
 
-      <ProductModal show={showProductModal} onClose={() => setShowProductModal(false)} editingProduct={editingProduct} productForm={productForm} setProductForm={setProductForm} categories={categories} brands={brands} saveProduct={saveProduct} onImageUpload={onImageUpload} loading={loading} config={config} />
+      <ProductModal show={showProductModal} onClose={() => setShowProductModal(false)} editingProduct={editingProduct} productForm={productForm} setProductForm={setProductForm} categories={categories} brands={brands} onSave={saveProduct} onImageUpload={onImageUpload} loading={loading} config={config} />
       <ImageCropper cropState={cropState} setCropState={setCropState} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset} isDragging={isDragging} setIsDragging={setIsDragging} dragStart={dragStart} setDragStart={setDragStart} executeCropAndUpload={executeCropAndUpload} />
     </div>
   );

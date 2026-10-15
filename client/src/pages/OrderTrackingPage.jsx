@@ -311,7 +311,7 @@ export function OrderTrackingPage() {
                             </div>
 
                             <div className="pt-4 border-t border-gray-200 text-center">
-                                <Link to="/magaza" className="text-amber-600 hover:text-amber-700 font-bold text-sm hover:underline">
+                                <Link to="/kedai" className="text-amber-600 hover:text-amber-700 font-bold text-sm hover:underline">
                                     ← Teruskan Membeli-belah
                                 </Link>
                             </div>

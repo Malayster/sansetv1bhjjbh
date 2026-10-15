@@ -230,7 +230,7 @@ export function TikTokBioPage() {
 
                     {/* Butang Katalog Lengkap Kedai */}
                     <Link
-                        to="/magaza"
+                        to="/kedai"
                         className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
                     >
                         <div className="flex items-center justify-between">
@@ -253,7 +253,7 @@ export function TikTokBioPage() {
 
                     {/* Butang Jejak Bungkusan Pos */}
                     <Link
-                        to="/siparis-takip"
+                        to="/jejak-pesanan"
                         className="group block w-full p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 text-white shadow transition-all duration-300 hover:scale-[1.01] active:scale-98"
                     >
                         <div className="flex items-center justify-between">
@@ -312,7 +312,7 @@ export function TikTokBioPage() {
                                 <p className="text-[11px] text-slate-400">Beli terus apa yang anda lihat dalam video</p>
                             </div>
 
-                            <Link to="/magaza" className="text-[11px] font-bold text-amber-400 hover:underline">
+                            <Link to="/kedai" className="text-[11px] font-bold text-amber-400 hover:underline">
                                 Semua &rarr;
                             </Link>
                         </div>

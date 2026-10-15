@@ -47,7 +47,7 @@ export function ProductCard({ product }) {
 
     return (
         <div className={`group bg-white shadow-xs rounded-xl overflow-hidden flex flex-col h-full border border-gray-100 hover:shadow-xl hover:border-indigo-600/50 transition-all duration-300 hover:-translate-y-1 ${!inStock ? 'opacity-70 grayscale-30' : ''}`}>
-            <Link to={product.slug ? `/urun/${product.slug}` : `/product/${product.id}`} className="block relative aspect-square bg-linear-to-br from-gray-50 to-gray-100 overflow-hidden">
+            <Link to={product.slug ? `/produk/${product.slug}` : `/product/${product.id}`} className="block relative aspect-square bg-linear-to-br from-gray-50 to-gray-100 overflow-hidden">
                 {/* Image Wrap */}
                 <div className="w-full h-full bg-white flex items-center justify-center p-4 pb-2">
                     {product.resimUrl ? (
@@ -103,7 +103,7 @@ export function ProductCard({ product }) {
                     </span>
                 )}
 
-                <Link to={product.slug ? `/urun/${product.slug}` : `/product/${product.id}`}>
+                <Link to={product.slug ? `/produk/${product.slug}` : `/product/${product.id}`}>
                     <h3 className="text-gray-800 font-semibold text-sm mb-3 line-clamp-2 leading-snug hover:text-action-red transition-colors min-h-[36px]">
                         {product.ad}
                     </h3>

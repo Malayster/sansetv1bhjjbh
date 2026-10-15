@@ -7,7 +7,9 @@ export class SettingsController {
 
     getSettings = asyncHandler(async (req, res, next) => {
         const settings = await this.settingsService.getSettings();
-        res.json({ status: 'success', data: settings || {} });
+        if (!settings) return res.json({ status: 'success', data: {} });
+        const { adminPin, ...safe } = settings;
+        res.json({ status: 'success', data: safe });
     });
 
     getPublicSettings = asyncHandler(async (req, res, next) => {
@@ -15,7 +17,7 @@ export class SettingsController {
         if (!settings) {
             return res.json({ status: 'success', data: {} });
         }
-        const { googleMerchantToken, ...publicSettings } = settings;
+        const { googleMerchantToken, adminPin, adminEmail, ...publicSettings } = settings;
         res.json({ status: 'success', data: publicSettings });
     });
 
@@ -60,10 +62,10 @@ export class SettingsController {
         if (body.posBorneo !== undefined) data.posBorneo = parseFloat(body.posBorneo);
 
         if (body.hakkindaMetni !== undefined) data.hakkindaMetni = body.hakkindaMetni || null;
-        if (body.adminEmail !== undefined) data.adminEmail = body.adminEmail || null;
-        if (body.adminPin !== undefined) data.adminPin = body.adminPin || null;
+        // adminPin & adminEmail hanya boleh ditukar melalui /admin/change-pin dan /admin/verify-email-change.
 
-        const settings = await this.settingsService.updateSettings(data);
+        const saved = await this.settingsService.updateSettings(data);
+        const { adminPin, ...settings } = saved || {};
         res.json({ status: 'success', data: settings });
     });
 }

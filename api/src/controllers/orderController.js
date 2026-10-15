@@ -36,13 +36,13 @@ export class OrderController {
         const { token } = req.query;
 
         if (!token) {
-            return res.status(400).json({ status: 'failure', errorMessage: 'Takip kodu eksik.' });
+            return res.status(400).json({ status: 'failure', errorMessage: 'Token penjejakan tidak lengkap.' });
         }
 
         const order = await this.orderService.getOrderByTrackingToken(token);
 
         if (!order) {
-            return res.status(404).json({ status: 'failure', errorMessage: 'Sipariş bulunamadı.' });
+            return res.status(404).json({ status: 'failure', errorMessage: 'Pesanan tidak dijumpai.' });
         }
 
         res.json({
@@ -75,24 +75,20 @@ export class OrderController {
                 teslimatAdresi: {
                     ilce: order.ilce,
                     sehir: order.sehir,
-                    acikAdres: '* Güvenlik nedeniyle tam adres gizlenmiştir.'
+                    acikAdres: '* Atas sebab keselamatan, alamat penuh dirahsiakan.'
                 }
             }
         });
     });
 
     /**
-     * Bir siparişi iptal eder.
-     *
-     * @param {import('express').Request} req - Express istek nesnesi.
-     * @param {import('express').Response} res - Express yanıt nesnesi.
-     * @param {import('express').NextFunction} next - Express next fonksiyonu.
+     * Membatalkan pesanan.
      */
     cancelOrder = asyncHandler(async (req, res, next) => {
         const { token, reason } = req.body;
 
         if (!token) {
-            return res.status(400).json({ status: 'failure', errorMessage: 'Takip kodu (token) gereklidir.' });
+            return res.status(400).json({ status: 'failure', errorMessage: 'Token penjejakan pesanan diperlukan.' });
         }
 
         try {
@@ -118,7 +114,7 @@ export class OrderController {
         const { id } = req.params;
         const order = await this.orderService.getOrderByIdWithDetails(id);
         if (!order) {
-            return res.status(404).json({ status: 'error', errorMessage: 'Sipariş bulunamadı.' });
+            return res.status(404).json({ status: 'error', errorMessage: 'Pesanan tidak dijumpai.' });
         }
         res.json({ status: 'success', data: order });
     });

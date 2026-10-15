@@ -220,7 +220,7 @@ export function ProductDetailPage() {
             <Package size={64} className="mx-auto text-gray-300 mb-4" />
             <h2 className="text-2xl font-bold text-gray-700 mb-2">{error || 'Barangan tidak dijumpai'}</h2>
             <button
-                onClick={() => navigate('/magaza')}
+                onClick={() => navigate('/kedai')}
                 className="mt-4 text-action-red hover:underline flex items-center justify-center gap-2 mx-auto cursor-pointer"
             >
                 <ArrowLeft size={16} /> Kembali ke Senarai Barangan
@@ -236,7 +236,7 @@ export function ProductDetailPage() {
                 keywords={`${product.ad}, ${product.kategori?.ad || ''}, ${product.marka?.ad || ''}`}
                 ogType="product"
                 ogImage={product.resimUrl}
-                canonical={`https://dinoempire.my/urun/${product.slug || product.id}`}
+                canonical={`https://dinoempire.my/produk/${product.slug || product.id}`}
                 structuredData={structuredData}
             />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -246,7 +246,7 @@ export function ProductDetailPage() {
                     <ChevronRight size={14} />
                     {product.kategori && (
                         <>
-                            <Link to={`/magaza?kategori=${product.kategori.slug || product.kategori.id}`} className="hover:text-corporate-black transition-colors">
+                            <Link to={`/kedai?kategori=${product.kategori.slug || product.kategori.id}`} className="hover:text-corporate-black transition-colors">
                                 {product.kategori.ad}
                             </Link>
                             <ChevronRight size={14} />

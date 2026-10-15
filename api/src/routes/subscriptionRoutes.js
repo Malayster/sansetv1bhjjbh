@@ -29,10 +29,6 @@ router.post('/:id/cancel', async (c) => {
   return adapt(controller.cancel)(c);
 });
 
-router.get('/admin/list', async (c) => {
-  const prisma = getPrisma(c.env);
-  const controller = new SubscriptionController(prisma);
-  return adapt(controller.adminList)(c);
-});
+// Senarai admin dipindahkan ke /api/v1/admin/subscriptions (dilindungi adminAuth).
 
 export default router;

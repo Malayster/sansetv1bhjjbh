@@ -18,7 +18,7 @@ export function SettingsProvider({ children }) {
         announcement_bar: {
             active: true,
             text: "PENGHANTARAN PERCUMA ke seluruh Semenanjung untuk pesanan RM100 ke atas! Terus dari Kilang Kuala Ketil.",
-            link: "/magaza",
+            link: "/kedai",
             theme: "amber"
         },
         info_kedai: {
