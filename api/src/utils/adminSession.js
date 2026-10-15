@@ -1,51 +1,112 @@
-import { SignJWT, jwtVerify } from 'jose';
 import { timingSafeEqual } from './timingSafeEqual.js';
 
 /**
  * Sesi pentadbir (log masuk PIN / OTP).
  *
- * Token ialah JWT HS256 yang ditandatangani dengan secret `ADMIN_SESSION_SECRET`
- * (set melalui `npx wrangler secret put ADMIN_SESSION_SECRET`). Tanpa secret ini
- * log masuk PIN/OTP dimatikan (fail closed).
+ * Menggunakan Web Crypto API asli (HMAC-SHA256 & PBKDF2) yang disokong secara standard
+ * oleh Cloudflare Workers dan Node.js tanpa sebarang dependensi luar (zero external dependencies).
+ * Token ditandatangani dengan secret `ADMIN_SESSION_SECRET` (set melalui `npx wrangler secret put ADMIN_SESSION_SECRET`).
  */
 
 const ISSUER = 'dinoempire-admin';
 const AUDIENCE = 'dinoempire-admin-api';
-const SESSION_TTL = '12h';
+const SESSION_TTL_SECONDS = 12 * 3600; // 12 jam
 
-function secretKey(env) {
+const b64UrlEncode = (data) => {
+    let str;
+    if (typeof data === 'string') {
+        str = btoa(data);
+    } else {
+        str = btoa(String.fromCharCode(...new Uint8Array(data)));
+    }
+    return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+const b64UrlDecode = (str) => {
+    const padded = str + '='.repeat((4 - (str.length % 4)) % 4);
+    const standard = padded.replace(/-/g, '+').replace(/_/g, '/');
+    return atob(standard);
+};
+
+const b64UrlDecodeToBytes = (str) => {
+    const decoded = b64UrlDecode(str);
+    return Uint8Array.from(decoded, (c) => c.charCodeAt(0));
+};
+
+function secretKeyString(env) {
     const secret = env?.ADMIN_SESSION_SECRET;
     if (!secret || secret.length < 32) return null;
-    return new TextEncoder().encode(secret);
+    return secret;
 }
 
 export function isSessionConfigured(env) {
-    return secretKey(env) !== null;
+    return secretKeyString(env) !== null;
 }
 
 export async function signAdminSession(env, email, method) {
-    const key = secretKey(env);
-    if (!key) throw new Error('ADMIN_SESSION_SECRET belum dikonfigurasi.');
-    return new SignJWT({ email, method })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuer(ISSUER)
-        .setAudience(AUDIENCE)
-        .setSubject(email)
-        .setIssuedAt()
-        .setExpirationTime(SESSION_TTL)
-        .sign(key);
+    const secret = secretKeyString(env);
+    if (!secret) throw new Error('ADMIN_SESSION_SECRET belum dikonfigurasi.');
+
+    const now = Math.floor(Date.now() / 1000);
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const payload = {
+        iss: ISSUER,
+        aud: AUDIENCE,
+        sub: email,
+        email,
+        method,
+        iat: now,
+        exp: now + SESSION_TTL_SECONDS
+    };
+
+    const encodedHeader = b64UrlEncode(JSON.stringify(header));
+    const encodedPayload = b64UrlEncode(JSON.stringify(payload));
+    const dataToSign = `${encodedHeader}.${encodedPayload}`;
+
+    const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(dataToSign));
+    return `${dataToSign}.${b64UrlEncode(sig)}`;
 }
 
 export async function verifyAdminSession(env, token) {
-    const key = secretKey(env);
-    if (!key || !token) return null;
+    const secret = secretKeyString(env);
+    if (!secret || !token) return null;
+
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [headerB64, payloadB64, sigB64] = parts;
+
     try {
-        const { payload } = await jwtVerify(token, key, {
-            issuer: ISSUER,
-            audience: AUDIENCE,
-            algorithms: ['HS256'],
-        });
-        return { email: payload.email, sub: payload.sub, method: payload.method };
+        const header = JSON.parse(b64UrlDecode(headerB64));
+        if (header.alg !== 'HS256') return null;
+
+        const key = await crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify']
+        );
+
+        const sigBytes = b64UrlDecodeToBytes(sigB64);
+        const dataBytes = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+        const isValid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
+        if (!isValid) return null;
+
+        const payload = JSON.parse(b64UrlDecode(payloadB64));
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.exp && now > payload.exp) return null;
+        if (payload.iss && payload.iss !== ISSUER) return null;
+        if (payload.aud && payload.aud !== AUDIENCE) return null;
+
+        return { email: payload.email || payload.sub, sub: payload.sub, method: payload.method };
     } catch {
         return null;
     }
@@ -81,7 +142,7 @@ export async function verifyPin(stored, input) {
     return timingSafeEqual(toB64(bits), hashB64);
 }
 
-/** Kod OTP 6 digit menggunakan CSPRNG (bukan Math.random). */
+/** Kod OTP 6 digit menggunakan CSPRNG. */
 export function generateOtp() {
     const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
     return n.toString().padStart(6, '0');
