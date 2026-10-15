@@ -167,7 +167,7 @@ export function AdminDashboardPage() {
                 api.get('/api/v1/admin/products').catch(() => ({ data: { data: [] } })),
                 api.get('/api/v1/admin/orders').catch(() => ({ data: { data: [] } })),
                 api.get('/api/v1/admin/categories').catch(() => api.get('/api/v1/categories')).catch(() => ({ data: [] })),
-                api.get('/api/v1/settings').catch(() => ({ data: {} })),
+                api.get('/api/v1/admin/settings').catch(() => api.get('/api/v1/settings')).catch(() => ({ data: {} })),
                 api.get('/api/v1/admin/financial-trajectory').catch(() => ({ data: { data: null } })),
                 api.get('/api/v1/admin/analytics').catch(() => ({ data: { data: null } })),
                 api.get('/api/v1/admin/inventory-health').catch(() => ({ data: { data: null } })),
@@ -419,8 +419,8 @@ export function AdminDashboardPage() {
     const handleChangePin = async (e) => {
         e.preventDefault();
         setPinFeedback({ type: '', message: '' });
-        if (!pinForm.newPin || pinForm.newPin.length < 4) {
-            setPinFeedback({ type: 'error', message: 'PIN baharu mesti sekurang-kurangnya 4 angka/aksara.' });
+        if (!pinForm.newPin || pinForm.newPin.length < 6) {
+            setPinFeedback({ type: 'error', message: 'PIN baharu mesti sekurang-kurangnya 6 angka/aksara.' });
             return;
         }
         if (pinForm.newPin !== pinForm.confirmPin) {

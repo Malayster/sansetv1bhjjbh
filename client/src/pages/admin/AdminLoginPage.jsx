@@ -55,19 +55,16 @@ export function AdminLoginPage() {
             const res = await api.post('/api/v1/admin/verify-otp', {
                 email: email.trim(),
                 otp: otpCode.trim()
-            }).catch(() => null);
+            });
 
-            const isSuccess = res?.data?.status === 'success' || (otpCode.trim().length === 6 && (res?.data?.token || true));
-
-            if (isSuccess) {
-                const token = res?.data?.token || 'dino_cf_session_' + Date.now();
+            if (res?.data?.status === 'success' && res?.data?.token) {
                 localStorage.setItem('dino_admin_auth', 'true');
                 localStorage.setItem('dino_admin_email', email.trim());
-                localStorage.setItem('token', token);
+                localStorage.setItem('token', res.data.token);
                 localStorage.setItem('dino_admin_login_time', new Date().toISOString());
                 navigate('/admin');
             } else {
-                setError('Kod OTP tidak sah atau telah tamat tempoh. Sila cuba lagi.');
+                setError(res?.data?.errorMessage || 'Kod OTP tidak sah atau telah tamat tempoh. Sila cuba lagi.');
             }
         } catch (err) {
             setError(err?.response?.data?.errorMessage || 'Pengesahan OTP gagal. Sila semak kod anda.');
@@ -86,23 +83,19 @@ export function AdminLoginPage() {
             const res = await api.post('/api/v1/admin/login', {
                 email: email.trim(),
                 pin: pin.trim()
-            }).catch(() => null);
+            });
 
-            // Semak PIN daripada backend atau PIN tersimpan
-            const savedPin = localStorage.getItem('dino_custom_admin_pw');
-            const isValid = res?.data?.status === 'success' || (savedPin ? pin === savedPin : pin.length >= 6);
-
-            if (isValid) {
+            if (res?.data?.status === 'success' && res?.data?.token) {
                 localStorage.setItem('dino_admin_auth', 'true');
-                localStorage.setItem('dino_admin_email', email.trim() || 'admin@dinoempire.my');
-                if (res?.data?.token) localStorage.setItem('token', res.data.token);
+                localStorage.setItem('dino_admin_email', res.data.user?.email || email.trim() || 'admin@dinoempire.my');
+                localStorage.setItem('token', res.data.token);
                 localStorage.setItem('dino_admin_login_time', new Date().toISOString());
                 navigate('/admin');
             } else {
-                setError('Kelayakan pentadbir tidak tepat. Sila pastikan e-mel dan PIN betul.');
+                setError(res?.data?.errorMessage || 'Kelayakan pentadbir tidak tepat. Sila pastikan PIN betul.');
             }
         } catch (err) {
-            setError(err?.response?.data?.errorMessage || 'Log masuk gagal.');
+            setError(err?.response?.data?.errorMessage || 'PIN keselamatan tidak sah atau terlalu banyak cubaan gagal.');
         } finally {
             setLoading(false);
         }

@@ -81,7 +81,12 @@ export default function App() {
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   const adminRequest = async (url, options = {}) => {
-    const res = await fetch(url, { ...options, credentials: 'include' });
+    const token = localStorage.getItem('token');
+    const headers = { ...(options.headers || {}) };
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(url, { ...options, headers, credentials: 'include' });
     if (res.status === 401 || res.status === 403) { window.location.reload(); throw new Error('UNAUTHORIZED'); }
     return res;
   };
