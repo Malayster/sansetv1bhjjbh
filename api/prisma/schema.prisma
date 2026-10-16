@@ -204,7 +204,7 @@ model SistemAyarlari {
   logoMode              String?  @default("image")
   faviconUrl            String?
   adminPin              String?  @default("dino1234")
-  adminEmail            String?  @default("dinoempireenterprise@gmail.com")
+  adminEmail            String?  @default("afalfarizy@gmail.com")
   posKedah              Float?   @default(6.00)
   posSemenanjung        Float?   @default(8.00)
   posBorneo             Float?   @default(15.00)

@@ -23,9 +23,9 @@ const ROLE_PERMISSIONS = {
 
 function getRole(email, env = {}) {
   const e = (email || '').toLowerCase();
-  const superadmins = (env.SUPERADMIN_EMAILS || 'admin@dinoempire.my').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const superadmins = (env.SUPERADMIN_EMAILS || 'afalfarizy@gmail.com').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const staff = (env.STAFF_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  if (superadmins.includes(e) || e === 'admin@dinoempire.my' || e.includes('admin')) return 'superadmin';
+  if (superadmins.includes(e) || e === 'afalfarizy@gmail.com' || e === 'admin@dinoempire.my' || e.includes('admin')) return 'superadmin';
   if (staff.includes(e)) return 'staff';
   return 'admin';
 }

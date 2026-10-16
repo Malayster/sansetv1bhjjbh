@@ -28,7 +28,7 @@ export function AdminLoginPage() {
             api.get('/api/v1/admin/me').then((res) => {
                 if (res?.data?.status === 'success') {
                     localStorage.setItem('dino_admin_auth', 'true');
-                    localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
+                    localStorage.setItem('dino_admin_email', res.data.data?.email || 'afalfarizy@gmail.com');
                     navigate('/');
                 }
             }).catch(() => {});
@@ -113,7 +113,7 @@ export function AdminLoginPage() {
             if (res?.data?.status === 'success' && res?.data?.token) {
                 sessionStorage.removeItem('dino_admin_logged_out');
                 localStorage.setItem('dino_admin_auth', 'true');
-                localStorage.setItem('dino_admin_email', res.data.user?.email || email.trim() || 'admin@dinoempire.my');
+                localStorage.setItem('dino_admin_email', res.data.user?.email || email.trim() || 'afalfarizy@gmail.com');
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('dino_admin_login_time', new Date().toISOString());
                 navigate('/admin');
@@ -229,7 +229,7 @@ export function AdminLoginPage() {
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 required
                                                 className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors text-sm"
-                                                placeholder="admin@dinoempire.my"
+                                                placeholder="afalfarizy@gmail.com"
                                             />
                                         </div>
                                     </div>
@@ -316,7 +316,7 @@ export function AdminLoginPage() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
                                         className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors text-sm"
-                                        placeholder="admin@dinoempire.my"
+                                        placeholder="afalfarizy@gmail.com"
                                     />
                                 </div>
                             </div>

@@ -95,7 +95,7 @@ export function AdminDashboardPage() {
                     const res = await api.get('/api/v1/admin/me');
                     if (res?.data?.status === 'success') {
                         localStorage.setItem('dino_admin_auth', 'true');
-                        localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
+                        localStorage.setItem('dino_admin_email', res.data.data?.email || 'afalfarizy@gmail.com');
                         return;
                     }
                 } catch {

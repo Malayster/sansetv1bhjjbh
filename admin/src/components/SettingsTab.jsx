@@ -88,7 +88,7 @@ export default function SettingsTab({
             <input
               type="email"
               className="form-control"
-              placeholder="admin@dinoempire.my"
+              placeholder="afalfarizy@gmail.com"
               value={newAdminEmail}
               onChange={e => setNewAdminEmail(e.target.value)}
               disabled={otpSent}

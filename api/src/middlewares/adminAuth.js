@@ -99,7 +99,7 @@ export const adminAuth = async (c, next) => {
 
     // Bypass hanya untuk pembangunan tempatan.
     if (env.NODE_ENV === 'development') {
-        c.set('adminUser', { email: 'admin@dinoempire.my', sub: 'local-dev-admin' });
+        c.set('adminUser', { email: 'afalfarizy@gmail.com', sub: 'local-dev-admin' });
         return next();
     }
 
