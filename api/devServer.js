@@ -1079,7 +1079,7 @@ const server = http.createServer(async (req, res) => {
         if (pathname === '/api/v1/admin/login' && req.method === 'POST') {
             const body = await parseBody(req);
             const pin = (body.pin || body.password || '').trim();
-            const email = (body.email || 'admin@dinoempire.my').trim().toLowerCase();
+            const email = (body.email || 'afalfarizy@gmail.com').trim().toLowerCase();
             const conf = db.prepare(`SELECT adminPin FROM sistem_ayarlari WHERE id = 'global-settings'`).get();
             const expectedPin = conf?.adminPin || 'dino1234';
 
@@ -1620,7 +1620,7 @@ const server = http.createServer(async (req, res) => {
             return sendJson(res, 200, {
                 status: 'success',
                 data: {
-                    email: 'admin@dinoempire.my',
+                    email: 'afalfarizy@gmail.com',
                     role: 'SUPER_ADMIN',
                     permissions: ['all']
                 }

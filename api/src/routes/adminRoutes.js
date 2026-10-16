@@ -161,7 +161,7 @@ router.post('/login', async (c) => {
     }
 
     await kvDelete(db, 'pin_fail').catch(() => {});
-    const email = (row.adminEmail || 'admin@dinoempire.my').toLowerCase();
+    const email = (row.adminEmail || 'afalfarizy@gmail.com').toLowerCase();
     const session = await signAdminSession(c.env, email, 'pin');
     return c.json({ status: 'success', token: session, user: { email, role: getUserRole(email, c.env) } });
 });
