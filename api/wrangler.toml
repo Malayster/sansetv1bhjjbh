@@ -10,7 +10,7 @@ NODE_ENV = "production"
 CORS_ORIGIN = "https://dinoempire.my,https://www.dinoempire.my,https://admin.dinoempire.my,http://localhost:8000,http://localhost:5173"
 CLIENT_URL = "https://dinoempire.my"
 API_URL = "https://api.dinoempire.my"
-ORDER_NOTIFICATION_EMAIL = "dinoempire.my@gmail.com"
+ORDER_NOTIFICATION_EMAIL = "afalfarizy@gmail.com"
 CDN_URL = "https://cdn.dinoempire.my"
 
 # ── Pembayaran ToyyibPay ──
@@ -22,8 +22,8 @@ TOYYIBPAY_BASE_URL = "https://toyyibpay.com"
 TOYYIBPAY_CATEGORY_CODE = "b4gn1lj7"
 
 # ── E-mel / Penghantaran ──
-SMTP_SENDER = "DIN'O EMPIRE <dinoempire.my@gmail.com>"
-SMTP_REPLY_TO = "dinoempire.my@gmail.com"
+SMTP_SENDER = "DIN'O EMPIRE <afalfarizy@gmail.com>"
+SMTP_REPLY_TO = "afalfarizy@gmail.com"
 EMAIL_PROVIDER = "cloudflare"
 
 [[d1_databases]]
