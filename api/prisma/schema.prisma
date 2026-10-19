@@ -208,6 +208,8 @@ model SistemAyarlari {
   posKedah              Float?   @default(6.00)
   posSemenanjung        Float?   @default(8.00)
   posBorneo             Float?   @default(15.00)
+  theme                 String?
+  installPrompt         Int?     @default(1)
   updatedAt             DateTime @updatedAt
   @@map("sistem_ayarlari")
 }

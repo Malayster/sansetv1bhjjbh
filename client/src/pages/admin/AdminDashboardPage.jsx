@@ -47,7 +47,8 @@ import {
     ChevronRight,
     SlidersHorizontal,
     Share2,
-    PhoneCall
+    PhoneCall,
+    Palette
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
@@ -58,6 +59,7 @@ import { AnalyticsTab } from '../../components/admin/AnalyticsTab';
 import { CmsManagerTab } from '../../components/admin/CmsManagerTab';
 import { BioSettingsTab } from '../../components/admin/BioSettingsTab';
 import { ContactInfoTab } from '../../components/admin/ContactInfoTab';
+import { ThemeSettingsTab } from '../../components/admin/ThemeSettingsTab';
 import { InventoryHealthTab } from '../../components/admin/InventoryHealthTab';
 import { AuditLogsTab } from '../../components/admin/AuditLogsTab';
 import { SalesAnalyticsCharts } from '../../components/admin/SalesAnalyticsCharts';
@@ -862,6 +864,7 @@ export function AdminDashboardPage() {
                                     { id: 'categories', label: 'Kategori', icon: Layers, badge: categories.length },
                                     { id: 'returns', label: 'Pemulangan', icon: RotateCcw },
                                     { id: 'settings', label: 'Tetapan Kedai', icon: Settings },
+                                    { id: 'theme', label: 'Tema & Warna', icon: Palette },
                                     { id: 'audit', label: 'Jejak Audit', icon: ShieldCheck }
                                 ].map(item => {
                                     const Icon = item.icon;
@@ -954,6 +957,7 @@ export function AdminDashboardPage() {
                         { id: 'categories', label: 'Kategori', icon: Layers, badge: categories.length },
                         { id: 'returns', label: 'Pemulangan', icon: RotateCcw },
                         { id: 'settings', label: 'Tetapan Kedai', icon: Settings },
+                        { id: 'theme', label: 'Tema & Warna', icon: Palette },
                         { id: 'audit', label: 'Jejak Audit', icon: ShieldCheck }
                     ].map(item => {
                         const Icon = item.icon;
@@ -1361,6 +1365,13 @@ export function AdminDashboardPage() {
                         settingsData={settings}
                         cmsData={cmsContent}
                         onSaveSuccess={loadAllData}
+                        showNotif={showNotif}
+                    />
+                )}
+
+                {/* Tab Tetapan Tema & Warna */}
+                {activeTab === 'theme' && (
+                    <ThemeSettingsTab
                         showNotif={showNotif}
                     />
                 )}
