@@ -308,9 +308,9 @@ export function AdminDashboardPage() {
             // abaikan jika ralat rangkaian
         }
 
-        // 4. Arahkan pengguna ke endpoint rasmi Cloudflare Access logout
+        // 4. Arahkan pengguna ke endpoint /logout (yang membersihkan Clear-Site-Data & kuki sebelum ke /cdn-cgi/access/logout)
         if (window.location.hostname === 'admin.dinoempire.my') {
-            window.location.assign('/cdn-cgi/access/logout');
+            window.location.assign('/logout');
         } else {
             window.location.assign('/login');
         }
