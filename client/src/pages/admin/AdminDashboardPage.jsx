@@ -72,6 +72,7 @@ export function AdminDashboardPage() {
     const [notification, setNotification] = useState('');
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+    const [isAuthVerified, setIsAuthVerified] = useState(false);
 
     // Pengendali pemilihan tab dengan Auto-Hide untuk mobile drawer
     const handleSelectTab = (tabId) => {
@@ -79,36 +80,42 @@ export function AdminDashboardPage() {
         setIsMobileDrawerOpen(false);
     };
 
-    // Semak pengesahan admin
+    // Semak pengesahan admin (Pelan 2: Wajib Sesi Tab PIN/OTP + Sahkan dengan /api/v1/admin/me)
     useEffect(() => {
+        let isMounted = true;
         const checkAuth = async () => {
-            // Jika pengguna baru sahaja log keluar, elakkan daripada auto-login semula
+            // Hapus baki sesi kekal localStorage lama supaya wajib melalui sesi tab baharu
+            localStorage.removeItem('dino_admin_auth');
+            localStorage.removeItem('token');
+
             if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
-                navigate('/admin/login');
+                navigate('/login', { replace: true });
                 return;
             }
 
-            const isAuth = localStorage.getItem('dino_admin_auth');
-            if (isAuth) return;
-
-            // Jika di domain Cloudflare Access (admin.dinoempire.my), semak sesi Access
-            if (window.location.hostname === 'admin.dinoempire.my') {
-                try {
-                    const res = await api.get('/api/v1/admin/me');
-                    if (res?.data?.status === 'success') {
-                        localStorage.setItem('dino_admin_auth', 'true');
-                        localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
-                        return;
-                    }
-                } catch {
-                    // Access assertion belum sah
-                }
+            const hasTabSession = sessionStorage.getItem('dino_admin_auth') === 'true' && !!sessionStorage.getItem('token');
+            if (!hasTabSession) {
+                navigate('/login', { replace: true });
+                return;
             }
 
-            navigate('/admin/login');
+            try {
+                const res = await api.get('/api/v1/admin/me');
+                if (res?.data?.status === 'success') {
+                    if (isMounted) setIsAuthVerified(true);
+                    return;
+                }
+            } catch {
+                // Sesi tidak sah atau telah tamat tempoh
+            }
+
+            sessionStorage.removeItem('dino_admin_auth');
+            sessionStorage.removeItem('token');
+            navigate('/login', { replace: true });
         };
 
         checkAuth();
+        return () => { isMounted = false; };
     }, [navigate]);
 
     // Data sebenar daripada API & Database
@@ -261,11 +268,17 @@ export function AdminDashboardPage() {
     }, []);
 
     useEffect(() => {
-        loadAllData();
-    }, [loadAllData]);
+        if (isAuthVerified) {
+            loadAllData();
+        }
+    }, [isAuthVerified, loadAllData]);
 
     const handleLogout = async () => {
-        // 1. Bersihkan semua auth state di client browser
+        // 1. Bersihkan semua auth state di client browser (sessionStorage & localStorage)
+        sessionStorage.removeItem('dino_admin_auth');
+        sessionStorage.removeItem('dino_admin_email');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('dino_admin_login_time');
         localStorage.removeItem('dino_admin_auth');
         localStorage.removeItem('dino_admin_email');
         localStorage.removeItem('token');
@@ -762,6 +775,16 @@ export function AdminDashboardPage() {
                 return { label: durum || 'Diproses', cls: 'bg-slate-800 text-slate-300', icon: Clock };
         }
     };
+
+    if (!isAuthVerified) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-slate-300 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm font-bold text-white">Mengesahkan Sesi Keselamatan Pentadbir (2-Faktor)...</p>
+                <p className="text-xs text-slate-500 mt-1">DIN'O EMPIRE Executive Portal</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">

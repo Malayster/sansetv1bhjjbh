@@ -1,108 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Palette, Save, Check, Sparkles, Sun, Moon, Leaf, Droplets, Flame, Mountain, Waves, Star } from 'lucide-react';
+import { Palette, Save, Check, Sparkles, Sun, Moon, Layers } from 'lucide-react';
 import api from '../../lib/axios';
-
-const PRESETS = {
-    gelap: {
-        name: 'Gelap',
-        icon: Moon,
-        bg: '#0f172a',
-        card: '#1e293b',
-        section: '#0f172a',
-        text: '#f8fafc',
-        textMuted: '#94a3b8',
-        accent: '#10b981',
-        pattern: 'none'
-    },
-    terang: {
-        name: 'Terang',
-        icon: Sun,
-        bg: '#f8fafc',
-        card: '#ffffff',
-        section: '#f1f5f9',
-        text: '#0f172a',
-        textMuted: '#64748b',
-        accent: '#059669',
-        pattern: 'none'
-    },
-    hijau: {
-        name: 'Hijau',
-        icon: Leaf,
-        bg: '#052e16',
-        card: '#14532d',
-        section: '#052e16',
-        text: '#ecfdf5',
-        textMuted: '#86efac',
-        accent: '#22c55e',
-        pattern: 'dots'
-    },
-    biru: {
-        name: 'Biru',
-        icon: Droplets,
-        bg: '#0c1929',
-        card: '#1e3a5f',
-        section: '#0c1929',
-        text: '#f0f9ff',
-        textMuted: '#7dd3fc',
-        accent: '#3b82f6',
-        pattern: 'grid'
-    },
-    oren: {
-        name: 'Oren',
-        icon: Flame,
-        bg: '#1c0a00',
-        card: '#431407',
-        section: '#1c0a00',
-        text: '#fff7ed',
-        textMuted: '#fdba74',
-        accent: '#f97316',
-        pattern: 'none'
-    },
-    ungu: {
-        name: 'Ungu',
-        icon: Sparkles,
-        bg: '#1e0a3c',
-        card: '#3b0764',
-        section: '#1e0a3c',
-        text: '#faf5ff',
-        textMuted: '#d8b4fe',
-        accent: '#a855f7',
-        pattern: 'dots'
-    },
-    merah: {
-        name: 'Merah',
-        icon: Star,
-        bg: '#1c0505',
-        card: '#450a0a',
-        section: '#1c0505',
-        text: '#fef2f2',
-        textMuted: '#fca5a5',
-        accent: '#ef4444',
-        pattern: 'none'
-    },
-    cyan: {
-        name: 'Cyan',
-        icon: Waves,
-        bg: '#042f2e',
-        card: '#134e4a',
-        section: '#042f2e',
-        text: '#f0fdfa',
-        textMuted: '#5eead4',
-        accent: '#14b8a6',
-        pattern: 'grid'
-    },
-    emas: {
-        name: 'Emas',
-        icon: Mountain,
-        bg: '#1c1408',
-        card: '#422006',
-        section: '#1c1408',
-        text: '#fefce8',
-        textMuted: '#fde047',
-        accent: '#eab308',
-        pattern: 'none'
-    }
-};
+import { COLOR_TEMPLATES, TEMPLATE_CATEGORIES } from '../../lib/colorTemplates';
+import { useSettings } from '../../context/SettingsContext';
 
 const PATTERNS = [
     { id: 'none', name: 'Tiada' },
@@ -119,11 +19,19 @@ const PATTERN_SVG = {
     waves: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 0, 50 10 T 100 10' stroke='%23ffffff' stroke-opacity='0.05' fill='none'/%3E%3C/svg%3E")`
 };
 
-const DEFAULT_THEME = PRESETS.gelap;
+const DEFAULT_THEME = {
+    ...COLOR_TEMPLATES.gelapDefault.colors,
+    name: COLOR_TEMPLATES.gelapDefault.name,
+    templateId: COLOR_TEMPLATES.gelapDefault.id,
+    category: COLOR_TEMPLATES.gelapDefault.category,
+    pattern: 'none'
+};
 
 export function ThemeSettingsTab({ showNotif }) {
+    const { refreshSettingsAndCMS } = useSettings() || {};
     const [theme, setTheme] = useState(DEFAULT_THEME);
-    const [selectedPreset, setSelectedPreset] = useState('gelap');
+    const [selectedTemplateId, setSelectedTemplateId] = useState('gelap-default');
+    const [activeCategory, setActiveCategory] = useState('semua');
     const [isSaving, setIsSaving] = useState(false);
     const [installPrompt, setInstallPrompt] = useState(true);
 
@@ -131,9 +39,13 @@ export function ThemeSettingsTab({ showNotif }) {
         api.get('/api/v1/admin/settings').then(res => {
             const s = res.data?.data || {};
             if (s.theme) {
-                const t = typeof s.theme === 'string' ? JSON.parse(s.theme) : s.theme;
-                setTheme(t);
-                setSelectedPreset('tersuai');
+                try {
+                    const t = typeof s.theme === 'string' ? JSON.parse(s.theme) : s.theme;
+                    setTheme(prev => ({ ...prev, ...t }));
+                    setSelectedTemplateId(t.templateId || 'tersuai');
+                } catch {
+                    // abaikan jika JSON tidak sah
+                }
             }
             if (s.installPrompt !== undefined) {
                 setInstallPrompt(!!s.installPrompt);
@@ -141,16 +53,22 @@ export function ThemeSettingsTab({ showNotif }) {
         }).catch(() => {});
     }, []);
 
-    const applyPreset = (key) => {
-        if (PRESETS[key]) {
-            setTheme(PRESETS[key]);
-            setSelectedPreset(key);
-        }
+    const applyTemplate = (tpl) => {
+        if (!tpl) return;
+        setTheme(prev => ({
+            ...prev,
+            ...tpl.colors,
+            name: tpl.name,
+            templateId: tpl.id,
+            category: tpl.category,
+            pattern: prev.pattern || 'none'
+        }));
+        setSelectedTemplateId(tpl.id);
     };
 
     const updateField = (field, value) => {
         setTheme(prev => ({ ...prev, [field]: value }));
-        setSelectedPreset('tersuai');
+        setSelectedTemplateId('tersuai');
     };
 
     const handleSave = async () => {
@@ -160,13 +78,23 @@ export function ThemeSettingsTab({ showNotif }) {
                 theme: JSON.stringify(theme),
                 installPrompt
             });
-            if (showNotif) showNotif('Tema berjaya disimpan!');
+            if (typeof refreshSettingsAndCMS === 'function') {
+                await refreshSettingsAndCMS();
+            }
+            if (showNotif) showNotif('Tema & penampilan laman web berjaya disimpan!');
         } catch (err) {
             alert('Ralat menyimpan tema: ' + (err.response?.data?.errorMessage || err.message));
         } finally {
             setIsSaving(false);
         }
     };
+
+    const isLightMode = theme.category === 'terang' || theme.templateId === 'minimal' || (theme.bg && theme.bg.toLowerCase().startsWith('#f'));
+
+    const allTemplates = Object.values(COLOR_TEMPLATES);
+    const filteredTemplates = activeCategory === 'semua'
+        ? allTemplates
+        : allTemplates.filter(t => t.category === activeCategory);
 
     const ColorField = ({ label, field }) => (
         <div>
@@ -196,60 +124,156 @@ export function ThemeSettingsTab({ showNotif }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
                 <div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider mb-2">
                         <Palette size={13} />
-                        TEMA & PENAMPILAN
+                        TEMA & PENAMPILAN (12 TEMPLATE)
                     </div>
-                    <h2 className="text-2xl font-black text-white">Warna Website</h2>
-                    <p className="text-sm text-slate-400 mt-1">Pilih template warna atau sesuaikan sendiri. Homepage akan mengikut tetapan ini.</p>
+                    <h2 className="text-2xl font-black text-white">Mod Gelap / Terang & Warna Website</h2>
+                    <p className="text-sm text-slate-400 mt-1">Pilih Mod Gelap (Dark Mode), Mod Terang (Light Mode), atau sesuaikan 12 template warna rasmi.</p>
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer"
                 >
                     <Save size={15} />
                     {isSaving ? 'Menyimpan...' : 'Simpan Tema'}
                 </button>
             </div>
 
-            {/* Template Warna */}
+            {/* Suis Pantas Mod Gelap (Dark Mode) vs Mod Terang (Light Mode) */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-                <h3 className="font-bold text-sm text-white mb-1">Template Warna</h3>
-                <p className="text-xs text-slate-400 mb-4">Klik untuk guna template. Warna akan diisi automatik.</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                            {isLightMode ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-emerald-400" />}
+                            <span>Mod Penampilan Pantas (Dark Mode / Light Mode)</span>
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-1">
+                            Tukar pantas antara tema latar gelap atau tema latar terang sebelum menekan Simpan Tema.
+                        </p>
+                    </div>
+                    <div className="inline-flex p-1 rounded-xl bg-slate-950 border border-slate-800">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                applyTemplate(COLOR_TEMPLATES.gelapDefault);
+                                setActiveCategory('gelap');
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                !isLightMode
+                                    ? 'bg-emerald-500 text-slate-950 shadow'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <Moon size={14} />
+                            <span>Mod Gelap (Dark)</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                applyTemplate(COLOR_TEMPLATES.terangDefault);
+                                setActiveCategory('terang');
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                isLightMode
+                                    ? 'bg-amber-400 text-slate-950 shadow'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <Sun size={14} />
+                            <span>Mod Terang (Light)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* 12 Template Warna Rasmi (colorTemplates.js) */}
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h3 className="font-bold text-sm text-white mb-1">12 Template Warna Rasmi</h3>
+                        <p className="text-xs text-slate-400">Klik mana-mana template untuk mengisi kod warna secara automatik.</p>
+                    </div>
+
+                    {/* Penapis Kategori */}
+                    <div className="flex flex-wrap gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setActiveCategory('semua')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                activeCategory === 'semua'
+                                    ? 'bg-amber-500 text-slate-950'
+                                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                            }`}
+                        >
+                            Semua ({allTemplates.length})
+                        </button>
+                        {TEMPLATE_CATEGORIES.map(cat => (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                    activeCategory === cat.id
+                                        ? 'bg-amber-500 text-slate-950'
+                                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                                }`}
+                            >
+                                {cat.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(PRESETS).map(([key, p]) => {
-                        const Icon = p.icon;
-                        const isSelected = selectedPreset === key;
+                    {filteredTemplates.map((tpl) => {
+                        const c = tpl.colors;
+                        const isSelected = selectedTemplateId === tpl.id;
+                        const isLightCard = tpl.category === 'terang' || tpl.id === 'minimal';
+                        const Icon = isLightCard ? Sun : tpl.category === 'khas' ? Sparkles : tpl.category === 'aksen' ? Layers : Moon;
+
                         return (
                             <button
-                                key={key}
-                                onClick={() => applyPreset(key)}
-                                className={`relative p-4 rounded-xl border text-left transition ${
+                                key={tpl.id}
+                                type="button"
+                                onClick={() => applyTemplate(tpl)}
+                                className={`relative p-4 rounded-xl border text-left transition cursor-pointer ${
                                     isSelected
                                         ? 'border-amber-500 ring-2 ring-amber-500/30'
-                                        : 'border-slate-700 hover:border-slate-600'
+                                        : 'border-slate-700 hover:border-slate-500'
                                 }`}
-                                style={{ background: p.bg }}
+                                style={{ background: c.bg }}
                             >
                                 {isSelected && (
-                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                                    <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shadow">
                                         <Check size={12} className="text-black" />
                                     </div>
                                 )}
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: p.accent }}>
-                                        <Icon size={16} className="text-black" />
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: c.accent }}>
+                                        <Icon size={16} className="text-white" />
                                     </div>
-                                    <span className="font-bold text-sm" style={{ color: p.text }}>{p.name}</span>
+                                    <div>
+                                        <span className="font-bold text-sm block leading-tight" style={{ color: c.text }}>{tpl.name}</span>
+                                        <span className="text-[10px] uppercase tracking-wider font-mono opacity-80" style={{ color: c.textMuted }}>
+                                            {tpl.category === 'terang' ? 'Mod Terang' : tpl.category === 'gelap' ? 'Mod Gelap' : tpl.category}
+                                        </span>
+                                    </div>
                                 </div>
+                                <p className="text-[11px] mb-3 line-clamp-1" style={{ color: c.textMuted }}>
+                                    {tpl.description}
+                                </p>
                                 <div className="flex gap-1.5">
-                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.bg }} title="Latar" />
-                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.card }} title="Kad" />
-                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.accent }} title="Aksen" />
-                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.text }} title="Font" />
+                                    <div className="w-6 h-6 rounded-md border border-black/20 shadow-xs" style={{ background: c.bg }} title="Latar" />
+                                    <div className="w-6 h-6 rounded-md border border-black/20 shadow-xs" style={{ background: c.card }} title="Kad" />
+                                    <div className="w-6 h-6 rounded-md border border-black/20 shadow-xs" style={{ background: c.accent }} title="Aksen" />
+                                    <div className="w-6 h-6 rounded-md border border-black/20 shadow-xs" style={{ background: c.text }} title="Font" />
+                                    {c.border && (
+                                        <div className="w-6 h-6 rounded-md border border-black/20 shadow-xs" style={{ background: c.border }} title="Border" />
+                                    )}
                                 </div>
                             </button>
                         );
@@ -264,8 +288,9 @@ export function ThemeSettingsTab({ showNotif }) {
                     {PATTERNS.map(p => (
                         <button
                             key={p.id}
+                            type="button"
                             onClick={() => updateField('pattern', p.id)}
-                            className={`px-4 py-2 rounded-xl border text-xs font-bold transition ${
+                            className={`px-4 py-2 rounded-xl border text-xs font-bold transition cursor-pointer ${
                                 theme.pattern === p.id
                                     ? 'border-amber-500 bg-amber-500/10 text-amber-400'
                                     : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600'
@@ -279,7 +304,7 @@ export function ThemeSettingsTab({ showNotif }) {
 
             {/* Color Fields */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-                <h3 className="font-bold text-sm text-white mb-4">Ubah Suai Warna</h3>
+                <h3 className="font-bold text-sm text-white mb-4">Ubah Suai Warna Manual</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     <ColorField label="Latar (Background)" field="bg" />
                     <ColorField label="Kad / Grid" field="card" />
@@ -292,24 +317,35 @@ export function ThemeSettingsTab({ showNotif }) {
 
             {/* Preview */}
             <div
-                className="p-6 rounded-2xl border border-slate-800"
+                className="p-6 rounded-2xl border border-slate-800 transition-colors"
                 style={{ background: theme.bg, ...patternStyle }}
             >
-                <h3 className="font-bold text-sm mb-4" style={{ color: theme.text }}>Pratonton</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-sm" style={{ color: theme.text }}>
+                        Pratonton Langsung ({theme.name || 'Tersuai'})
+                    </h3>
+                    <span
+                        className="text-[11px] font-mono px-2.5 py-0.5 rounded-full border"
+                        style={{ color: theme.text, borderColor: theme.border || theme.accent }}
+                    >
+                        {isLightMode ? 'Mod Terang (Light)' : 'Mod Gelap (Dark)'}
+                    </span>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl" style={{ background: theme.card }}>
-                        <p className="font-bold text-sm" style={{ color: theme.text }}>Kad Produk</p>
-                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Penerangan ringkas</p>
+                    <div className="p-4 rounded-xl border" style={{ background: theme.card, borderColor: theme.border || 'transparent' }}>
+                        <p className="font-bold text-sm" style={{ color: theme.text }}>Kad Produk Kilang</p>
+                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Penerangan ringkas barangan terpilih DIN'O EMPIRE.</p>
                         <button
+                            type="button"
                             className="mt-3 px-4 py-2 rounded-lg text-xs font-bold"
-                            style={{ background: theme.accent, color: '#000' }}
+                            style={{ background: theme.accent, color: '#ffffff' }}
                         >
                             Beli Sekarang
                         </button>
                     </div>
-                    <div className="p-4 rounded-xl" style={{ background: theme.section }}>
-                        <p className="font-bold text-sm" style={{ color: theme.text }}>Section</p>
-                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Kandungan section</p>
+                    <div className="p-4 rounded-xl border" style={{ background: theme.section, borderColor: theme.border || 'transparent' }}>
+                        <p className="font-bold text-sm" style={{ color: theme.text }}>Section Kandungan</p>
+                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Pratonton kontras warna teks dan latar section.</p>
                     </div>
                 </div>
             </div>

@@ -52,9 +52,22 @@ export function SettingsProvider({ children }) {
             const rawSettings = setRes.data?.data || setRes.data || {};
 
             if (rawSettings && typeof rawSettings === 'object') {
+                let parsedTheme = null;
+                if (rawSettings.theme) {
+                    try {
+                        parsedTheme = typeof rawSettings.theme === 'string'
+                            ? JSON.parse(rawSettings.theme)
+                            : rawSettings.theme;
+                    } catch {
+                        parsedTheme = null;
+                    }
+                }
+
                 setSettings(prev => ({
                     ...prev,
                     ...rawSettings,
+                    parsedTheme: parsedTheme || prev.parsedTheme || null,
+                    installPrompt: rawSettings.installPrompt !== undefined ? !!rawSettings.installPrompt : true,
                     siteTitle: rawSettings.siteAdi || prev.siteTitle || "DIN'O EMPIRE",
                     companyName: rawSettings.siteAdi || prev.companyName || "DIN'O EMPIRE Enterprise",
                     currency: 'MYR',
@@ -79,6 +92,20 @@ export function SettingsProvider({ children }) {
     useEffect(() => {
         refreshSettingsAndCMS();
     }, []);
+
+    // Terapkan pemboleh ubah CSS tema pada root dokumen
+    useEffect(() => {
+        const t = settings?.parsedTheme;
+        if (!t || typeof document === 'undefined') return;
+        const root = document.documentElement;
+        if (t.bg) root.style.setProperty('--dino-bg', t.bg);
+        if (t.card) root.style.setProperty('--dino-card', t.card);
+        if (t.section) root.style.setProperty('--dino-section', t.section);
+        if (t.text) root.style.setProperty('--dino-text', t.text);
+        if (t.textMuted) root.style.setProperty('--dino-text-muted', t.textMuted);
+        if (t.accent) root.style.setProperty('--dino-accent', t.accent);
+        if (t.border) root.style.setProperty('--dino-border', t.border);
+    }, [settings?.parsedTheme]);
 
     // Kemas kini dinamik Favicon Browser untuk semua tag icon
     useEffect(() => {

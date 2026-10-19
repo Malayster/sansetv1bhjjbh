@@ -17,8 +17,9 @@ import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 
 import { Shop } from './pages/Shop';
 import { BoxBuilderPage } from './pages/BoxBuilderPage';
@@ -29,9 +30,27 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { TikTokBioPage } from './pages/TikTokBioPage';
 
 const isAdminDomain = typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my';
+const isLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+function AdminExternalRedirect() {
+    useEffect(() => {
+        window.location.replace('https://admin.dinoempire.my');
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-slate-950 text-slate-300 flex items-center justify-center p-6 text-center font-sans">
+            <div className="space-y-3">
+                <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-sm font-bold text-white">Mengarahkan ke Portal Keselamatan Pentadbir (Cloudflare Access)...</p>
+                <p className="text-xs text-slate-400">https://admin.dinoempire.my</p>
+            </div>
+        </div>
+    );
+}
 
 function AppLayout() {
     const location = useLocation();
+    const { settings } = useSettings();
     const isAdminRoute = isAdminDomain || location.pathname.startsWith('/admin') || location.pathname === '/login';
     const isBioRoute = location.pathname === '/tt' || location.pathname === '/bio';
     const isCustomLayout = isAdminRoute || isBioRoute;
@@ -41,8 +60,9 @@ function AppLayout() {
             <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
                 <main className="flex-1 min-h-0">
                     <Routes>
-                        <Route path="/" element={<AdminDashboardPage />} />
                         <Route path="/login" element={<AdminLoginPage />} />
+                        <Route path="/admin/login" element={<AdminLoginPage />} />
+                        <Route path="/" element={<AdminDashboardPage />} />
                         <Route path="/admin" element={<AdminDashboardPage />} />
                         <Route path="/admin/*" element={<AdminDashboardPage />} />
                         <Route path="*" element={<AdminDashboardPage />} />
@@ -52,8 +72,14 @@ function AppLayout() {
         );
     }
 
+    const themeBg = settings?.parsedTheme?.bg || '#020507';
+    const themeText = settings?.parsedTheme?.text || '#ffffff';
+
     return (
-        <div className="min-h-screen bg-[#020507] text-white flex flex-col">
+        <div
+            className="min-h-screen flex flex-col transition-colors duration-300"
+            style={{ backgroundColor: themeBg, color: themeText }}
+        >
             {!isCustomLayout && <Header />}
             <main className="flex-1 min-h-0">
                 <Routes>
@@ -78,10 +104,10 @@ function AppLayout() {
                     <Route path="/soalan-lazim" element={<FAQPage />} />
                     <Route path="/tentang" element={<AboutPage />} />
 
-                    <Route path="/login" element={<AdminLoginPage />} />
-                    <Route path="/admin/login" element={<AdminLoginPage />} />
-                    <Route path="/admin" element={<AdminDashboardPage />} />
-                    <Route path="/admin/*" element={<AdminDashboardPage />} />
+                    <Route path="/login" element={isLocalhost ? <AdminLoginPage /> : <AdminExternalRedirect />} />
+                    <Route path="/admin/login" element={isLocalhost ? <AdminLoginPage /> : <AdminExternalRedirect />} />
+                    <Route path="/admin" element={isLocalhost ? <AdminDashboardPage /> : <AdminExternalRedirect />} />
+                    <Route path="/admin/*" element={isLocalhost ? <AdminDashboardPage /> : <AdminExternalRedirect />} />
 
                     <Route path="/pulangan" element={<LegalPage title="Syarat Pemulangan" contentKey="iade-degisim" />} />
                     <Route path="/penghantaran" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="kargo-bilgileri" />} />

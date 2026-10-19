@@ -6,9 +6,10 @@ import api from '../../lib/axios';
 
 export function AdminLoginPage() {
     const navigate = useNavigate();
-    const [loginMode, setLoginMode] = useState('otp'); // 'otp' | 'pin'
+    const [loginMode, setLoginMode] = useState('pin'); // 'pin' | 'otp'
     const [step, setStep] = useState('request'); // 'request' | 'verify'
     const [email, setEmail] = useState('');
+    const [cfAccessEmail, setCfAccessEmail] = useState('');
     const [otpCode, setOtpCode] = useState('');
     const [pin, setPin] = useState('');
     const [showPin, setShowPin] = useState(false);
@@ -18,18 +19,37 @@ export function AdminLoginPage() {
 
     const isExplicitlyLoggedOut = sessionStorage.getItem('dino_admin_logged_out') === 'true';
 
-    // Semak jika pengguna sudah diautentikasi oleh Cloudflare Access
+    // Pelan 2 (Keselamatan 2-Faktor):
+    // 1. Hapus baki localStorage lama supaya tiada auto-login kekal merentas tab.
+    // 2. Jika tab semasa sudah disahkan (sessionStorage), benarkan masuk.
+    // 3. Jika belum, praisi e-mel daripada Cloudflare Access (/api/v1/admin/me) tetapi wajibkan PIN/OTP.
     useEffect(() => {
+        localStorage.removeItem('dino_admin_auth');
+        localStorage.removeItem('token');
+
         if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
+            return;
+        }
+
+        const hasTabSession = sessionStorage.getItem('dino_admin_auth') === 'true' && !!sessionStorage.getItem('token');
+        if (hasTabSession) {
+            api.get('/api/v1/admin/me').then((res) => {
+                if (res?.data?.status === 'success') {
+                    const target = window.location.hostname === 'admin.dinoempire.my' ? '/' : '/admin';
+                    navigate(target, { replace: true });
+                }
+            }).catch(() => {
+                sessionStorage.removeItem('dino_admin_auth');
+                sessionStorage.removeItem('token');
+            });
             return;
         }
 
         if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
             api.get('/api/v1/admin/me').then((res) => {
-                if (res?.data?.status === 'success') {
-                    localStorage.setItem('dino_admin_auth', 'true');
-                    localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
-                    navigate('/');
+                if (res?.data?.status === 'success' && res.data.data?.email) {
+                    setCfAccessEmail(res.data.data.email);
+                    setEmail((prev) => prev || res.data.data.email);
                 }
             }).catch(() => {});
         }
@@ -37,7 +57,8 @@ export function AdminLoginPage() {
 
     const handleReAuthenticateAccess = () => {
         sessionStorage.removeItem('dino_admin_logged_out');
-        window.location.href = '/';
+        setError('');
+        setInfoMessage('Sila masukkan PIN keselamatan atau mohon kod OTP untuk membuka sesi baharu.');
     };
 
     // Langkah 1: Mohon Kod OTP ke E-mel Pentadbir
@@ -53,9 +74,7 @@ export function AdminLoginPage() {
 
         setLoading(true);
         try {
-            const res = await api.post('/api/v1/admin/send-otp', { email: email.trim() }).catch(() => null);
-            
-            // Jika backend memulangkan respon atau fallback tempatan
+            const res = await api.post('/api/v1/admin/send-otp', { email: email.trim() });
             setStep('verify');
             if (res?.data?.message) {
                 setInfoMessage(res.data.message);
@@ -69,7 +88,7 @@ export function AdminLoginPage() {
         }
     };
 
-    // Langkah 2: Sahkan Kod OTP dan Buka Sesi Pentadbir
+    // Langkah 2: Sahkan Kod OTP dan Buka Sesi Pentadbir (sessionStorage sahaja)
     const handleVerifyOtp = async (e) => {
         if (e) e.preventDefault();
         setError('');
@@ -83,11 +102,14 @@ export function AdminLoginPage() {
 
             if (res?.data?.status === 'success' && res?.data?.token) {
                 sessionStorage.removeItem('dino_admin_logged_out');
-                localStorage.setItem('dino_admin_auth', 'true');
-                localStorage.setItem('dino_admin_email', email.trim());
-                localStorage.setItem('token', res.data.token);
-                localStorage.setItem('dino_admin_login_time', new Date().toISOString());
-                navigate('/admin');
+                sessionStorage.setItem('dino_admin_auth', 'true');
+                sessionStorage.setItem('dino_admin_email', email.trim());
+                sessionStorage.setItem('token', res.data.token);
+                sessionStorage.setItem('dino_admin_login_time', new Date().toISOString());
+                localStorage.removeItem('dino_admin_auth');
+                localStorage.removeItem('token');
+                const target = window.location.hostname === 'admin.dinoempire.my' ? '/' : '/admin';
+                navigate(target, { replace: true });
             } else {
                 setError(res?.data?.errorMessage || 'Kod OTP tidak sah atau telah tamat tempoh. Sila cuba lagi.');
             }
@@ -98,7 +120,7 @@ export function AdminLoginPage() {
         }
     };
 
-    // Alternatif: Log Masuk Menggunakan PIN Keselamatan Pentadbir
+    // Alternatif: Log Masuk Menggunakan PIN Keselamatan Pentadbir (sessionStorage sahaja)
     const handlePinLogin = async (e) => {
         if (e) e.preventDefault();
         setError('');
@@ -112,11 +134,14 @@ export function AdminLoginPage() {
 
             if (res?.data?.status === 'success' && res?.data?.token) {
                 sessionStorage.removeItem('dino_admin_logged_out');
-                localStorage.setItem('dino_admin_auth', 'true');
-                localStorage.setItem('dino_admin_email', res.data.user?.email || email.trim() || 'admin@dinoempire.my');
-                localStorage.setItem('token', res.data.token);
-                localStorage.setItem('dino_admin_login_time', new Date().toISOString());
-                navigate('/admin');
+                sessionStorage.setItem('dino_admin_auth', 'true');
+                sessionStorage.setItem('dino_admin_email', res.data.user?.email || email.trim() || 'admin@dinoempire.my');
+                sessionStorage.setItem('token', res.data.token);
+                sessionStorage.setItem('dino_admin_login_time', new Date().toISOString());
+                localStorage.removeItem('dino_admin_auth');
+                localStorage.removeItem('token');
+                const target = window.location.hostname === 'admin.dinoempire.my' ? '/' : '/admin';
+                navigate(target, { replace: true });
             } else {
                 setError(res?.data?.errorMessage || 'Kelayakan pentadbir tidak tepat. Sila pastikan PIN betul.');
             }
@@ -143,12 +168,21 @@ export function AdminLoginPage() {
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tight">DIN'O EMPIRE</h1>
                     <p className="text-xs font-semibold uppercase tracking-wider text-amber-500/90 mt-1">
-                        Portal Pentadbir Eksekutif
+                        Portal Pentadbir Eksekutif (Keselamatan 2-Faktor)
                     </p>
                 </div>
 
                 {/* Card Container */}
                 <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/80">
+                    {cfAccessEmail && (
+                        <div className="mb-5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-2 text-xs text-emerald-300">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                                <span>Cloudflare Access Aktif: <strong className="text-white">{cfAccessEmail}</strong></span>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
                         <div>
                             <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -158,7 +192,7 @@ export function AdminLoginPage() {
                             <p className="text-xs text-slate-400 mt-0.5">
                                 {loginMode === 'otp' 
                                     ? (step === 'request' ? 'Masukkan e-mel untuk menerima kod OTP' : 'Masukkan kod OTP 6-digit anda')
-                                    : 'Masukkan PIN keselamatan pentadbir'
+                                    : 'Masukkan PIN keselamatan pentadbir untuk sesi ini'
                                 }
                             </p>
                         </div>
@@ -183,7 +217,7 @@ export function AdminLoginPage() {
                                 <span>Anda telah berjaya log keluar daripada sesi pentadbir.</span>
                             </div>
                             <p className="text-slate-300">
-                                Sesi anda telah ditamatkan dengan selamat. Klik butang di bawah jika anda ingin mengakses semula.
+                                Sesi anda telah ditamatkan dengan selamat. Masukkan PIN atau OTP di bawah jika anda ingin mengakses semula.
                             </p>
                             <button
                                 type="button"
@@ -191,7 +225,7 @@ export function AdminLoginPage() {
                                 className="w-full mt-2 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                             >
                                 <RefreshCw size={13} />
-                                <span>Log Masuk Semula ke Dashboard</span>
+                                <span>Aktifkan Borang Log Masuk</span>
                             </button>
                         </div>
                     )}
