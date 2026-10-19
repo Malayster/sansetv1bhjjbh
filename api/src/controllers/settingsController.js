@@ -62,7 +62,10 @@ export class SettingsController {
         if (body.posBorneo !== undefined) data.posBorneo = parseFloat(body.posBorneo);
 
         if (body.hakkindaMetni !== undefined) data.hakkindaMetni = body.hakkindaMetni || null;
-        // adminPin & adminEmail hanya boleh ditukar melalui /admin/change-pin dan /admin/verify-email-change.
+
+        // Tema
+        if (body.theme !== undefined) data.theme = body.theme;
+        if (body.installPrompt !== undefined) data.installPrompt = body.installPrompt ? 1 : 0;
 
         const saved = await this.settingsService.updateSettings(data);
         const { adminPin, ...settings } = saved || {};
