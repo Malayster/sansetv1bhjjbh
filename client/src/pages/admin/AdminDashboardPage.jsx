@@ -48,10 +48,13 @@ import {
     SlidersHorizontal,
     Share2,
     PhoneCall,
-    Palette
+    Palette,
+    Sun,
+    Moon
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
+import { useSettings } from '../../context/SettingsContext';
 
 // Komponen Modul Tambahan Pentadbir DIN'O EMPIRE
 import { FinancialTrajectoryTab } from '../../components/admin/FinancialTrajectoryTab';
@@ -68,6 +71,8 @@ import ImageUploader from '../../components/common/ImageUploader';
 
 export function AdminDashboardPage() {
     const navigate = useNavigate();
+    const { colorMode, setColorMode, toggleColorMode } = useSettings();
+    const [isAuthVerified, setIsAuthVerified] = useState(false);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [notification, setNotification] = useState('');
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -79,36 +84,54 @@ export function AdminDashboardPage() {
         setIsMobileDrawerOpen(false);
     };
 
-    // Semak pengesahan admin
+    // Semak pengesahan admin secara ketat melalui API & Cloudflare Access
     useEffect(() => {
+        let isMounted = true;
         const checkAuth = async () => {
-            // Jika pengguna baru sahaja log keluar, elakkan daripada auto-login semula
-            if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
-                navigate('/admin/login');
+            const host = window.location.hostname;
+            const isLocal = host === 'localhost' || host === '127.0.0.1';
+
+            // Paksa domain admin rasmi supaya wajib melepasi Cloudflare Access
+            if (!isLocal && host !== 'admin.dinoempire.my') {
+                window.location.replace('https://admin.dinoempire.my');
                 return;
             }
 
-            const isAuth = localStorage.getItem('dino_admin_auth');
-            if (isAuth) return;
-
-            // Jika di domain Cloudflare Access (admin.dinoempire.my), semak sesi Access
-            if (window.location.hostname === 'admin.dinoempire.my') {
-                try {
-                    const res = await api.get('/api/v1/admin/me');
-                    if (res?.data?.status === 'success') {
-                        localStorage.setItem('dino_admin_auth', 'true');
-                        localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
-                        return;
-                    }
-                } catch {
-                    // Access assertion belum sah
-                }
+            // Jika pengguna baru sahaja log keluar, elakkan daripada auto-login semula
+            if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
+                localStorage.removeItem('dino_admin_auth');
+                localStorage.removeItem('dino_admin_email');
+                localStorage.removeItem('token');
+                navigate('/login', { replace: true });
+                return;
             }
 
-            navigate('/admin/login');
+            try {
+                const res = await api.get('/api/v1/admin/me');
+                if (res?.data?.status === 'success') {
+                    localStorage.setItem('dino_admin_auth', 'true');
+                    localStorage.setItem('dino_admin_email', res.data.data?.email || 'admin@dinoempire.my');
+                    if (isMounted) setIsAuthVerified(true);
+                    return;
+                }
+            } catch {
+                // Sesi JWT atau Cloudflare Access tidak sah / telah tamat tempoh
+            }
+
+            localStorage.removeItem('dino_admin_auth');
+            localStorage.removeItem('dino_admin_email');
+            localStorage.removeItem('token');
+            localStorage.removeItem('dino_admin_login_time');
+            if (isMounted) {
+                setIsAuthVerified(false);
+                navigate('/login', { replace: true });
+            }
         };
 
         checkAuth();
+        return () => {
+            isMounted = false;
+        };
     }, [navigate]);
 
     // Data sebenar daripada API & Database
@@ -261,8 +284,10 @@ export function AdminDashboardPage() {
     }, []);
 
     useEffect(() => {
-        loadAllData();
-    }, [loadAllData]);
+        if (isAuthVerified) {
+            loadAllData();
+        }
+    }, [isAuthVerified, loadAllData]);
 
     const handleLogout = async () => {
         // 1. Bersihkan semua auth state di client browser
@@ -271,9 +296,10 @@ export function AdminDashboardPage() {
         localStorage.removeItem('token');
         localStorage.removeItem('dino_admin_login_time');
         sessionStorage.setItem('dino_admin_logged_out', 'true');
+        setIsAuthVerified(false);
 
         // 2. Beri maklum balas visual kepada admin
-        showNotif('Melog keluar daripada sistem pentadbir...');
+        showNotif('Melog keluar daripada sistem pentadbir & Cloudflare Access...');
 
         // 3. Maklumkan backend API untuk hapus kuki
         try {
@@ -282,11 +308,11 @@ export function AdminDashboardPage() {
             // abaikan jika ralat rangkaian
         }
 
-        // 4. Arahkan pengguna keluar daripada admin
+        // 4. Arahkan pengguna ke endpoint rasmi Cloudflare Access logout
         if (window.location.hostname === 'admin.dinoempire.my') {
-            window.location.href = '/logout';
+            window.location.assign('/cdn-cgi/access/logout');
         } else {
-            window.location.href = 'https://dinoempire.my';
+            window.location.assign('/login');
         }
     };
 
@@ -763,6 +789,24 @@ export function AdminDashboardPage() {
         }
     };
 
+    if (!isAuthVerified) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
+                <SEO title="Pengesahan Keselamatan Pentadbir | DIN'O EMPIRE" />
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-xl">
+                    <ShieldCheck size={32} className="animate-pulse" />
+                </div>
+                <div className="flex items-center gap-2 text-white font-black text-lg">
+                    <Loader2 size={18} className="animate-spin text-amber-400" />
+                    <span>Mengesahkan Sesi Cloudflare Access &amp; Pentadbir...</span>
+                </div>
+                <p className="text-xs text-slate-400 mt-2 max-w-sm">
+                    Sila tunggu sebentar sementara sistem mengesahkan token keselamatan rasmi DIN&apos;O EMPIRE.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
             <SEO title="Papan Kawalan Pentadbir | DIN'O EMPIRE" />
@@ -802,6 +846,14 @@ export function AdminDashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={toggleColorMode}
+                        className="p-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 rounded-xl transition border border-amber-500/30 active:scale-95 cursor-pointer"
+                        title={colorMode === 'light' ? 'Tukar ke Mod Gelap (Dark Mode)' : 'Tukar ke Mod Terang (Light Mode)'}
+                    >
+                        {colorMode === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                    </button>
                     <button
                         onClick={loadAllData}
                         disabled={isLoadingData}
@@ -1043,8 +1095,37 @@ export function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    {/* 3 Butang Pintasan Boleh Disunting: Yahoo Mail, EasyParcel, ToyyibPay */}
+                    {/* 3 Butang Pintasan Boleh Disunting: Yahoo Mail, EasyParcel, ToyyibPay + Suis Light/Dark Mode */}
                     <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={toggleColorMode}
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 border border-amber-500/30 rounded-xl text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                            title={colorMode === 'light' ? 'Tukar ke Mod Gelap (Dark Mode)' : 'Tukar ke Mod Terang (Light Mode)'}
+                        >
+                            {colorMode === 'light' ? (
+                                <>
+                                    <Sun size={15} className="text-amber-400" />
+                                    <span>Mod Terang</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Moon size={15} className="text-amber-400" />
+                                    <span>Mod Gelap</span>
+                                </>
+                            )}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('theme')}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                            title="Buka Tetapan Tema & Warna Kedai"
+                        >
+                            <Palette size={14} className="text-amber-400" />
+                            <span>Tema &amp; Warna</span>
+                        </button>
+
                         <a
                             href={quickLinks.yahooMailUrl || 'https://mail.yahoo.com'}
                             target="_blank"
@@ -1920,7 +2001,88 @@ export function AdminDashboardPage() {
                     <div className="space-y-8 animate-in fade-in duration-300 max-w-5xl">
                         <div>
                             <h1 className="text-2xl md:text-3xl font-black text-white">Tetapan Kedai & Keselamatan DIN'O EMPIRE</h1>
-                            <p className="text-sm text-slate-400 mt-1">Urus identiti jenama, keselamatan akses pentadbir, talian bantuan pelanggan dan kos penghantaran.</p>
+                            <p className="text-sm text-slate-400 mt-1">Urus identiti jenama, mod paparan (Light / Dark Mode), keselamatan akses pentadbir, talian bantuan pelanggan dan kos penghantaran.</p>
+                        </div>
+
+                        {/* 0. SEKSYEN PAPARAN & MOD TEMA (LIGHT / DARK MODE) */}
+                        <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 md:p-8 space-y-5 shadow-xl">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                                        {colorMode === 'light' ? <Sun size={22} /> : <Moon size={22} />}
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-white">Tetapan Mod Gelap (Dark Mode) &amp; Mod Terang (Light Mode)</h2>
+                                        <p className="text-xs text-slate-400">Tukar mod paparan laman web secara serta-merta atau buka studio warna penuh.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('theme')}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition cursor-pointer shadow-lg shadow-amber-500/20"
+                                >
+                                    <Palette size={15} />
+                                    <span>Buka Studio Tema &amp; Warna Penuh</span>
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setColorMode('dark');
+                                        showNotif('Mod Gelap (Dark Mode) diaktifkan.');
+                                    }}
+                                    className={`flex items-center justify-between p-4 rounded-xl border text-left transition cursor-pointer ${
+                                        colorMode !== 'light'
+                                            ? 'bg-amber-500/15 border-amber-500 text-white shadow-lg shadow-amber-500/10'
+                                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-950 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                                            <Moon size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="font-black text-sm">Mod Gelap (Dark Mode)</div>
+                                            <div className="text-[11px] text-slate-400">Paparan eksklusif gelap emas DIN&apos;O EMPIRE</div>
+                                        </div>
+                                    </div>
+                                    {colorMode !== 'light' && (
+                                        <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase">
+                                            Aktif
+                                        </span>
+                                    )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setColorMode('light');
+                                        showNotif('Mod Terang (Light Mode) diaktifkan.');
+                                    }}
+                                    className={`flex items-center justify-between p-4 rounded-xl border text-left transition cursor-pointer ${
+                                        colorMode === 'light'
+                                            ? 'bg-amber-500/15 border-amber-500 text-white shadow-lg shadow-amber-500/10'
+                                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-300 flex items-center justify-center text-amber-600">
+                                            <Sun size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="font-black text-sm">Mod Terang (Light Mode)</div>
+                                            <div className="text-[11px] text-slate-400">Paparan cerah bersih siang hari</div>
+                                        </div>
+                                    </div>
+                                    {colorMode === 'light' && (
+                                        <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase">
+                                            Aktif
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         {/* 1. SEKSYEN KESELAMATAN & LOG MASUK PENTADBIR */}
