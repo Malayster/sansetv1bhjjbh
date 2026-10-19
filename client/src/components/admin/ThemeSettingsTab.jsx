@@ -1,44 +1,122 @@
 import React, { useState, useEffect } from 'react';
-import { Palette, Save, Check } from 'lucide-react';
+import { Palette, Save, Check, Sparkles, Sun, Moon, Leaf, Droplets, Flame, Mountain, Waves, Star } from 'lucide-react';
 import api from '../../lib/axios';
 
 const PRESETS = {
     gelap: {
         name: 'Gelap',
+        icon: Moon,
         bg: '#0f172a',
         card: '#1e293b',
         section: '#0f172a',
         text: '#f8fafc',
         textMuted: '#94a3b8',
-        accent: '#10b981'
+        accent: '#10b981',
+        pattern: 'none'
     },
     terang: {
         name: 'Terang',
+        icon: Sun,
         bg: '#f8fafc',
         card: '#ffffff',
         section: '#f1f5f9',
         text: '#0f172a',
         textMuted: '#64748b',
-        accent: '#059669'
+        accent: '#059669',
+        pattern: 'none'
     },
     hijau: {
         name: 'Hijau',
+        icon: Leaf,
         bg: '#052e16',
         card: '#14532d',
         section: '#052e16',
         text: '#ecfdf5',
         textMuted: '#86efac',
-        accent: '#22c55e'
+        accent: '#22c55e',
+        pattern: 'dots'
     },
     biru: {
         name: 'Biru',
+        icon: Droplets,
         bg: '#0c1929',
         card: '#1e3a5f',
         section: '#0c1929',
         text: '#f0f9ff',
         textMuted: '#7dd3fc',
-        accent: '#3b82f6'
+        accent: '#3b82f6',
+        pattern: 'grid'
+    },
+    oren: {
+        name: 'Oren',
+        icon: Flame,
+        bg: '#1c0a00',
+        card: '#431407',
+        section: '#1c0a00',
+        text: '#fff7ed',
+        textMuted: '#fdba74',
+        accent: '#f97316',
+        pattern: 'none'
+    },
+    ungu: {
+        name: 'Ungu',
+        icon: Sparkles,
+        bg: '#1e0a3c',
+        card: '#3b0764',
+        section: '#1e0a3c',
+        text: '#faf5ff',
+        textMuted: '#d8b4fe',
+        accent: '#a855f7',
+        pattern: 'dots'
+    },
+    merah: {
+        name: 'Merah',
+        icon: Star,
+        bg: '#1c0505',
+        card: '#450a0a',
+        section: '#1c0505',
+        text: '#fef2f2',
+        textMuted: '#fca5a5',
+        accent: '#ef4444',
+        pattern: 'none'
+    },
+    cyan: {
+        name: 'Cyan',
+        icon: Waves,
+        bg: '#042f2e',
+        card: '#134e4a',
+        section: '#042f2e',
+        text: '#f0fdfa',
+        textMuted: '#5eead4',
+        accent: '#14b8a6',
+        pattern: 'grid'
+    },
+    emas: {
+        name: 'Emas',
+        icon: Mountain,
+        bg: '#1c1408',
+        card: '#422006',
+        section: '#1c1408',
+        text: '#fefce8',
+        textMuted: '#fde047',
+        accent: '#eab308',
+        pattern: 'none'
     }
+};
+
+const PATTERNS = [
+    { id: 'none', name: 'Tiada' },
+    { id: 'dots', name: 'Titik' },
+    { id: 'grid', name: 'Grid' },
+    { id: 'diagonal', name: 'Diagonal' },
+    { id: 'waves', name: 'Ombak' }
+];
+
+const PATTERN_SVG = {
+    dots: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E")`,
+    grid: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1v38h38V1H1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+    diagonal: `url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 0h1L0 6V5z' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E")`,
+    waves: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 0, 50 10 T 100 10' stroke='%23ffffff' stroke-opacity='0.05' fill='none'/%3E%3C/svg%3E")`
 };
 
 const DEFAULT_THEME = PRESETS.gelap;
@@ -70,7 +148,7 @@ export function ThemeSettingsTab({ showNotif }) {
         }
     };
 
-    const updateColor = (field, value) => {
+    const updateField = (field, value) => {
         setTheme(prev => ({ ...prev, [field]: value }));
         setSelectedPreset('tersuai');
     };
@@ -97,19 +175,24 @@ export function ThemeSettingsTab({ showNotif }) {
                 <input
                     type="color"
                     value={theme[field] || '#000000'}
-                    onChange={(e) => updateColor(field, e.target.value)}
+                    onChange={(e) => updateField(field, e.target.value)}
                     className="w-10 h-10 rounded-lg border border-slate-700 cursor-pointer bg-transparent"
                 />
                 <input
                     type="text"
                     value={theme[field] || ''}
-                    onChange={(e) => updateColor(field, e.target.value)}
+                    onChange={(e) => updateField(field, e.target.value)}
                     className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
                     placeholder="#000000"
                 />
             </div>
         </div>
     );
+
+    const patternStyle = theme.pattern && theme.pattern !== 'none' ? {
+        backgroundImage: PATTERN_SVG[theme.pattern],
+        backgroundSize: theme.pattern === 'dots' ? '20px 20px' : theme.pattern === 'grid' ? '40px 40px' : 'auto'
+    } : {};
 
     return (
         <div className="space-y-6">
@@ -134,33 +217,48 @@ export function ThemeSettingsTab({ showNotif }) {
 
             {/* Presets */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-                <h3 className="font-bold text-sm text-white mb-4">Preset</h3>
+                <h3 className="font-bold text-sm text-white mb-4">Preset Warna</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {Object.entries(PRESETS).map(([key, p]) => {
+                        const Icon = p.icon;
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => applyPreset(key)}
+                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition ${
+                                    selectedPreset === key
+                                        ? 'border-amber-500 bg-amber-500/10'
+                                        : 'border-slate-700 bg-slate-950 hover:border-slate-600'
+                                }`}
+                            >
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: p.accent }}>
+                                    <Icon size={16} className="text-black" />
+                                </div>
+                                <span className={`text-xs font-bold ${selectedPreset === key ? 'text-amber-400' : 'text-slate-300'}`}>{p.name}</span>
+                                {selectedPreset === key && <Check size={12} className="text-amber-400" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Pattern */}
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
+                <h3 className="font-bold text-sm text-white mb-4">Corak Latar (SVG Pattern)</h3>
                 <div className="flex flex-wrap gap-3">
-                    {Object.entries(PRESETS).map(([key, p]) => (
+                    {PATTERNS.map(p => (
                         <button
-                            key={key}
-                            onClick={() => applyPreset(key)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition ${
-                                selectedPreset === key
+                            key={p.id}
+                            onClick={() => updateField('pattern', p.id)}
+                            className={`px-4 py-2 rounded-xl border text-xs font-bold transition ${
+                                theme.pattern === p.id
                                     ? 'border-amber-500 bg-amber-500/10 text-amber-400'
                                     : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600'
                             }`}
                         >
-                            <span className="w-4 h-4 rounded-full" style={{ background: p.accent }} />
-                            <span className="text-xs font-bold">{p.name}</span>
-                            {selectedPreset === key && <Check size={14} />}
+                            {p.name}
                         </button>
                     ))}
-                    <button
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition ${
-                            selectedPreset === 'tersuai'
-                                ? 'border-amber-500 bg-amber-500/10 text-amber-400'
-                                : 'border-slate-700 bg-slate-950 text-slate-300'
-                        }`}
-                    >
-                        <span className="text-xs font-bold">Tersuai</span>
-                        {selectedPreset === 'tersuai' && <Check size={14} />}
-                    </button>
                 </div>
             </div>
 
@@ -178,7 +276,10 @@ export function ThemeSettingsTab({ showNotif }) {
             </div>
 
             {/* Preview */}
-            <div className="p-6 rounded-2xl border border-slate-800" style={{ background: theme.bg }}>
+            <div
+                className="p-6 rounded-2xl border border-slate-800"
+                style={{ background: theme.bg, ...patternStyle }}
+            >
                 <h3 className="font-bold text-sm mb-4" style={{ color: theme.text }}>Pratonton</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl" style={{ background: theme.card }}>
