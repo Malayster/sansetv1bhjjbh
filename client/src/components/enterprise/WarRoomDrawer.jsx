@@ -305,7 +305,7 @@ export function WarRoomDrawer({ isOpen, onClose }) {
                 <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-between text-xs font-mono">
                     <span className="text-white/50">Port API: 8787 • Admin Console: 5173</span>
                     <a
-                        href={typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname) ? '/admin' : 'https://admin.dinoempire.my'}
+                        href="/admin"
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-bold transition"

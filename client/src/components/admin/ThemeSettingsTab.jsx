@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Palette, Save, Check, Sparkles, Sun, Moon, Leaf, Droplets, Flame, Mountain, Waves, Star } from 'lucide-react';
 import api from '../../lib/axios';
-import { useSettings } from '../../context/SettingsContext';
 
 const PRESETS = {
     gelap: {
@@ -123,7 +122,6 @@ const PATTERN_SVG = {
 const DEFAULT_THEME = PRESETS.gelap;
 
 export function ThemeSettingsTab({ showNotif }) {
-    const { colorMode, setColorMode, refreshSettingsAndCMS } = useSettings() || {};
     const [theme, setTheme] = useState(DEFAULT_THEME);
     const [selectedPreset, setSelectedPreset] = useState('gelap');
     const [isSaving, setIsSaving] = useState(false);
@@ -135,8 +133,7 @@ export function ThemeSettingsTab({ showNotif }) {
             if (s.theme) {
                 const t = typeof s.theme === 'string' ? JSON.parse(s.theme) : s.theme;
                 setTheme(t);
-                const matchingKey = Object.keys(PRESETS).find(k => PRESETS[k].name === t.name || PRESETS[k].bg === t.bg);
-                setSelectedPreset(matchingKey || 'tersuai');
+                setSelectedPreset('tersuai');
             }
             if (s.installPrompt !== undefined) {
                 setInstallPrompt(!!s.installPrompt);
@@ -148,8 +145,6 @@ export function ThemeSettingsTab({ showNotif }) {
         if (PRESETS[key]) {
             setTheme(PRESETS[key]);
             setSelectedPreset(key);
-            if (key === 'terang' && setColorMode) setColorMode('light');
-            else if (setColorMode) setColorMode('dark');
         }
     };
 
@@ -165,12 +160,7 @@ export function ThemeSettingsTab({ showNotif }) {
                 theme: JSON.stringify(theme),
                 installPrompt
             });
-            const isLight = selectedPreset === 'terang' || theme.name?.toLowerCase().includes('terang') || theme.bg === '#f8fafc' || theme.bg === '#ffffff';
-            localStorage.removeItem('dino_color_mode_manual');
-            if (setColorMode) setColorMode(isLight ? 'light' : 'dark');
-            localStorage.removeItem('dino_color_mode_manual');
-            if (refreshSettingsAndCMS) await refreshSettingsAndCMS();
-            if (showNotif) showNotif('Tema & Mod Paparan berjaya disimpan!');
+            if (showNotif) showNotif('Tema berjaya disimpan!');
         } catch (err) {
             alert('Ralat menyimpan tema: ' + (err.response?.data?.errorMessage || err.message));
         } finally {
@@ -210,72 +200,19 @@ export function ThemeSettingsTab({ showNotif }) {
                 <div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider mb-2">
                         <Palette size={13} />
-                        TEMA & PENAMPILAN (LIGHT / DARK MODE)
+                        TEMA & PENAMPILAN
                     </div>
-                    <h2 className="text-2xl font-black text-white">Mod Gelap / Terang & Warna Website</h2>
-                    <p className="text-sm text-slate-400 mt-1">Pilih Mod Gelap (Dark Mode), Mod Terang (Light Mode) atau sesuaikan warna kedai anda.</p>
+                    <h2 className="text-2xl font-black text-white">Warna Website</h2>
+                    <p className="text-sm text-slate-400 mt-1">Pilih template warna atau sesuaikan sendiri. Homepage akan mengikut tetapan ini.</p>
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition disabled:opacity-50"
                 >
                     <Save size={15} />
                     {isSaving ? 'Menyimpan...' : 'Simpan Tema'}
                 </button>
-            </div>
-
-            {/* Suis Pantas Mod Gelap (Dark Mode) vs Mod Terang (Light Mode) */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-                <h3 className="font-bold text-sm text-white mb-1">Suis Pantas: Mod Gelap / Mod Terang</h3>
-                <p className="text-xs text-slate-400 mb-4">Tukar antara Mod Gelap (Dark Mode) dan Mod Terang (Light Mode) dengan satu klik, kemudian tekan Simpan Tema.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button
-                        type="button"
-                        onClick={() => applyPreset('gelap')}
-                        className={`p-5 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ${
-                            selectedPreset === 'gelap' || (colorMode === 'dark' && selectedPreset !== 'terang')
-                                ? 'border-emerald-500 bg-slate-950 ring-2 ring-emerald-500/20'
-                                : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                        }`}
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                                <Moon size={24} />
-                            </div>
-                            <div>
-                                <div className="font-black text-base text-white">Mod Gelap (Dark Mode)</div>
-                                <div className="text-xs text-slate-400 mt-0.5">Latar gelap eksklusif & mesra mata</div>
-                            </div>
-                        </div>
-                        {selectedPreset === 'gelap' && (
-                            <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase">Aktif</span>
-                        )}
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => applyPreset('terang')}
-                        className={`p-5 rounded-2xl border-2 text-left transition flex items-center justify-between cursor-pointer ${
-                            selectedPreset === 'terang' || colorMode === 'light'
-                                ? 'border-amber-500 bg-white text-slate-900 ring-2 ring-amber-500/30'
-                                : 'border-slate-700 bg-slate-100 text-slate-900 hover:border-amber-400'
-                        }`}
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 shadow-md">
-                                <Sun size={24} />
-                            </div>
-                            <div>
-                                <div className="font-black text-base text-slate-900">Mod Terang (Light Mode)</div>
-                                <div className="text-xs text-slate-600 mt-0.5">Latar putih bersih & cerah</div>
-                            </div>
-                        </div>
-                        {selectedPreset === 'terang' && (
-                            <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase">Aktif</span>
-                        )}
-                    </button>
-                </div>
             </div>
 
             {/* Template Warna */}

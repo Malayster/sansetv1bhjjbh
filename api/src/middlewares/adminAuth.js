@@ -22,27 +22,11 @@ export function resetAccessKeyCache() {
 }
 
 function accessConfig(env) {
-    const rawDomain = env.ACCESS_TEAM_DOMAIN || env.TEAM_DOMAIN || 'dinoempire.cloudflareaccess.com';
-    const audience = env.ACCESS_AUD || env.POLICY_AUD || '136dc03441caed4570bc9f028a51490534d542013a7c200830b08e5f0e801adc';
+    const rawDomain = env.ACCESS_TEAM_DOMAIN || env.TEAM_DOMAIN || '';
+    const audience = env.ACCESS_AUD || env.POLICY_AUD || '';
     if (!rawDomain || !audience) return null;
     const domain = rawDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '');
-    const allowedIssuers = new Set([
-        `https://${domain}`,
-        'https://dinoempire.cloudflareaccess.com',
-        'https://morning-breeze-fc84.cloudflareaccess.com'
-    ]);
-    const allowedAudiences = new Set(
-        audience.split(',').map((a) => a.trim()).filter(Boolean).concat([
-            '136dc03441caed4570bc9f028a51490534d542013a7c200830b08e5f0e801adc'
-        ])
-    );
-    return { issuer: `https://${domain}`, allowedIssuers, allowedAudiences };
-}
-
-function getCookieValue(cookieHeader, name) {
-    if (!cookieHeader) return '';
-    const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-    return match ? match[1].trim() : '';
+    return { issuer: `https://${domain}`, audience };
 }
 
 const b64UrlDecode = (str) => {
@@ -77,16 +61,7 @@ async function verifyAccessJwt(token, access) {
         const header = JSON.parse(b64UrlDecode(headerB64));
         if (header.alg !== 'RS256') return null;
 
-        const payload = JSON.parse(b64UrlDecode(payloadB64));
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp && now > payload.exp) return null;
-
-        const tokenIssuer = (payload.iss || access.issuer).replace(/\/+$/, '');
-        if (access.allowedIssuers && !access.allowedIssuers.has(tokenIssuer)) {
-            return null;
-        }
-
-        const keys = await getAccessPublicKeys(tokenIssuer);
+        const keys = await getAccessPublicKeys(access.issuer);
         const jwk = (header.kid ? keys.find(k => k.kid === header.kid) : null) || keys[0];
         if (!jwk) return null;
 
@@ -103,9 +78,13 @@ async function verifyAccessJwt(token, access) {
         const isValid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', cryptoKey, sigBytes, dataBytes);
         if (!isValid) return null;
 
-        if (payload.aud && access.allowedAudiences) {
+        const payload = JSON.parse(b64UrlDecode(payloadB64));
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.exp && now > payload.exp) return null;
+        if (payload.iss && payload.iss !== access.issuer) return null;
+        if (payload.aud) {
             const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-            if (!auds.some((a) => access.allowedAudiences.has(a))) return null;
+            if (!auds.includes(access.audience)) return null;
         }
 
         return { email: payload.email || payload.sub, sub: payload.sub };
@@ -124,15 +103,6 @@ export const adminAuth = async (c, next) => {
         return next();
     }
 
-    // Halang sebarang panggilan API admin terus dari domain kedai awam (dinoempire.my)
-    const origin = (c.req.header('Origin') || '').toLowerCase();
-    if (origin === 'https://dinoempire.my' || origin === 'https://www.dinoempire.my') {
-        return c.json({
-            status: 'error',
-            errorMessage: 'Akses pentadbir hanya dibenarkan melalui portal rasmi https://admin.dinoempire.my (Cloudflare Access).'
-        }, 401);
-    }
-
     const access = accessConfig(env);
     const sessionEnabled = isSessionConfigured(env);
 
@@ -143,27 +113,26 @@ export const adminAuth = async (c, next) => {
         }, 503);
     }
 
-    // 1) Cloudflare Access (Cf-Access-Jwt-Assertion header atau CF_Authorization cookie)
-    const assertion = c.req.header('Cf-Access-Jwt-Assertion') || getCookieValue(c.req.header('Cookie'), 'CF_Authorization');
-    if (assertion && access) {
-        const user = await verifyAccessJwt(assertion, access);
-        if (user) {
-            c.set('adminUser', { email: user.email, sub: user.sub, via: 'cloudflare-access' });
-            return next();
-        }
-    }
-
-    // 2) Sesi PIN / OTP (Authorization: Bearer <jwt>) — hanya dibenarkan jika bukan dipintas tanpa Cloudflare Access
+    // 1) Sesi PIN / OTP (Authorization: Bearer <jwt>)
     const authHeader = c.req.header('Authorization') || '';
     const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
     if (bearer && sessionEnabled) {
         const user = await verifyAdminSession(env, bearer);
         if (user) {
-            c.set('adminUser', { email: user.email, sub: user.sub, via: 'session' });
+            c.set('adminUser', { email: user.email, sub: user.sub });
             return next();
         }
     }
 
-    return c.json({ status: 'error', errorMessage: 'Sesi Cloudflare Access atau pentadbir tidak sah. Sila log masuk semula.' }, 401);
-};
+    // 2) Cloudflare Access (Cf-Access-Jwt-Assertion)
+    const assertion = c.req.header('Cf-Access-Jwt-Assertion');
+    if (assertion && access) {
+        const user = await verifyAccessJwt(assertion, access);
+        if (user) {
+            c.set('adminUser', { email: user.email, sub: user.sub });
+            return next();
+        }
+    }
 
+    return c.json({ status: 'error', errorMessage: 'Sesi pentadbir tidak sah atau telah tamat tempoh. Sila log masuk semula.' }, 401);
+};

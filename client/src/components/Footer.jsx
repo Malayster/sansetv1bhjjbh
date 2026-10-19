@@ -125,21 +125,14 @@ export function Footer() {
                                 { name: 'Syarat Pemulangan', href: '/pulangan' },
                                 { name: 'Dasar Privasi (PDPA)', href: '/privasi' },
                                 { name: 'Soalan Lazim (FAQ)', href: '/soalan-lazim' },
-                                { name: 'Log Masuk Pentadbir', href: typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname) ? '/login' : 'https://admin.dinoempire.my' },
+                                { name: 'Log Masuk Pentadbir', href: '/login' },
                                 { name: 'Hubungi WhatsApp', href: `https://wa.me/${cleanNum}?text=${waText}` }
                             ].map((item) => (
                                 <li key={item.name}>
-                                    {item.href.startsWith('http') ? (
-                                        <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-amber-500 transition-colors flex items-center gap-2 text-sm group">
-                                            <ChevronRight size={14} className="text-gray-600 group-hover:text-amber-500 transition-colors" />
-                                            <span>{item.name}</span>
-                                        </a>
-                                    ) : (
-                                        <Link to={item.href} className="text-gray-400 hover:text-amber-500 transition-colors flex items-center gap-2 text-sm group">
-                                            <ChevronRight size={14} className="text-gray-600 group-hover:text-amber-500 transition-colors" />
-                                            <span>{item.name}</span>
-                                        </Link>
-                                    )}
+                                    <Link to={item.href} className="text-gray-400 hover:text-amber-500 transition-colors flex items-center gap-2 text-sm group">
+                                        <ChevronRight size={14} className="text-gray-600 group-hover:text-amber-500 transition-colors" />
+                                        <span>{item.name}</span>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>

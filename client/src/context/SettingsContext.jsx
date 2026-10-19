@@ -52,19 +52,9 @@ export function SettingsProvider({ children }) {
             const rawSettings = setRes.data?.data || setRes.data || {};
 
             if (rawSettings && typeof rawSettings === 'object') {
-                let parsedTheme = null;
-                if (rawSettings.theme) {
-                    try {
-                        parsedTheme = typeof rawSettings.theme === 'string' ? JSON.parse(rawSettings.theme) : rawSettings.theme;
-                    } catch {
-                        parsedTheme = null;
-                    }
-                }
-
                 setSettings(prev => ({
                     ...prev,
                     ...rawSettings,
-                    parsedTheme,
                     siteTitle: rawSettings.siteAdi || prev.siteTitle || "DIN'O EMPIRE",
                     companyName: rawSettings.siteAdi || prev.companyName || "DIN'O EMPIRE Enterprise",
                     currency: 'MYR',
@@ -74,17 +64,6 @@ export function SettingsProvider({ children }) {
                     logoMode: rawSettings.logoMode || prev.logoMode || 'image',
                     faviconUrl: rawSettings.faviconUrl || prev.faviconUrl || null
                 }));
-
-                // Jika pengguna belum memilih manual di browser, ikut tema kedai dari database
-                if (parsedTheme && !localStorage.getItem('dino_color_mode_manual')) {
-                    const isLight = parsedTheme.name?.toLowerCase().includes('terang') ||
-                        parsedTheme.name?.toLowerCase().includes('minimal') ||
-                        parsedTheme.bg === '#f8fafc' ||
-                        parsedTheme.bg === '#ffffff';
-                    const mode = isLight ? 'light' : 'dark';
-                    setColorModeState(mode);
-                    localStorage.setItem('dino_color_mode', mode);
-                }
             }
 
             if (cmsRes.data?.data) {
@@ -96,64 +75,6 @@ export function SettingsProvider({ children }) {
             setLoading(false);
         }
     };
-
-    const [colorMode, setColorModeState] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('dino_color_mode') || 'dark';
-        }
-        return 'dark';
-    });
-
-    const setColorMode = (mode) => {
-        const nextMode = mode === 'light' ? 'light' : 'dark';
-        setColorModeState(nextMode);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('dino_color_mode', nextMode);
-            localStorage.setItem('dino_color_mode_manual', 'true');
-        }
-    };
-
-    const toggleColorMode = () => {
-        setColorMode(colorMode === 'dark' ? 'light' : 'dark');
-    };
-
-    // Terapkan data-theme & pembolehubah CSS ke dokumen HTML
-    useEffect(() => {
-        if (typeof document === 'undefined') return;
-        const root = document.documentElement;
-        root.setAttribute('data-theme', colorMode);
-        if (colorMode === 'light') {
-            root.classList.remove('dark');
-            root.classList.add('light-mode');
-        } else {
-            root.classList.remove('light-mode');
-            root.classList.add('dark');
-        }
-
-        const t = settings?.parsedTheme;
-        if (t && !localStorage.getItem('dino_color_mode_manual')) {
-            if (t.bg) root.style.setProperty('--theme-bg', t.bg);
-            if (t.card) root.style.setProperty('--theme-card', t.card);
-            if (t.section) root.style.setProperty('--theme-section', t.section);
-            if (t.text) root.style.setProperty('--theme-text', t.text);
-            if (t.textMuted) root.style.setProperty('--theme-text-muted', t.textMuted);
-            if (t.accent) root.style.setProperty('--theme-accent', t.accent);
-        } else if (colorMode === 'light') {
-            root.style.setProperty('--theme-bg', '#f8fafc');
-            root.style.setProperty('--theme-card', '#ffffff');
-            root.style.setProperty('--theme-section', '#f1f5f9');
-            root.style.setProperty('--theme-text', '#0f172a');
-            root.style.setProperty('--theme-text-muted', '#475569');
-            root.style.setProperty('--theme-accent', '#059669');
-        } else {
-            root.style.setProperty('--theme-bg', '#020507');
-            root.style.setProperty('--theme-card', '#0f172a');
-            root.style.setProperty('--theme-section', '#020507');
-            root.style.setProperty('--theme-text', '#f8fafc');
-            root.style.setProperty('--theme-text-muted', '#94a3b8');
-            root.style.setProperty('--theme-accent', '#10b981');
-        }
-    }, [colorMode, settings?.parsedTheme]);
 
     useEffect(() => {
         refreshSettingsAndCMS();
@@ -185,11 +106,10 @@ export function SettingsProvider({ children }) {
     }
 
     return (
-        <SettingsContext.Provider value={{ settings, cms, setCms, refreshSettingsAndCMS, loading, colorMode, setColorMode, toggleColorMode }}>
+        <SettingsContext.Provider value={{ settings, cms, setCms, refreshSettingsAndCMS, loading }}>
             {children}
         </SettingsContext.Provider>
     );
 }
 
 export const useSettings = () => useContext(SettingsContext);
-

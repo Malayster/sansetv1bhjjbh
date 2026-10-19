@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, X, Sparkles, Lock, Truck, Phone, Sun, Moon } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, Sparkles, Lock, Truck, Phone } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
 import { NavigationSidebar } from './NavigationSidebar';
 
 export function Header() {
     const { toggleSidebar, setIsSidebarOpen, cartCount } = useCart();
-    const { settings, cms, colorMode, toggleColorMode } = useSettings();
+    const { settings, cms } = useSettings();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearch, setShowSearch] = useState(false);
@@ -131,25 +131,6 @@ export function Header() {
                                 <Search size={18} />
                             </button>
                         )}
-
-                        {/* Butang Tukar Mod Gelap / Terang (Light / Dark Mode) */}
-                        <button
-                            onClick={toggleColorMode}
-                            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/80 hover:text-amber-400 border border-white/10 transition cursor-pointer flex items-center gap-1.5 sm:px-3"
-                            title={colorMode === 'light' ? 'Tukar ke Mod Gelap (Dark Mode)' : 'Tukar ke Mod Terang (Light Mode)'}
-                        >
-                            {colorMode === 'light' ? (
-                                <>
-                                    <Moon size={16} className="text-slate-700" />
-                                    <span className="hidden md:inline text-[11px] font-bold">Gelap</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Sun size={16} className="text-amber-400" />
-                                    <span className="hidden md:inline text-[11px] font-bold">Terang</span>
-                                </>
-                            )}
-                        </button>
 
                         {/* Beg Belian (Cart Button) */}
                         <button

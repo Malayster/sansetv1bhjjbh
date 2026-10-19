@@ -7,15 +7,14 @@ export default defineConfig({
     plugins: [
         react(),
         VitePWA({
-            selfDestroying: true,
             registerType: 'autoUpdate',
             includeAssets: ['icons/favicon.ico', 'icons/apple-touch-icon.png', 'mask-icon.svg'],
             manifest: {
-                name: "DIN'O EMPIRE",
-                short_name: "DIN'O EMPIRE",
-                description: "Kedai rasmi barangan berkualiti dari kilang Kuala Ketil, Kedah",
-                theme_color: '#0f172a',
-                background_color: '#020507',
+                name: 'E-Market',
+                short_name: 'E-Market',
+                description: 'Sunucusuz ve hızlı alışveriş platformunuz',
+                theme_color: '#191919',
+                background_color: '#FFFFFF',
                 display: 'standalone',
                 orientation: 'portrait',
                 scope: '/',
@@ -41,13 +40,23 @@ export default defineConfig({
                 ]
             },
             workbox: {
-                cleanupOutdatedCaches: true,
-                navigateFallbackDenylist: [
-                    /^\/cdn-cgi\//,
-                    /^\/api\//,
-                    /^\/logout/,
-                    /^\/admin/,
-                    /^\/login/
+                globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
+                globIgnores: ['**/images/og-image.png', '**/images/hero/**'],
+                runtimeCaching: [
+                    {
+                        urlPattern: /^https:\/\/api\.ecommerceflaredev\.web\.tr\/api\/v1\/.*/i,
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'api-cache',
+                            expiration: {
+                                maxEntries: 100,
+                                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200]
+                            }
+                        }
+                    }
                 ]
             }
         })

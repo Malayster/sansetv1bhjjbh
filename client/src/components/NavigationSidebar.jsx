@@ -12,9 +12,7 @@ import {
     ExternalLink,
     ChevronRight,
     ShieldCheck,
-    Package,
-    Sun,
-    Moon
+    Package
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
@@ -31,7 +29,7 @@ const TikTokIcon = () => (
 );
 
 export function NavigationSidebar({ isOpen, onClose }) {
-    const { settings, colorMode, setColorMode } = useSettings();
+    const { settings } = useSettings();
     const navigate = useNavigate();
 
     // Lock body scroll when sidebar is open
@@ -219,39 +217,6 @@ export function NavigationSidebar({ isOpen, onClose }) {
                                     <TikTokIcon />
                                     <span>TikTok</span>
                                 </a>
-                            </div>
-                        </div>
-
-                        {/* Section 5: Mod Paparan (Gelap / Terang) */}
-                        <div className="pt-4 border-t border-white/10">
-                            <span className="text-[11px] font-mono font-bold text-white/40 uppercase tracking-widest block mb-3">
-                                Mod Paparan (Tema)
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setColorMode('dark')}
-                                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                                        colorMode === 'dark'
-                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
-                                            : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
-                                    }`}
-                                >
-                                    <Moon size={15} />
-                                    <span>Mod Gelap</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setColorMode('light')}
-                                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                                        colorMode === 'light'
-                                            ? 'bg-amber-500/20 border-amber-500 text-amber-400'
-                                            : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
-                                    }`}
-                                >
-                                    <Sun size={15} />
-                                    <span>Mod Terang</span>
-                                </button>
                             </div>
                         </div>
                     </div>
