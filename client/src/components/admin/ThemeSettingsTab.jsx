@@ -203,7 +203,7 @@ export function ThemeSettingsTab({ showNotif }) {
                         TEMA & PENAMPILAN
                     </div>
                     <h2 className="text-2xl font-black text-white">Warna Website</h2>
-                    <p className="text-sm text-slate-400 mt-1">Pilih preset atau sesuaikan warna. Homepage akan mengikut tetapan ini.</p>
+                    <p className="text-sm text-slate-400 mt-1">Pilih template warna atau sesuaikan sendiri. Homepage akan mengikut tetapan ini.</p>
                 </div>
                 <button
                     onClick={handleSave}
@@ -215,27 +215,42 @@ export function ThemeSettingsTab({ showNotif }) {
                 </button>
             </div>
 
-            {/* Presets */}
+            {/* Template Warna */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-                <h3 className="font-bold text-sm text-white mb-4">Preset Warna</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <h3 className="font-bold text-sm text-white mb-1">Template Warna</h3>
+                <p className="text-xs text-slate-400 mb-4">Klik untuk guna template. Warna akan diisi automatik.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Object.entries(PRESETS).map(([key, p]) => {
                         const Icon = p.icon;
+                        const isSelected = selectedPreset === key;
                         return (
                             <button
                                 key={key}
                                 onClick={() => applyPreset(key)}
-                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition ${
-                                    selectedPreset === key
-                                        ? 'border-amber-500 bg-amber-500/10'
-                                        : 'border-slate-700 bg-slate-950 hover:border-slate-600'
+                                className={`relative p-4 rounded-xl border text-left transition ${
+                                    isSelected
+                                        ? 'border-amber-500 ring-2 ring-amber-500/30'
+                                        : 'border-slate-700 hover:border-slate-600'
                                 }`}
+                                style={{ background: p.bg }}
                             >
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: p.accent }}>
-                                    <Icon size={16} className="text-black" />
+                                {isSelected && (
+                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                                        <Check size={12} className="text-black" />
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: p.accent }}>
+                                        <Icon size={16} className="text-black" />
+                                    </div>
+                                    <span className="font-bold text-sm" style={{ color: p.text }}>{p.name}</span>
                                 </div>
-                                <span className={`text-xs font-bold ${selectedPreset === key ? 'text-amber-400' : 'text-slate-300'}`}>{p.name}</span>
-                                {selectedPreset === key && <Check size={12} className="text-amber-400" />}
+                                <div className="flex gap-1.5">
+                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.bg }} title="Latar" />
+                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.card }} title="Kad" />
+                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.accent }} title="Aksen" />
+                                    <div className="w-6 h-6 rounded-md border border-white/20" style={{ background: p.text }} title="Font" />
+                                </div>
                             </button>
                         );
                     })}
@@ -264,7 +279,7 @@ export function ThemeSettingsTab({ showNotif }) {
 
             {/* Color Fields */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-                <h3 className="font-bold text-sm text-white mb-4">Warna Tersuai</h3>
+                <h3 className="font-bold text-sm text-white mb-4">Ubah Suai Warna</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     <ColorField label="Latar (Background)" field="bg" />
                     <ColorField label="Kad / Grid" field="card" />
