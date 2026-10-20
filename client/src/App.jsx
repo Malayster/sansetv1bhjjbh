@@ -60,9 +60,8 @@ function AppLayout() {
             <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
                 <main className="flex-1 min-h-0">
                     <Routes>
-                        <Route path="/login" element={<AdminLoginPage />} />
-                        <Route path="/admin/login" element={<AdminLoginPage />} />
-                        <Route path="/logout" element={<AdminLoginPage />} />
+                        <Route path="/login" element={<Navigate to="/" replace />} />
+                        <Route path="/admin/login" element={<Navigate to="/" replace />} />
                         <Route path="/" element={<AdminDashboardPage />} />
                         <Route path="/admin" element={<AdminDashboardPage />} />
                         <Route path="/admin/*" element={<AdminDashboardPage />} />

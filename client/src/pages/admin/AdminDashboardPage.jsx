@@ -80,25 +80,30 @@ export function AdminDashboardPage() {
         setIsMobileDrawerOpen(false);
     };
 
-    // Semak pengesahan admin (Pelan 2: Wajib Sesi Tab PIN/OTP + Sahkan dengan /api/v1/admin/me)
+    // Semak pengesahan admin:
+    // Di admin.dinoempire.my -> 1x Login sahaja menerusi Cloudflare Zero Trust Access (tiada login kedua di /login)
     useEffect(() => {
         let isMounted = true;
         const checkAuth = async () => {
-            // Hapus baki sesi kekal localStorage lama supaya wajib melalui sesi tab baharu
-            localStorage.removeItem('dino_admin_auth');
-            localStorage.removeItem('token');
+            const isAdminSubdomain = typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my';
 
-            if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
-                navigate('/login', { replace: true });
+            if (isAdminSubdomain) {
+                try {
+                    const res = await api.get('/api/v1/admin/me');
+                    if (res?.data?.status === 'success') {
+                        if (isMounted) setIsAuthVerified(true);
+                        return;
+                    }
+                } catch {
+                    // Jika sesi Cloudflare Access tidak sah, arahkan ke logout Cloudflare Access supaya minta PIN semula
+                    window.location.replace('https://admin.dinoempire.my/cdn-cgi/access/logout');
+                    return;
+                }
+                if (isMounted) setIsAuthVerified(true);
                 return;
             }
 
-            const hasTabSession = sessionStorage.getItem('dino_admin_auth') === 'true' && !!sessionStorage.getItem('token');
-            if (!hasTabSession) {
-                navigate('/login', { replace: true });
-                return;
-            }
-
+            // Untuk pembangunan tempatan (localhost)
             try {
                 const res = await api.get('/api/v1/admin/me');
                 if (res?.data?.status === 'success') {
@@ -106,12 +111,15 @@ export function AdminDashboardPage() {
                     return;
                 }
             } catch {
-                // Sesi tidak sah atau telah tamat tempoh
+                // Abaikan
             }
 
-            sessionStorage.removeItem('dino_admin_auth');
-            sessionStorage.removeItem('token');
-            navigate('/login', { replace: true });
+            const hasLocalAuth = sessionStorage.getItem('dino_admin_auth') === 'true' || localStorage.getItem('dino_admin_auth') === 'true';
+            if (!hasLocalAuth) {
+                navigate('/login', { replace: true });
+            } else if (isMounted) {
+                setIsAuthVerified(true);
+            }
         };
 
         checkAuth();
@@ -275,21 +283,17 @@ export function AdminDashboardPage() {
 
     const handleLogout = async () => {
         // 1. Bersihkan semua auth state di client browser (sessionStorage & localStorage)
-        sessionStorage.removeItem('dino_admin_auth');
-        sessionStorage.removeItem('dino_admin_email');
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('dino_admin_login_time');
+        sessionStorage.clear();
         localStorage.removeItem('dino_admin_auth');
         localStorage.removeItem('dino_admin_email');
         localStorage.removeItem('token');
         localStorage.removeItem('dino_admin_login_time');
-        sessionStorage.setItem('dino_admin_logged_out', 'true');
         setIsAuthVerified(false);
 
         // 2. Beri maklum balas visual kepada admin
-        showNotif('Melog keluar daripada sistem pentadbir...');
+        showNotif('Menamatkan sesi Cloudflare Access...');
 
-        // 3. Bersihkan sebarang Service Worker & Cache Storage lama supaya tidak memintas /logout
+        // 3. Bersihkan sebarang Service Worker & Cache Storage lama
         try {
             if ('serviceWorker' in navigator) {
                 const regs = await navigator.serviceWorker.getRegistrations();
@@ -303,17 +307,20 @@ export function AdminDashboardPage() {
             // abaikan
         }
 
-        // 4. Maklumkan backend API & worker untuk hapus kuki CF_Authorization
+        // 4. Maklumkan backend API untuk batalkan token sesi D1
         try {
-            await Promise.allSettled([
-                api.post('/api/v1/admin/logout'),
-                fetch('/logout', { credentials: 'include', redirect: 'manual' })
-            ]);
+            await api.post('/api/v1/admin/logout');
         } catch {
             // abaikan jika ralat rangkaian
         }
 
-        // 5. Bawa terus ke skrin pengesahan log masuk (/login)
+        // 5. Di admin.dinoempire.my, arahkan pelayar terus ke endpoint rasmi Cloudflare Access Logout
+        // supaya sesi di admin.dinoempire.my DAN dinoempire.cloudflareaccess.com ditamatkan sepenuhnya!
+        if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
+            window.location.replace('https://admin.dinoempire.my/cdn-cgi/access/logout');
+            return;
+        }
+
         navigate('/login', { replace: true });
     };
 

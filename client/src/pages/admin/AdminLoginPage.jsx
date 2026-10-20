@@ -19,15 +19,11 @@ export function AdminLoginPage() {
 
     const isExplicitlyLoggedOut = sessionStorage.getItem('dino_admin_logged_out') === 'true';
 
-    // Pelan 2 (Keselamatan 2-Faktor):
-    // 1. Hapus baki localStorage lama supaya tiada auto-login kekal merentas tab.
-    // 2. Jika tab semasa sudah disahkan (sessionStorage), benarkan masuk.
-    // 3. Jika belum, praisi e-mel daripada Cloudflare Access (/api/v1/admin/me) tetapi wajibkan PIN/OTP.
+    // Di admin.dinoempire.my, pengesahan dikawal 100% oleh Cloudflare Zero Trust Access (1x Login sahaja).
+    // Jika pengguna sampai ke /login di admin.dinoempire.my, terus arahkan masuk ke Papan Pemuka ('/').
     useEffect(() => {
-        localStorage.removeItem('dino_admin_auth');
-        localStorage.removeItem('token');
-
-        if (sessionStorage.getItem('dino_admin_logged_out') === 'true') {
+        if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
+            navigate('/', { replace: true });
             return;
         }
 
@@ -35,23 +31,12 @@ export function AdminLoginPage() {
         if (hasTabSession) {
             api.get('/api/v1/admin/me').then((res) => {
                 if (res?.data?.status === 'success') {
-                    const target = window.location.hostname === 'admin.dinoempire.my' ? '/' : '/admin';
-                    navigate(target, { replace: true });
+                    navigate('/admin', { replace: true });
                 }
             }).catch(() => {
                 sessionStorage.removeItem('dino_admin_auth');
                 sessionStorage.removeItem('token');
             });
-            return;
-        }
-
-        if (typeof window !== 'undefined' && window.location.hostname === 'admin.dinoempire.my') {
-            api.get('/api/v1/admin/me').then((res) => {
-                if (res?.data?.status === 'success' && res.data.data?.email) {
-                    setCfAccessEmail(res.data.data.email);
-                    setEmail((prev) => prev || res.data.data.email);
-                }
-            }).catch(() => {});
         }
     }, [navigate]);
 
