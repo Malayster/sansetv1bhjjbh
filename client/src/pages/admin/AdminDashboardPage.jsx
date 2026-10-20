@@ -48,7 +48,8 @@ import {
     SlidersHorizontal,
     Share2,
     PhoneCall,
-    Palette
+    Palette,
+    BookOpen
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
@@ -65,6 +66,7 @@ import { InventoryHealthTab } from '../../components/admin/InventoryHealthTab';
 import { AuditLogsTab } from '../../components/admin/AuditLogsTab';
 import { SalesAnalyticsCharts } from '../../components/admin/SalesAnalyticsCharts';
 import { OrderPrintSlipModal } from '../../components/admin/OrderPrintSlipModal';
+import { ElderlyUserGuideModal } from '../../components/admin/ElderlyUserGuideModal';
 import ImageUploader from '../../components/common/ImageUploader';
 
 export function AdminDashboardPage() {
@@ -73,6 +75,7 @@ export function AdminDashboardPage() {
     const [notification, setNotification] = useState('');
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+    const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [isAuthVerified, setIsAuthVerified] = useState(false);
 
     // Pengendali pemilihan tab dengan Auto-Hide untuk mobile drawer
@@ -856,6 +859,13 @@ export function AdminDashboardPage() {
 
                 <div className="flex items-center gap-1.5">
                     <button
+                        onClick={() => setIsGuideModalOpen(true)}
+                        className="p-2 rounded-xl transition border border-blue-500/30 bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 active:scale-95 cursor-pointer"
+                        title="Buka Buku Panduan Mudah (Mesra Warga Emas)"
+                    >
+                        <BookOpen size={16} />
+                    </button>
+                    <button
                         onClick={() => setActiveTab('theme')}
                         className={`p-2 rounded-xl transition border active:scale-95 cursor-pointer ${
                             activeTab === 'theme'
@@ -970,6 +980,16 @@ export function AdminDashboardPage() {
                         <div className="pt-4 border-t border-slate-800 space-y-2 mt-4">
                             <button
                                 onClick={() => {
+                                    setIsGuideModalOpen(true);
+                                    setIsMobileDrawerOpen(false);
+                                }}
+                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-blue-300 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 transition-colors cursor-pointer"
+                            >
+                                <BookOpen size={14} />
+                                <span>Buku Panduan Mudah Kedai</span>
+                            </button>
+                            <button
+                                onClick={() => {
                                     loadAllData();
                                     setIsMobileDrawerOpen(false);
                                 }}
@@ -1061,6 +1081,14 @@ export function AdminDashboardPage() {
 
                 <div className="p-4 border-t border-slate-800 space-y-2">
                     <button
+                        onClick={() => setIsGuideModalOpen(true)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-blue-300 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 transition-colors cursor-pointer"
+                        title="Buka panduan langkah demi langkah mesra warga emas"
+                    >
+                        <BookOpen size={16} />
+                        <span>Buku Panduan Mudah</span>
+                    </button>
+                    <button
                         onClick={loadAllData}
                         disabled={isLoadingData}
                         className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-800/40 hover:bg-slate-800 transition-colors cursor-pointer"
@@ -1116,6 +1144,16 @@ export function AdminDashboardPage() {
 
                     {/* Butang Pintasan: Tema & Warna, Yahoo Mail, EasyParcel, ToyyibPay, Edit Link & Log Keluar */}
                     <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => setIsGuideModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer border border-blue-500/30 bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 hover:text-blue-200"
+                            title="Buka Buku Panduan Penggunaan Mudah Kedai (Mesra Warga Emas)"
+                        >
+                            <BookOpen size={15} className="text-blue-400" />
+                            <span>Buku Panduan</span>
+                        </button>
+
                         <button
                             type="button"
                             onClick={() => setActiveTab('theme')}
@@ -2952,6 +2990,12 @@ export function AdminDashboardPage() {
                     onClose={() => setPrintingOrder(null)}
                 />
             )}
+
+            {/* Modal Panduan Mesra Warga Emas */}
+            <ElderlyUserGuideModal
+                isOpen={isGuideModalOpen}
+                onClose={() => setIsGuideModalOpen(false)}
+            />
         </div>
     );
 }
