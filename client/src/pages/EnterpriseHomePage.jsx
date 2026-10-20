@@ -101,26 +101,16 @@ export function EnterpriseHomePage() {
     };
 
     const activeTheme = settings?.parsedTheme || null;
-    const PATTERN_SVG = {
-        dots: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E")`,
-        grid: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1v38h38V1H1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        diagonal: `url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 0h1L0 6V5z' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E")`,
-        waves: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 0, 50 10 T 100 10' stroke='%23ffffff' stroke-opacity='0.05' fill='none'/%3E%3C/svg%3E")`
-    };
     const homeStyle = {
-        backgroundColor: activeTheme?.bg || '#020507',
-        color: activeTheme?.text || '#ffffff',
-        ...(activeTheme?.pattern && activeTheme.pattern !== 'none' && PATTERN_SVG[activeTheme.pattern]
-            ? {
-                backgroundImage: PATTERN_SVG[activeTheme.pattern],
-                backgroundSize: activeTheme.pattern === 'dots' ? '20px 20px' : activeTheme.pattern === 'grid' ? '40px 40px' : 'auto'
-            }
-            : {})
+        backgroundColor: activeTheme?.bg || 'var(--dino-bg, #090f1a)',
+        color: activeTheme?.text || 'var(--dino-text, #f8fafc)',
+        backgroundImage: 'var(--dino-pattern-image, none)',
+        backgroundSize: 'var(--dino-pattern-size, auto)'
     };
 
     return (
         <div
-            className="min-h-screen font-sans selection:bg-emerald-500 selection:text-black overflow-x-hidden transition-colors duration-300"
+            className="min-h-screen font-sans overflow-x-hidden transition-colors duration-300"
             style={homeStyle}
         >
             <SEO
@@ -133,7 +123,10 @@ export function EnterpriseHomePage() {
             {/* ── 2. HERO SECTION DENGAN 3D PARALLAX SHOWCASE ── */}
             <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
                 {/* Iridescent Glow Background */}
-                <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[450px] bg-gradient-to-tr from-emerald-600/20 via-cyan-500/10 to-transparent rounded-full blur-[140px] pointer-events-none"></div>
+                <div
+                    className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[450px] rounded-full blur-[140px] pointer-events-none opacity-25"
+                    style={{ background: 'radial-gradient(circle, var(--dino-accent, #10b981) 0%, transparent 70%)' }}
+                ></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">

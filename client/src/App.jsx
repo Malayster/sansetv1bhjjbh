@@ -55,9 +55,23 @@ function AppLayout() {
     const isBioRoute = location.pathname === '/tt' || location.pathname === '/bio';
     const isCustomLayout = isAdminRoute || isBioRoute;
 
+    const activeTheme = settings?.parsedTheme || {};
+    const themeScope = activeTheme.scope || 'both';
+    const isAdminThemed = themeScope === 'both' || themeScope === 'admin';
+    const isWebThemed = themeScope === 'both' || themeScope === 'website';
+
     if (isAdminDomain) {
         return (
-            <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+            <div
+                className={`min-h-screen flex flex-col transition-colors duration-300 dino-admin-root ${isAdminThemed ? 'dino-themed' : 'bg-slate-950 text-slate-100'}`}
+                style={isAdminThemed ? {
+                    backgroundColor: 'var(--dino-bg, #090f1a)',
+                    color: 'var(--dino-text, #f8fafc)',
+                    fontFamily: 'var(--dino-font, Outfit, Inter, system-ui, sans-serif)',
+                    backgroundImage: 'var(--dino-pattern-image, none)',
+                    backgroundSize: 'var(--dino-pattern-size, auto)'
+                } : undefined}
+            >
                 <main className="flex-1 min-h-0">
                     <Routes>
                         <Route path="/login" element={<Navigate to="/" replace />} />
@@ -72,13 +86,19 @@ function AppLayout() {
         );
     }
 
-    const themeBg = settings?.parsedTheme?.bg || '#020507';
-    const themeText = settings?.parsedTheme?.text || '#ffffff';
+    const themeBg = activeTheme.bg || '#090f1a';
+    const themeText = activeTheme.text || '#f8fafc';
 
     return (
         <div
-            className="min-h-screen flex flex-col transition-colors duration-300"
-            style={{ backgroundColor: themeBg, color: themeText }}
+            className={`min-h-screen flex flex-col transition-colors duration-300 ${isAdminRoute ? `dino-admin-root ${isAdminThemed ? 'dino-themed' : ''}` : `dino-website-root ${isWebThemed ? 'dino-themed' : ''}`}`}
+            style={{
+                backgroundColor: themeBg,
+                color: themeText,
+                fontFamily: 'var(--dino-font, Outfit, Inter, system-ui, sans-serif)',
+                backgroundImage: 'var(--dino-pattern-image, none)',
+                backgroundSize: 'var(--dino-pattern-size, auto)'
+            }}
         >
             {!isCustomLayout && <Header />}
             <main className="flex-1 min-h-0">

@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import api from '../../lib/axios';
+import { applyThemeToDocument } from '../../lib/colorTemplates';
 
 // Komponen Modul Tambahan Pentadbir DIN'O EMPIRE
 import { FinancialTrajectoryTab } from '../../components/admin/FinancialTrajectoryTab';
@@ -247,6 +248,14 @@ export function AdminDashboardPage() {
                     logoMode: s.logoMode || 'image',
                     faviconUrl: s.faviconUrl || ''
                 });
+                if (s.theme) {
+                    try {
+                        const parsedTheme = typeof s.theme === 'string' ? JSON.parse(s.theme) : s.theme;
+                        applyThemeToDocument(parsedTheme);
+                    } catch {
+                        // abaikan
+                    }
+                }
             }
 
             if (trajRes.data?.data) {
@@ -801,7 +810,7 @@ export function AdminDashboardPage() {
         return (
             <div className="min-h-screen bg-slate-950 text-slate-300 flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-sm font-bold text-white">Mengesahkan Sesi Keselamatan Pentadbir (2-Faktor)...</p>
+                <p className="text-sm font-bold text-white">Mengesahkan Sesi Keselamatan Cloudflare Access...</p>
                 <p className="text-xs text-slate-500 mt-1">DIN'O EMPIRE Executive Portal</p>
             </div>
         );

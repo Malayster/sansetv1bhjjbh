@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../lib/axios';
 import { MaintenancePage } from '../pages/MaintenancePage';
 import { initFacebookPixel, initGTM } from '../utils/analytics';
+import { applyThemeToDocument, COLOR_TEMPLATES } from '../lib/colorTemplates';
 
 const SettingsContext = createContext();
 
@@ -93,19 +94,27 @@ export function SettingsProvider({ children }) {
         refreshSettingsAndCMS();
     }, []);
 
-    // Terapkan pemboleh ubah CSS tema pada root dokumen
+    // Terapkan pemboleh ubah CSS tema pada root dokumen (Website + Admin Dashboard)
     useEffect(() => {
-        const t = settings?.parsedTheme;
-        if (!t || typeof document === 'undefined') return;
-        const root = document.documentElement;
-        if (t.bg) root.style.setProperty('--dino-bg', t.bg);
-        if (t.card) root.style.setProperty('--dino-card', t.card);
-        if (t.section) root.style.setProperty('--dino-section', t.section);
-        if (t.text) root.style.setProperty('--dino-text', t.text);
-        if (t.textMuted) root.style.setProperty('--dino-text-muted', t.textMuted);
-        if (t.accent) root.style.setProperty('--dino-accent', t.accent);
-        if (t.border) root.style.setProperty('--dino-border', t.border);
+        const t = settings?.parsedTheme || {
+            ...COLOR_TEMPLATES.gelapDefault.colors,
+            name: COLOR_TEMPLATES.gelapDefault.name,
+            templateId: COLOR_TEMPLATES.gelapDefault.id,
+            category: COLOR_TEMPLATES.gelapDefault.category,
+            scope: 'both',
+            pattern: 'none'
+        };
+        applyThemeToDocument(t);
     }, [settings?.parsedTheme]);
+
+    const previewTheme = (newThemeObj) => {
+        if (!newThemeObj) return;
+        applyThemeToDocument(newThemeObj);
+        setSettings(prev => ({
+            ...prev,
+            parsedTheme: { ...(prev?.parsedTheme || {}), ...newThemeObj }
+        }));
+    };
 
     // Kemas kini dinamik Favicon Browser untuk semua tag icon
     useEffect(() => {
@@ -133,7 +142,7 @@ export function SettingsProvider({ children }) {
     }
 
     return (
-        <SettingsContext.Provider value={{ settings, cms, setCms, refreshSettingsAndCMS, loading }}>
+        <SettingsContext.Provider value={{ settings, cms, setCms, refreshSettingsAndCMS, previewTheme, loading }}>
             {children}
         </SettingsContext.Provider>
     );
