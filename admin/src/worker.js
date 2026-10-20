@@ -2,13 +2,15 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Logout handler: Hapus kuki sesi dan arahkan keluar ke storefront rasmi dinoempire.my
+    // Logout handler: Hapus kuki sesi dan arahkan keluar ke halaman log masuk / storefront
     if (url.pathname === '/logout' || url.pathname === '/cdn-cgi/access/logout') {
       const headers = new Headers();
       headers.append('Set-Cookie', 'CF_Authorization=; Path=/; Domain=.dinoempire.my; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax');
       headers.append('Set-Cookie', 'CF_Authorization=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax');
       headers.append('Set-Cookie', 'CF_AppSession=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax');
-      headers.append('Location', 'https://dinoempire.my');
+      headers.append('Clear-Site-Data', '"cache"');
+      headers.append('Cache-Control', 'no-store, no-cache, must-revalidate');
+      headers.append('Location', 'https://admin.dinoempire.my/login');
       return new Response(null, { status: 302, headers });
     }
 

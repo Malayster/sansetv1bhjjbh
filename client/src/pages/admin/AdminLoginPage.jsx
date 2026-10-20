@@ -211,22 +211,30 @@ export function AdminLoginPage() {
                     </div>
 
                     {isExplicitlyLoggedOut && (
-                        <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs space-y-2">
+                        <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs space-y-2.5">
                             <div className="flex items-center gap-2 font-bold">
                                 <CheckCircle2 size={16} />
                                 <span>Anda telah berjaya log keluar daripada sesi pentadbir.</span>
                             </div>
                             <p className="text-slate-300">
-                                Sesi anda telah ditamatkan dengan selamat. Masukkan PIN atau OTP di bawah jika anda ingin mengakses semula.
+                                Sesi papan pemuka anda telah ditamatkan dengan selamat. Masukkan PIN atau OTP di bawah jika anda ingin mengakses semula, atau tamatkan sesi Cloudflare Access sepenuhnya.
                             </p>
-                            <button
-                                type="button"
-                                onClick={handleReAuthenticateAccess}
-                                className="w-full mt-2 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
-                            >
-                                <RefreshCw size={13} />
-                                <span>Aktifkan Borang Log Masuk</span>
-                            </button>
+                            <div className="flex flex-col gap-2 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={handleReAuthenticateAccess}
+                                    className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                    <RefreshCw size={13} />
+                                    <span>Aktifkan Borang Log Masuk</span>
+                                </button>
+                                <a
+                                    href="https://admin.dinoempire.my/cdn-cgi/access/logout"
+                                    className="w-full py-2 px-3 bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+                                >
+                                    <span>Tamatkan Sesi Cloudflare Access Sepenuhnya</span>
+                                </a>
+                            </div>
                         </div>
                     )}
 

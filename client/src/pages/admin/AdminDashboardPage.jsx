@@ -284,23 +284,37 @@ export function AdminDashboardPage() {
         localStorage.removeItem('token');
         localStorage.removeItem('dino_admin_login_time');
         sessionStorage.setItem('dino_admin_logged_out', 'true');
+        setIsAuthVerified(false);
 
         // 2. Beri maklum balas visual kepada admin
         showNotif('Melog keluar daripada sistem pentadbir...');
 
-        // 3. Maklumkan backend API untuk hapus kuki
+        // 3. Bersihkan sebarang Service Worker & Cache Storage lama supaya tidak memintas /logout
         try {
-            await api.post('/api/v1/admin/logout');
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(regs.map((r) => r.unregister()));
+            }
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+        } catch {
+            // abaikan
+        }
+
+        // 4. Maklumkan backend API & worker untuk hapus kuki CF_Authorization
+        try {
+            await Promise.allSettled([
+                api.post('/api/v1/admin/logout'),
+                fetch('/logout', { credentials: 'include', redirect: 'manual' })
+            ]);
         } catch {
             // abaikan jika ralat rangkaian
         }
 
-        // 4. Arahkan pengguna keluar daripada admin
-        if (window.location.hostname === 'admin.dinoempire.my') {
-            window.location.href = '/logout';
-        } else {
-            window.location.href = 'https://dinoempire.my';
-        }
+        // 5. Bawa terus ke skrin pengesahan log masuk (/login)
+        navigate('/login', { replace: true });
     };
 
     // Keadaan Modal Tambah / Sunting Produk
@@ -824,7 +838,18 @@ export function AdminDashboardPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={() => setActiveTab('theme')}
+                        className={`p-2 rounded-xl transition border active:scale-95 cursor-pointer ${
+                            activeTab === 'theme'
+                                ? 'bg-amber-500 text-slate-950 border-amber-400'
+                                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border-amber-500/30'
+                        }`}
+                        title="Tema & Warna Kedai"
+                    >
+                        <Palette size={16} />
+                    </button>
                     <button
                         onClick={loadAllData}
                         disabled={isLoadingData}
@@ -842,6 +867,13 @@ export function AdminDashboardPage() {
                     >
                         <Store size={16} />
                     </a>
+                    <button
+                        onClick={handleLogout}
+                        className="p-2 bg-red-500/15 hover:bg-red-500/25 text-red-400 rounded-xl transition border border-red-500/30 active:scale-95 cursor-pointer"
+                        title="Log Keluar Sesi Pentadbir"
+                    >
+                        <LogOut size={16} />
+                    </button>
                 </div>
             </div>
 
@@ -876,6 +908,7 @@ export function AdminDashboardPage() {
                             <nav className="space-y-1.5">
                                 {[
                                     { id: 'dashboard', label: 'Papan Pemuka', icon: LayoutDashboard },
+                                    { id: 'theme', label: 'Tema & Warna', icon: Palette, badge: 'BARU' },
                                     { id: 'trajectory', label: 'Unjuran Kewangan', icon: TrendingUp },
                                     { id: 'analytics', label: 'Analitik & Pasaran', icon: BarChart3 },
                                     { id: 'cms', label: 'Pengurusan CMS', icon: Globe },
@@ -887,7 +920,6 @@ export function AdminDashboardPage() {
                                     { id: 'categories', label: 'Kategori', icon: Layers, badge: categories.length },
                                     { id: 'returns', label: 'Pemulangan', icon: RotateCcw },
                                     { id: 'settings', label: 'Tetapan Kedai', icon: Settings },
-                                    { id: 'theme', label: 'Tema & Warna', icon: Palette },
                                     { id: 'audit', label: 'Jejak Audit', icon: ShieldCheck }
                                 ].map(item => {
                                     const Icon = item.icon;
@@ -969,6 +1001,7 @@ export function AdminDashboardPage() {
                 <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto">
                     {[
                         { id: 'dashboard', label: 'Papan Pemuka', icon: LayoutDashboard },
+                        { id: 'theme', label: 'Tema & Warna', icon: Palette, badge: 'BARU' },
                         { id: 'trajectory', label: 'Unjuran Kewangan', icon: TrendingUp },
                         { id: 'analytics', label: 'Analitik & Pasaran', icon: BarChart3 },
                         { id: 'cms', label: 'Pengurusan CMS', icon: Globe },
@@ -980,7 +1013,6 @@ export function AdminDashboardPage() {
                         { id: 'categories', label: 'Kategori', icon: Layers, badge: categories.length },
                         { id: 'returns', label: 'Pemulangan', icon: RotateCcw },
                         { id: 'settings', label: 'Tetapan Kedai', icon: Settings },
-                        { id: 'theme', label: 'Tema & Warna', icon: Palette },
                         { id: 'audit', label: 'Jejak Audit', icon: ShieldCheck }
                     ].map(item => {
                         const Icon = item.icon;
@@ -1066,8 +1098,22 @@ export function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    {/* 3 Butang Pintasan Boleh Disunting: Yahoo Mail, EasyParcel, ToyyibPay */}
+                    {/* Butang Pintasan: Tema & Warna, Yahoo Mail, EasyParcel, ToyyibPay, Edit Link & Log Keluar */}
                     <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('theme')}
+                            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer border ${
+                                activeTab === 'theme'
+                                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-black'
+                                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 border-amber-500/30'
+                            }`}
+                            title="Tukar Tema & Warna Kedai (Gelap / Cerah / Warna Utama)"
+                        >
+                            <Palette size={15} className={activeTab === 'theme' ? 'text-slate-950' : 'text-amber-400'} />
+                            <span>Tema & Warna</span>
+                        </button>
+
                         <a
                             href={quickLinks.yahooMailUrl || 'https://mail.yahoo.com'}
                             target="_blank"
@@ -1112,6 +1158,16 @@ export function AdminDashboardPage() {
                         >
                             <Settings size={14} />
                             <span>Edit Link</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-500/15 hover:bg-red-500/25 text-red-400 hover:text-red-300 border border-red-500/30 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer"
+                            title="Tamatkan Sesi Pentadbir & Log Keluar"
+                        >
+                            <LogOut size={14} />
+                            <span>Log Keluar</span>
                         </button>
                     </div>
                 </header>

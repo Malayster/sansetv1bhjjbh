@@ -62,6 +62,7 @@ function AppLayout() {
                     <Routes>
                         <Route path="/login" element={<AdminLoginPage />} />
                         <Route path="/admin/login" element={<AdminLoginPage />} />
+                        <Route path="/logout" element={<AdminLoginPage />} />
                         <Route path="/" element={<AdminDashboardPage />} />
                         <Route path="/admin" element={<AdminDashboardPage />} />
                         <Route path="/admin/*" element={<AdminDashboardPage />} />
