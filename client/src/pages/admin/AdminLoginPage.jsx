@@ -365,8 +365,8 @@ export function AdminLoginPage() {
                                         value={pin}
                                         onChange={(e) => setPin(e.target.value)}
                                         required
-                                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors text-sm"
-                                        placeholder="Masukkan PIN keselamatan"
+                                        className="w-full pl-4 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors text-sm"
+                                        placeholder="••••"
                                     />
                                     <button
                                         type="button"
@@ -398,7 +398,7 @@ export function AdminLoginPage() {
                     {/* Lencana Keselamatan Cloudflare */}
                     <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-center gap-2 text-[11px] text-slate-500">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Dilindungi oleh Cloudflare Edge Security & Turnstile</span>
+                        <span>Dilindungi oleh Cloudflare Access</span>
                     </div>
                 </div>
 
