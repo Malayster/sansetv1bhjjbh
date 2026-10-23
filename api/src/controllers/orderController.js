@@ -1,23 +1,23 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 /**
- * Sipariş HTTP isteklerini yöneten Controller.
+ * Controller for managing Order HTTP requests.
  * OrderController
  */
 export class OrderController {
     /**
-     * OrderController örneği oluşturur.
-     * @param {import('../services/orderService.js').OrderService} orderService - Sipariş servisi.
+     * Initializes a new instance of OrderController.
+     * @param {import('../services/orderService.js').OrderService} orderService - Order service instance.
      */
     constructor(orderService) {
         this.orderService = orderService;
     }
 
     /**
-     * Checkout (Ödeme Başlatma) işlemini yönetir.
+     * Handles Checkout (payment initialization) request.
      *
-     * @param {import('express').Request} req - Express istek nesnesi.
-     * @param {import('express').Response} res - Express yanıt nesnesi.
+     * @param {import('express').Request} req - Express request object.
+     * @param {import('express').Response} res - Express response object.
      * @param {import('express').NextFunction} next - Express next fonksiyonu.
      */
     createCheckoutSession = asyncHandler(async (req, res, next) => {
@@ -26,10 +26,10 @@ export class OrderController {
     });
 
     /**
-     * Güvenli token ile sipariş takibini sağlar.
+     * Provides order tracking using a secure token.
      *
-     * @param {import('express').Request} req - Express istek nesnesi.
-     * @param {import('express').Response} res - Express yanıt nesnesi.
+     * @param {import('express').Request} req - Express request object.
+     * @param {import('express').Response} res - Express response object.
      * @param {import('express').NextFunction} next - Express next fonksiyonu.
      */
     trackOrder = asyncHandler(async (req, res, next) => {

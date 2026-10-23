@@ -1,9 +1,9 @@
 {
-  "name": "e-market-api",
+  "name": "dino-empire-api",
   "version": "1.0.0",
   "license": "UNLICENSED",
   "private": true,
-  "description": "E-Market REST API - Hono & Prisma",
+  "description": "DIN'O EMPIRE REST API - Hono & Prisma",
   "type": "module",
   "main": "src/app.js",
   "scripts": {

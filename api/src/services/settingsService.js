@@ -19,7 +19,7 @@ export class SettingsService {
                 kargoAgirlikCarpani: 15.00,
                 ucretsizKargoAltLimit: 5000.00,
                 maintenanceMode: false,
-                siteAdi: 'E-Market'
+                siteAdi: "DIN'O EMPIRE"
             });
         }
         return settings;

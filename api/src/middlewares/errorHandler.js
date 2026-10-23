@@ -3,18 +3,18 @@ import { ZodError } from 'zod';
 import { Prisma } from '../generated/prisma/client.ts';
 
 /**
- * Global Hata Yakalama Middleware'i (Hono Uyumlu).
- * Uygulama genelinde fırlatılan tüm hataları yakalar ve standart JSON formatında döner.
+ * Global Error Handling Middleware (Hono Compatible).
+ * Menangkap semua ralat aplikasi dan mengembalikan respons format JSON yang seragam.
  */
 export const errorHandler = (err, c) => {
     let statusCode = err.statusCode || 500;
-    let message = err.message || 'Sunucu Hatası (Internal Server Error)';
+    let message = err.message || 'Ralat Pelayan Dalaman (Internal Server Error)';
     let details = undefined;
 
     // Zod Validation Errors
     if (err instanceof ZodError) {
         statusCode = 400;
-        message = 'Geçersiz Veri Girişi';
+        message = 'Kemasukan Data Tidak Sah (Invalid Input)';
         details = err.issues.map(e => ({
             path: e.path.join('.'),
             message: e.message
@@ -25,14 +25,14 @@ export const errorHandler = (err, c) => {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === 'P2002') {
             statusCode = 409;
-            message = 'Benzersizlik kısıtlaması ihlal edildi (Duplicate Entry)';
+            message = 'Rekod sudah wujud (Duplicate Entry)';
         } else if (err.code === 'P2025') {
             statusCode = 404;
-            message = 'Kayıt bulunamadı';
+            message = 'Rekod tidak dijumpai (Not Found)';
         }
     }
 
-    console.error('[Hata] %s - %s %s: %s', statusCode, c.req.method, c.req.path, message);
+    console.error('[Error] %s - %s %s: %s', statusCode, c.req.method, c.req.path, message);
     if (config.nodeEnv === 'development' && !(err instanceof ZodError)) {
         console.error(err.stack);
     }

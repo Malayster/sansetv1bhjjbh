@@ -167,10 +167,10 @@ export function MySubscriptionsPage() {
             {subs.map(s => (
               <div key={s.id} className="bg-[#060d11] rounded-2xl border border-white/10 p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-white text-base">{s.urunAd}</h3>
+                  <h3 className="font-bold text-white text-base">{s.items?.[0]?.urun?.ad || s.namaProduk || s.urunAd || 'Produk Langganan'}</h3>
                   <div className="text-xs text-white/60 font-mono mt-1 space-y-0.5">
-                    <div>Penghantaran Seterusnya: <strong className="text-emerald-400">{s.sonrakiTarih || '-'}</strong></div>
-                    <div>Status: <span className="text-white font-bold">{s.durum}</span></div>
+                    <div>Penghantaran Seterusnya: <strong className="text-emerald-400">{s.tarikhSeterusnya ? new Date(s.tarikhSeterusnya).toLocaleDateString('ms-MY') : (s.sonrakiTarih || '-')}</strong></div>
+                    <div>Status: <span className="text-white font-bold">{s.status || s.durum || 'AKTIF'}</span></div>
                   </div>
                 </div>
                 <div className="flex gap-2">

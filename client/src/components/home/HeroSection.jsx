@@ -15,7 +15,7 @@ export function HeroSection({ scrollToProducts }) {
             image: "/images/hero/shopping_hero.png",
             badge: "Pilihan Ramai",
             buttonText: "Lihat Barangan",
-            buttonLink: "/magaza"
+            buttonLink: "/kedai"
         },
         {
             title: "KOLEKSI KHAS",
@@ -24,7 +24,7 @@ export function HeroSection({ scrollToProducts }) {
             image: "/images/hero/tech_hero.png",
             badge: "Kualiti Dijamin",
             buttonText: "Beli Sekarang",
-            buttonLink: "/magaza"
+            buttonLink: "/kedai"
         },
         {
             title: "PANTAS & SELAMAT",
@@ -33,7 +33,7 @@ export function HeroSection({ scrollToProducts }) {
             image: "/images/hero/deals_hero.png",
             badge: "Bayaran Mudah",
             buttonText: "Terokai Koleksi",
-            buttonLink: "/magaza"
+            buttonLink: "/kedai"
         }
     ];
 
@@ -82,7 +82,7 @@ export function HeroSection({ scrollToProducts }) {
                                 </p>
                                 <div className="flex flex-wrap items-center gap-4">
                                     <Link
-                                        to={slide.buttonLink || "/magaza"}
+                                        to={slide.buttonLink || "/kedai"}
                                         className="group bg-brand-primary text-white px-6 py-3.5 md:px-10 md:py-4 rounded-xl md:rounded-2xl font-black text-sm md:text-lg hover:bg-amber-600 transition-all duration-300 shadow-xl flex items-center justify-center gap-2 transform hover:-translate-y-1 cursor-pointer"
                                     >
                                         <span>{slide.buttonText || "Lihat Barangan"}</span>

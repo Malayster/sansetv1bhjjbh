@@ -20,32 +20,32 @@ export function MaintenancePage() {
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
-                    BAKIM <span className="text-indigo-600">MODU</span>
+                    MOD <span className="text-indigo-600">PENYELENGGARAAN</span>
                 </h1>
 
                 <p className="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
-                    Sizlere daha iyi hizmet verebilmek için altyapımızda planlı bir güncelleme yapıyoruz.
-                    Çok kısa bir süre sonra yenilenmiş yüzümüzle karşınızda olacağız.
+                    Kami sedang menjalankan kerja-kerja penyelenggaraan berjadual bagi menaik taraf sistem untuk memberi perkhidmatan yang lebih pantas dan berkualiti.
+                    Kami akan kembali beroperasi sebentar sahaja lagi.
                 </p>
 
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-center gap-3 text-yellow-500">
                     <AlertTriangle size={20} />
-                    <span className="font-bold text-sm">Tahmini Süre: 15-30 Dakika</span>
+                    <span className="font-bold text-sm">Anggaran Masa: 15-30 Minit</span>
                 </div>
 
                 <div className="mt-12 pt-8 border-t border-white/10 flex flex-col items-center gap-4">
-                    <p className="text-sm text-gray-400">Acil durumlar için bize ulaşın:</p>
+                    <p className="text-sm text-gray-400">Untuk sebarang pertanyaan kecemasan atau bantuan:</p>
                     <a
-                        href="mailto:bilgi@ecommerceflaredev.web.tr"
+                        href="mailto:support@dinoempire.my"
                         className="text-indigo-600 font-bold hover:text-white transition-colors text-lg"
                     >
-                        bilgi@ecommerceflaredev.web.tr
+                        support@dinoempire.my
                     </a>
                 </div>
             </div>
 
             <div className="absolute bottom-8 text-xs text-gray-600 font-medium">
-                &copy; {new Date().getFullYear()} E-Market. Tüm hakları saklıdır.
+                &copy; {new Date().getFullYear()} DIN'O EMPIRE. Hak Cipta Terpelihara.
             </div>
         </div>
     );

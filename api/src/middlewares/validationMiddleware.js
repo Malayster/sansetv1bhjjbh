@@ -1,17 +1,17 @@
 /**
- * İstek Validasyon Middleware'i (Zod ve Hono Uyumlu).
- * Gelen isteğin body kısmını verilen şemaya göre doğrular ve doğrulanmış veriyi
- * `parsedBody` olarak context'e koyar (honoAdapter bunu controller'a iletir).
+ * Request Validation Middleware (Zod & Hono Compatible).
+ * Mengesahkan format body permintaan berdasarkan skema Zod dan menyimpan
+ * data yang sah ke dalam context sebagai `parsedBody`.
  *
- * @param {import('zod').ZodSchema} schema - Doğrulama şeması.
- * @returns {Function} Hono middleware fonksiyonu.
+ * @param {import('zod').ZodSchema} schema - Skema pengesahan Zod.
+ * @returns {Function} Fungsi middleware Hono.
  */
 export const validateRequest = (schema) => async (c, next) => {
     let body;
     try {
         body = await c.req.json();
     } catch {
-        return c.json({ status: 'failure', errorMessage: 'Geçersiz JSON gövdesi.' }, 400);
+        return c.json({ status: 'failure', errorMessage: 'Format data JSON tidak sah.' }, 400);
     }
 
     const result = schema.safeParse(body);
@@ -20,11 +20,11 @@ export const validateRequest = (schema) => async (c, next) => {
             path: issue.path.join('.'),
             message: issue.message,
         }));
-        // Only field paths are logged: values may contain personal data (KVKK).
-        console.warn('Doğrulama hatası: %s', errors.map((e) => e.path).join(', '));
+        // Hanya laluan medan dicatat: nilai mungkin mengandungi data peribadi (PDPA).
+        console.warn('Ralat pengesahan data: %s', errors.map((e) => e.path).join(', '));
         return c.json({
             status: 'failure',
-            errorMessage: errors[0]?.message || 'Doğrulama hatası.',
+            errorMessage: errors[0]?.message || 'Ralat pengesahan data.',
             errors,
         }, 400);
     }

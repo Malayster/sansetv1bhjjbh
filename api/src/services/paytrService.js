@@ -70,7 +70,7 @@ export class PaytrService {
             ]);
         } else {
             items = [
-                [`Siparis #${orderNumber}`, String(Number(orderTotal).toFixed(2)), 1]
+                [`Pesanan #${orderNumber}`, String(Number(orderTotal).toFixed(2)), 1]
             ];
         }
 
@@ -142,7 +142,7 @@ export class PaytrService {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>PayTR Yönlendiriliyor...</title>
+    <title>Mengalihkan ke PayTR...</title>
 </head>
 <body>
     <form id="paytr-form" action="${escapeMarkup(actionUrl)}" method="post">
@@ -219,7 +219,7 @@ export class PaytrService {
         if (!merchantKey || !merchantSalt || typeof hash !== 'string') {
             return {
                 status: 'failure',
-                errorMessage: 'PayTR yapılandırılmamış veya imza eksik.',
+                errorMessage: 'PayTR tidak dikonfigurasikan atau tandatangan hilang.',
                 siparisNumarasi: merchantOid
             };
         }
@@ -232,7 +232,7 @@ export class PaytrService {
             console.error('[PayTR] Callback signature mismatch!');
             return {
                 status: 'failure',
-                errorMessage: 'Geçersiz callback imzası.',
+                errorMessage: 'Tandatangan panggilan balik PayTR tidak sah.',
                 siparisNumarasi: merchantOid
             };
         }
@@ -240,7 +240,7 @@ export class PaytrService {
         if (status !== 'success') {
             return {
                 status: 'failure',
-                errorMessage: callbackData.failed_reason_msg || 'PayTR ödemesi başarısız oldu.',
+                errorMessage: callbackData.failed_reason_msg || 'Pembayaran PayTR gagal.',
                 siparisNumarasi: merchantOid
             };
         }
@@ -273,7 +273,7 @@ export class PaytrService {
         console.log('[PayTR] Refunding payment %s, Reason: %s', merchantOid, reason);
 
         if (!(Number(amount) > 0)) {
-            throw new Error('PayTR iadesi için tutar gereklidir.');
+            throw new Error('Jumlah pemulangan PayTR diperlukan.');
         }
 
         const merchantId = this.config.merchantId;
@@ -306,13 +306,13 @@ export class PaytrService {
         const result = await response.json();
 
         if (result.status !== 'success') {
-            throw new Error(result.err_msg || 'PayTR iade işlemi başarısız.');
+            throw new Error(result.err_msg || 'Pemulangan PayTR gagal.');
         }
 
         return {
             status: 'success',
             paymentId: merchantOid,
-            message: 'PayTR iade işlemi onaylandı.'
+            message: 'Pemulangan PayTR telah diluluskan.'
         };
     }
 

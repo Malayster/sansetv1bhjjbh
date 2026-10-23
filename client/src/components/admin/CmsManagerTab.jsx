@@ -36,14 +36,14 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
         image: '/images/hero/shopping_hero.png',
         badge: 'Tawaran Kilang',
         buttonText: 'Lihat Barangan',
-        buttonLink: '/magaza'
+        buttonLink: '/kedai'
     });
 
     // Bar Pengumuman State
     const [announcement, setAnnouncement] = useState(cmsData?.announcement_bar || {
         active: true,
         text: 'PENGHANTARAN PERCUMA ke seluruh Semenanjung untuk pesanan RM100 ke atas! Terus dari Kilang Kuala Ketil.',
-        link: '/magaza',
+        link: '/kedai',
         theme: 'amber'
     });
 
@@ -111,7 +111,7 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
             image: '/images/hero/shopping_hero.png',
             badge: 'Tawaran Hebat',
             buttonText: 'Beli Sekarang',
-            buttonLink: '/magaza'
+            buttonLink: '/kedai'
         });
         setSlideModalOpen(true);
     };
@@ -452,7 +452,7 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
                             value={announcement.link}
                             onChange={(e) => setAnnouncement({ ...announcement, link: e.target.value })}
                             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                            placeholder="Contoh: /magaza"
+                            placeholder="Contoh: /kedai"
                         />
                     </div>
                 </div>

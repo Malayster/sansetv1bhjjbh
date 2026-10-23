@@ -4,7 +4,7 @@ import { timingSafeEqual } from '../utils/timingSafeEqual.js';
 
 /**
  * Google Shopping Feed Controller
- * Generates XML feed for Google Merchant Center
+ * Menjana suapan XML untuk Google Merchant Center (Malaysia / MYR).
  */
 export class FeedController {
     /**
@@ -41,9 +41,12 @@ export class FeedController {
     _mapToGoogleCategory(kategori) {
         const categoryMappings = {
             'elektronik': '222',        // Electronics
-            'giyim-aksesuar': '166',    // Apparel & Accessories
-            'ev-yasam': '536',          // Home & Garden
-            'spor-outdoor': '988',      // Sporting Goods
+            'pakaian': '166',           // Apparel & Accessories
+            'giyim-aksesuar': '166',    // Apparel & Accessories (legacy)
+            'rumah-kediaman': '536',    // Home & Garden
+            'ev-yasam': '536',          // Home & Garden (legacy)
+            'sukan-rekreasi': '988',    // Sporting Goods
+            'spor-outdoor': '988',      // Sporting Goods (legacy)
         };
 
         if (kategori?.slug && categoryMappings[kategori.slug]) {
@@ -85,16 +88,16 @@ export class FeedController {
             }
         });
 
-        const baseUrl = config.clientUrl || 'https://ecommerceflaredev.web.tr';
-        const cdnUrl = config.cdnUrl || 'https://cdn.ecommerceflaredev.web.tr';
+        const baseUrl = config.clientUrl || 'https://dinoempire.my';
+        const cdnUrl = config.cdnUrl || 'https://cdn.dinoempire.my';
 
         // XML Header
         let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
   <channel>
-    <title>E-Market Ürün Kataloğu</title>
+    <title>Katalog Produk DIN'O EMPIRE</title>
     <link>${baseUrl}</link>
-    <description>E-Market Ürün Kataloğu - Sunucusuz Hızlı Alışveriş</description>`;
+    <description>Katalog Produk DIN'O EMPIRE - Pembelian Pantas Terus Dari Kilang</description>`;
 
         // Generate item entries
         for (const urun of urunler) {
@@ -114,7 +117,7 @@ export class FeedController {
 
             // Sale price if discounted
             const salePrice = urun.indirimliFiyat
-                ? `<g:sale_price>${Number(urun.indirimliFiyat).toFixed(2)} TRY</g:sale_price>`
+                ? `<g:sale_price>${Number(urun.indirimliFiyat).toFixed(2)} MYR</g:sale_price>`
                 : '';
 
             // Original price for sale items
@@ -185,9 +188,9 @@ export class FeedController {
                 const shippingFeeStr = Number(itemShippingFee).toFixed(2);
                 shippingNode = `
       <g:shipping>
-        <g:country>TR</g:country>
-        <g:service>Kargo</g:service>
-        <g:price>${shippingFeeStr} TRY</g:price>
+        <g:country>MY</g:country>
+        <g:service>Penghantaran</g:service>
+        <g:price>${shippingFeeStr} MYR</g:price>
       </g:shipping>`;
             }
 
@@ -196,17 +199,17 @@ export class FeedController {
       <g:id>${this._escapeXml(urun.id)}</g:id>
       <g:title>${this._escapeXml(urun.ad)}</g:title>
       <g:description>${this._escapeXml(urun.aciklama || urun.ad)}</g:description>
-      <g:link>${baseUrl}/product/${this._escapeXml(urun.id)}</g:link>
+      <g:link>${baseUrl}/produk/${this._escapeXml(urun.slug || urun.id)}</g:link>
       <g:image_link>${this._escapeXml(imageUrl || '')}</g:image_link>
       <g:condition>new</g:condition>
       <g:availability>in_stock</g:availability>
       <g:shipping_weight>${Number(urun.agirlik || 1).toFixed(2)} kg</g:shipping_weight>
-      <g:price>${originalPrice} TRY</g:price>
+      <g:price>${originalPrice} MYR</g:price>
       ${salePrice}
-      <g:brand>${this._escapeXml(urun.marka?.ad || 'E-Market')}</g:brand>
+      <g:brand>${this._escapeXml(urun.marka?.ad || "DIN'O EMPIRE")}</g:brand>
       <g:identifier_exists>no</g:identifier_exists>
       <g:google_product_category>${this._mapToGoogleCategory(urun.kategori)}</g:google_product_category>
-      <g:product_type>${this._escapeXml(urun.kategori?.ad || 'Genel')}</g:product_type>
+      <g:product_type>${this._escapeXml(urun.kategori?.ad || 'Umum')}</g:product_type>
       ${shippingNode}
     </item>`;
         }

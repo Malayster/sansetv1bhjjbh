@@ -101,8 +101,8 @@ export function Footer() {
                         <ul className="space-y-3">
                             {[
                                 { name: 'Produk Utama', href: '/kedai' },
-                                { name: 'Pilihan Ramai', href: '/kedai?ozellik=one-cikan' },
-                                { name: 'Barangan Baru', href: '/kedai?ozellik=yeni' }
+                                { name: 'Pilihan Ramai', href: '/kedai?filter=featured' },
+                                { name: 'Barangan Baru', href: '/kedai?filter=new' }
                             ].map((item) => (
                                 <li key={item.name}>
                                     <Link to={item.href} className="text-gray-400 hover:text-amber-500 transition-colors flex items-center gap-2 text-sm group">

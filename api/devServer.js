@@ -137,7 +137,7 @@ function initDatabase() {
                 image: "/images/hero/shopping_hero.png",
                 badge: "Pilihan Ramai",
                 buttonText: "Lihat Barangan",
-                buttonLink: "/magaza"
+                buttonLink: "/kedai"
             },
             {
                 id: 'slide-2',
@@ -147,7 +147,7 @@ function initDatabase() {
                 image: "/images/hero/tech_hero.png",
                 badge: "Kualiti Dijamin",
                 buttonText: "Beli Sekarang",
-                buttonLink: "/magaza"
+                buttonLink: "/kedai"
             },
             {
                 id: 'slide-3',
@@ -157,7 +157,7 @@ function initDatabase() {
                 image: "/images/hero/deals_hero.png",
                 badge: "Bayaran Mudah",
                 buttonText: "Terokai Koleksi",
-                buttonLink: "/magaza"
+                buttonLink: "/kedai"
             }
         ];
         db.prepare(`INSERT INTO cms_kandungan (kunci, kandunganJson) VALUES ('hero_slides', ?)`).run(JSON.stringify(defaultHeroSlides));
@@ -168,7 +168,7 @@ function initDatabase() {
         const defaultBar = {
             active: true,
             text: "PENGHANTARAN PERCUMA ke seluruh Semenanjung untuk pesanan RM100 ke atas! Terus dari Kilang Kuala Ketil.",
-            link: "/magaza",
+            link: "/kedai",
             theme: "amber"
         };
         db.prepare(`INSERT INTO cms_kandungan (kunci, kandunganJson) VALUES ('announcement_bar', ?)`).run(JSON.stringify(defaultBar));
@@ -242,14 +242,14 @@ function initDatabase() {
                     id: 'link_2',
                     title: "🛍️ Terokai Katalog Lengkap Kilang Kuala Ketil",
                     subtitle: "Pelbagai barangan kualiti premium harga kilang",
-                    url: "/magaza",
+                    url: "/kedai",
                     highlight: false
                 },
                 {
                     id: 'link_3',
                     title: "🚚 Semak Status Tracking Bungkusan Anda",
                     subtitle: "Masukkan nombor pesanan atau token tracking",
-                    url: "/siparis-takip",
+                    url: "/jejak-pesanan",
                     highlight: false
                 },
                 {
@@ -376,10 +376,10 @@ const server = http.createServer(async (req, res) => {
                 sql += ` AND u.kategoriId = ?`;
                 params.push(query.kategoriId);
             }
-            if (query.ozellik === 'one-cikan') {
+            if (query.filter === 'featured' || query.ozellik === 'one-cikan') {
                 sql += ` AND u.oneCikan = 1`;
             }
-            if (query.ozellik === 'yeni') {
+            if (query.filter === 'new' || query.ozellik === 'yeni') {
                 sql += ` AND u.yeniUrun = 1`;
             }
             if (query.search) {

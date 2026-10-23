@@ -87,7 +87,8 @@ export function OrderTrackingPage() {
     const getStatusLabel = (status) => {
         switch (status) {
             case 'BEKLEMEDE': return 'Menunggu Pembayaran';
-            case 'ODENDİ':
+            case 'ODENDI':
+            case 'PAID':
             case 'HAZIRLANIYOR': return 'Sedang Dibungkus di Kilang';
             case 'KARGOLANDI': return 'Diserahkan Kepada Kurier';
             case 'TESLIM_EDILDI':

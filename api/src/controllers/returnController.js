@@ -12,7 +12,7 @@ export class ReturnController {
         const { token, iadeTipi, sebepAciklamasi, fotografUrls } = req.body;
 
         if (!token) {
-            return res.status(400).json({ status: 'error', errorMessage: 'Takip tokeni gerekli.' });
+            return res.status(400).json({ status: 'error', errorMessage: 'Token penjejakan diperlukan.' });
         }
 
         const result = await this.returnService.createReturnRequest({
@@ -22,13 +22,13 @@ export class ReturnController {
             fotografUrls
         });
 
-        res.json({ status: 'success', data: result, message: 'İade talebiniz oluşturuldu. Onay bekleniyor.' });
+        res.json({ status: 'success', data: result, message: 'Permohonan pemulangan anda telah dihantar. Menunggu kelulusan.' });
     });
 
     getReturnStatus = asyncHandler(async (req, res, next) => {
         const { token } = req.query;
         if (!token) {
-            return res.status(400).json({ status: 'error', errorMessage: 'Token gerekli.' });
+            return res.status(400).json({ status: 'error', errorMessage: 'Token diperlukan.' });
         }
 
         const result = await this.returnService.getReturnStatus(token);

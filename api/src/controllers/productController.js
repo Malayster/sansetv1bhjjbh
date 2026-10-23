@@ -51,13 +51,13 @@ export function validateMinimumImages(body) {
 }
 
 /**
- * Ürün HTTP isteklerini yöneten Controller.
+ * Controller for managing Product HTTP requests.
  * ProductController
  */
 export class ProductController {
     /**
-     * ProductController örneği oluşturur.
-     * @param {import('../services/productService.js').ProductService} productService - Ürün servisi.
+     * Initializes a new instance of ProductController.
+     * @param {import('../services/productService.js').ProductService} productService - Product service instance.
      */
     constructor(productService) {
         this.productService = productService;

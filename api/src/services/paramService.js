@@ -197,7 +197,7 @@ export class ParamService {
       <Hata_URL>${errorUrl}</Hata_URL>
       <Basarili_URL>${successUrl}</Basarili_URL>
       <Siparis_ID>${orderId}</Siparis_ID>
-      <Siparis_Aciklama>Sipariş #${orderId}</Siparis_Aciklama>
+      <Siparis_Aciklama>Pesanan #${orderId}</Siparis_Aciklama>
       <Taksit>${taksit}</Taksit>
       <Islem_Tutar>${islemTutar}</Islem_Tutar>
       <Toplam_Tutar>${toplamTutar}</Toplam_Tutar>
@@ -223,7 +223,7 @@ export class ParamService {
 
         if (sonuc !== '1') {
             console.error('[Param] API error:', sonucStr);
-            throw new Error(sonucStr || 'Ödeme başlatılamadı.');
+            throw new Error(sonucStr || 'Pembayaran gagal dimulakan.');
         }
 
         return {
@@ -272,7 +272,7 @@ export class ParamService {
         const failure = (errorMessage) => ({ status: 'failure', errorMessage, siparisNumarasi: orderId });
 
         if (!md || !mdStatus || !orderId || !islemGUID || !islemHash || !this.config.guid) {
-            return failure('Ödeme doğrulaması başarısız.');
+            return failure('Pengesahan pembayaran gagal.');
         }
 
         const expectedHash = await this._sha1Base64(
@@ -280,11 +280,11 @@ export class ParamService {
         );
         if (!timingSafeEqual(expectedHash, islemHash)) {
             console.error('[Param] Callback hash mismatch for order %s', orderId);
-            return failure('Geçersiz ödeme doğrulama imzası.');
+            return failure('Tandatangan pengesahan pembayaran tidak sah.');
         }
 
         if (mdStatus !== '1') {
-            return failure(callbackData.md_errormessage || 'Ödeme doğrulaması başarısız.');
+            return failure(callbackData.md_errormessage || 'Pengesahan pembayaran gagal.');
         }
 
         const bodyContent = `
@@ -305,7 +305,7 @@ export class ParamService {
             responseXml = await this._sendSoapRequest('TP_WMD_Pay', bodyContent);
         } catch (error) {
             console.error('[Param] TP_WMD_Pay failed:', error);
-            return failure('Ödeme tamamlanamadı.');
+            return failure('Pembayaran tidak dapat diselesaikan.');
         }
 
         const sonuc    = Number(this._extractTag(responseXml, 'Sonuc'));
@@ -313,7 +313,7 @@ export class ParamService {
         const dekontId = this._extractTag(responseXml, 'Dekont_ID');
 
         if (!(sonuc > 0) || !dekontId || !(Number(dekontId) > 0)) {
-            return failure(sonucAck || 'Ödeme tamamlanamadı.');
+            return failure(sonucAck || 'Pembayaran tidak dapat diselesaikan.');
         }
 
         return {
@@ -382,7 +382,7 @@ export class ParamService {
         const sonucStr = this._extractTag(responseXml, 'Sonuc_Str');
 
         if (sonuc !== '1') {
-            throw new Error(sonucStr || 'İptal işlemi başarısız.');
+            throw new Error(sonucStr || 'Pembatalan transaksi gagal.');
         }
     }
 

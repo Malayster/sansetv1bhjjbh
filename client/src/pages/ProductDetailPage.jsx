@@ -134,7 +134,7 @@ export function ProductDetailPage() {
         const colorOptions = Array.isArray(product?.renkSecenekleri) ? product.renkSecenekleri : [];
         const availableColors = paletteOptions.length > 0 ? paletteOptions.map((item) => item.name) : colorOptions;
         if (availableColors.length > 0 && !selectedColor) {
-            alert('Lutfen bir renk seciniz.');
+            alert('Sila pilih warna terlebih dahulu.');
             return;
         }
 
@@ -155,7 +155,7 @@ export function ProductDetailPage() {
             try {
                 await navigator.share({
                     title: product.ad,
-                    text: `${product.ad} - E-Market`,
+                    text: `${product.ad} - DIN'O EMPIRE`,
                     url: window.location.href
                 });
             } catch {
@@ -163,7 +163,7 @@ export function ProductDetailPage() {
             }
         } else {
             navigator.clipboard.writeText(window.location.href);
-            alert('Link kopyalandı!');
+            alert('Pautan produk berjaya disalin!');
         }
     };
 

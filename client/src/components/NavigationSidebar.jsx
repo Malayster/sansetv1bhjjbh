@@ -143,13 +143,13 @@ export function NavigationSidebar({ isOpen, onClose }) {
                             </span>
                             <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
                                 <button
-                                    onClick={() => handleLinkClick('/kedai?ozellik=one-cikan')}
+                                    onClick={() => handleLinkClick('/kedai?filter=featured')}
                                     className="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-left text-white/80 hover:text-emerald-400 transition cursor-pointer"
                                 >
                                     🔥 Paling Laris
                                 </button>
                                 <button
-                                    onClick={() => handleLinkClick('/kedai?ozellik=yeni')}
+                                    onClick={() => handleLinkClick('/kedai?filter=new')}
                                     className="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-left text-white/80 hover:text-emerald-400 transition cursor-pointer"
                                 >
                                     ✨ Produk Baru

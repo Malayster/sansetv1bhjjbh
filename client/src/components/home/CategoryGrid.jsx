@@ -30,7 +30,7 @@ export function CategoryGrid({ activeCategory }) {
                     {activeCategory.altKategoriler.map(sub => (
                         <div
                             key={sub.id}
-                            onClick={() => navigate(`/magaza?kategori=${sub.slug}`)}
+                            onClick={() => navigate(`/kedai?kategori=${sub.slug}`)}
                             className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden border border-gray-100 group hover:-translate-y-2"
                         >
                             <div className="aspect-square bg-linear-to-br from-gray-50 to-gray-100 relative overflow-hidden">

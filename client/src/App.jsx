@@ -129,11 +129,11 @@ function AppLayout() {
                     <Route path="/admin" element={isLocalhost ? <AdminDashboardPage /> : <AdminExternalRedirect />} />
                     <Route path="/admin/*" element={isLocalhost ? <AdminDashboardPage /> : <AdminExternalRedirect />} />
 
-                    <Route path="/pulangan" element={<LegalPage title="Syarat Pemulangan" contentKey="iade-degisim" />} />
-                    <Route path="/penghantaran" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="kargo-bilgileri" />} />
-                    <Route path="/terma-syarat" element={<LegalPage title="Terma & Syarat Jualan" contentKey="mesafeli-satis-sozlesmesi" />} />
-                    <Route path="/maklumat-awal" element={<LegalPage title="Maklumat Awal Pembelian" contentKey="on-bilgilendirme" />} />
-                    <Route path="/privasi" element={<LegalPage title="Dasar Privasi & Perlindungan Data (PDPA)" contentKey="gizlilik-ve-kvkk" />} />
+                    <Route path="/pulangan" element={<LegalPage title="Syarat Pemulangan" contentKey="pulangan" />} />
+                    <Route path="/penghantaran" element={<LegalPage title="Kadar & Maklumat Penghantaran" contentKey="penghantaran" />} />
+                    <Route path="/terma-syarat" element={<LegalPage title="Terma & Syarat Jualan" contentKey="terma-syarat" />} />
+                    <Route path="/maklumat-awal" element={<LegalPage title="Maklumat Awal Pembelian" contentKey="maklumat-awal" />} />
+                    <Route path="/privasi" element={<LegalPage title="Dasar Privasi & Perlindungan Data (PDPA)" contentKey="privasi-pdpa" />} />
 
                     {/* Redirect dari routes Turki lama */}
                     <Route path="/magaza" element={<Navigate to="/kedai" replace />} />

@@ -51,7 +51,7 @@ export function FeaturedProducts() {
                     </div>
 
                     <button
-                        onClick={() => navigate('/magaza')}
+                        onClick={() => navigate('/kedai')}
                         className="hidden md:flex items-center gap-2 text-corporate-black font-bold hover:text-indigo-600 transition-colors group cursor-pointer"
                     >
                         Lihat Semua
@@ -77,7 +77,7 @@ export function FeaturedProducts() {
                 {/* Mobile "See All" Button */}
                 <div className="mt-8 text-center md:hidden">
                     <button
-                        onClick={() => navigate('/magaza')}
+                        onClick={() => navigate('/kedai')}
                         className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors cursor-pointer"
                     >
                         Lihat Semua

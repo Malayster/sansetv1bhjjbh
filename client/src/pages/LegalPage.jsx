@@ -11,14 +11,20 @@ import { Sparkles, ShieldCheck } from 'lucide-react';
 export function LegalPage({ title, contentKey }) {
     const getContent = () => {
         switch (contentKey) {
+            case 'pulangan':
             case 'iade-degisim':
                 return <RefundPolicy />;
+            case 'penghantaran':
             case 'kargo-bilgileri':
                 return <ShippingInfo />;
+            case 'terma-syarat':
             case 'mesafeli-satis-sozlesmesi':
                 return <DistanceSalesAgreement />;
+            case 'maklumat-awal':
             case 'on-bilgilendirme':
                 return <PreliminaryInfoForm />;
+            case 'privasi-pdpa':
+            case 'privasi':
             case 'gizlilik-ve-kvkk':
                 return <PrivacyPolicy />;
             default:

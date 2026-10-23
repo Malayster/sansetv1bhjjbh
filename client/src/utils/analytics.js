@@ -4,7 +4,7 @@ import { getApiUrl } from '../lib/axios';
  * Storefront Telemetry & Analytics Utility (GTM / GA4)
  *
  * Routes GTM container loading and event collections through our
- * serverless edge metrics proxy to preserve KVKK privacy.
+ * serverless edge metrics proxy to preserve PDPA privacy.
  */
 
 // Default placeholder container ID if none is configured
@@ -118,7 +118,7 @@ export function trackViewItem(product) {
             item_id: product.id,
             item_name: product.ad,
             price: price,
-            item_brand: product.marka?.ad || 'E-Market',
+            item_brand: product.marka?.ad || "DIN'O EMPIRE",
             item_category: product.kategori?.ad || 'Genel',
             quantity: 1
         }]
@@ -152,7 +152,7 @@ export function trackAddToCart(product, quantity, selectedColor) {
             item_id: product.id,
             item_name: product.ad,
             price: price,
-            item_brand: product.marka?.ad || 'E-Market',
+            item_brand: product.marka?.ad || "DIN'O EMPIRE",
             item_category: product.kategori?.ad || 'Genel',
             quantity: quantity,
             item_variant: selectedColor || undefined
@@ -186,7 +186,7 @@ export function trackBeginCheckout(cartItems, totalValue) {
                 item_id: item.id,
                 item_name: item.ad,
                 price: price,
-                item_brand: item.marka?.ad || 'E-Market',
+                item_brand: item.marka?.ad || "DIN'O EMPIRE",
                 item_category: item.kategori?.ad || 'Genel',
                 quantity: item.quantity,
                 item_variant: item.selectedColor || undefined
@@ -224,7 +224,7 @@ export function trackPurchase(transactionId, cartItems, totalValue, shippingFee 
                 item_id: item.id,
                 item_name: item.ad,
                 price: price,
-                item_brand: item.marka?.ad || 'E-Market',
+                item_brand: item.marka?.ad || "DIN'O EMPIRE",
                 item_category: item.kategori?.ad || 'Genel',
                 quantity: item.quantity,
                 item_variant: item.selectedColor || undefined

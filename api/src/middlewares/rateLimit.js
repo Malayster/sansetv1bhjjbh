@@ -20,7 +20,7 @@ export const rateLimit = (bindingName, scope) => async (c, next) => {
     const { success } = await limiter.limit({ key: `${scope}:${client}` });
     if (!success) {
         return c.json(
-            { status: 'error', errorMessage: 'Çok fazla istek. Lütfen biraz sonra tekrar deneyin.' },
+            { status: 'error', errorMessage: 'Terlalu banyak permintaan. Sila cuba sebentar lagi.' },
             429,
             { 'Retry-After': '60' }
         );

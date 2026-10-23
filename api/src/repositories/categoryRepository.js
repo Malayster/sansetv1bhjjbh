@@ -2,12 +2,12 @@ import { BaseRepository } from './baseRepository.js';
 
 /**
  * Kategori veri etkileşimlerini yöneten Repository.
- * Temel CRUD işlemleri için BaseRepository'yi genişletir.
+ * Extends BaseRepository for category CRUD operations.
  */
 export class CategoryRepository extends BaseRepository {
     /**
      * CategoryRepository örneği oluşturur.
-     * @param {import('../generated/prisma/client.ts').PrismaClient} dbClient - Veritabanı istemcisi (PrismaClient).
+     * @param {import('../generated/prisma/client.ts').PrismaClient} dbClient - Database client (PrismaClient).
      */
     constructor(dbClient) {
         super(dbClient.kategori);
@@ -28,8 +28,8 @@ export class CategoryRepository extends BaseRepository {
     }
 
     /**
-     * Slug'a göre kategori bulur.
-     * @param {string} slug - Kategori slug'ı.
+     * Finds category by slug.
+     * @param {string} slug - Category slug.
      * @returns {Promise<Object|null>} Kategori.
      */
     async findBySlug(slug) {

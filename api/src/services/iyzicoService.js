@@ -138,7 +138,7 @@ export class IyzicoService {
             // Fallback: at least one item is mandatory in iyzico
             items = [{
                 id: `order-${orderNumber}`,
-                name: `Siparis #${orderNumber}`,
+                name: `Pesanan #${orderNumber}`,
                 category1: 'Genel',
                 itemType: 'PHYSICAL',
                 price: totalAmount.toFixed(2)
@@ -153,8 +153,8 @@ export class IyzicoService {
         if (difference > 0.01) {
             items.push({
                 id: `shipping-${orderNumber}`,
-                name: 'Kargo Ucreti',
-                category1: 'Kargo',
+                name: 'Kos Penghantaran',
+                category1: 'Penghantaran',
                 itemType: 'VIRTUAL',
                 price: difference.toFixed(2)
             });
@@ -214,7 +214,7 @@ export class IyzicoService {
 
         if (result.status !== 'success') {
             console.error('[iyzico] Initialization error:', result.errorMessage);
-            throw new Error(result.errorMessage || 'iyzico ödeme başlatma başarısız oldu.');
+            throw new Error(result.errorMessage || 'Permulaan bayaran iyzico gagal.');
         }
 
         // iyzico returns base64 HTML code inside threeDSHtmlContent
@@ -265,7 +265,7 @@ export class IyzicoService {
         if (status !== 'success' || !paymentId) {
             return {
                 status: 'failure',
-                errorMessage: 'Ödeme işlemi iptal edildi veya başarısız.',
+                errorMessage: 'Transaksi pembayaran dibatalkan atau gagal.',
                 siparisNumarasi: conversationId
             };
         }
@@ -289,7 +289,7 @@ export class IyzicoService {
                 if (!verificationResult.basketId || !verificationResult.paymentId) {
                     return {
                         status: 'failure',
-                        errorMessage: 'Ödeme doğrulama yanıtı eksik.',
+                        errorMessage: 'Respons pengesahan pembayaran tidak lengkap.',
                         siparisNumarasi: conversationId
                     };
                 }
@@ -304,7 +304,7 @@ export class IyzicoService {
             } else {
                 return {
                     status: 'failure',
-                    errorMessage: verificationResult.errorMessage || 'Ödeme doğrulama hatası.',
+                    errorMessage: verificationResult.errorMessage || 'Ralat pengesahan pembayaran.',
                     siparisNumarasi: conversationId
                 };
             }
@@ -312,7 +312,7 @@ export class IyzicoService {
             console.error('[iyzico] Secure verification detail check failed:', error);
             return {
                 status: 'failure',
-                errorMessage: error.message || 'Ödeme doğrulanamadı.',
+                errorMessage: error.message || 'Pembayaran tidak dapat disahkan.',
                 siparisNumarasi: conversationId
             };
         }
@@ -343,13 +343,13 @@ export class IyzicoService {
         const result = await this._request('/payment/cancel', 'POST', payload);
 
         if (result.status !== 'success') {
-            throw new Error(result.errorMessage || 'iyzico iptal işlemi başarısız.');
+            throw new Error(result.errorMessage || 'Pembatalan iyzico gagal.');
         }
 
         return {
             status: 'success',
             paymentId: paymentId,
-            message: 'iyzico iptal işlemi onaylandı.'
+            message: 'Pembatalan iyzico telah disahkan.'
         };
     }
 
