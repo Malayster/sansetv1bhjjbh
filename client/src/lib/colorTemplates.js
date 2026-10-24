@@ -455,4 +455,31 @@ export function applyThemeToDocument(themeObj) {
     root.setAttribute('data-dino-theme', 'active');
     root.setAttribute('data-dino-mode', isLight ? 'light' : 'dark');
     root.setAttribute('data-dino-scope', scope);
+
+    // Pastikan kelas .dino-themed wujud pada html & body untuk liputan 100% pada mobile & desktop
+    root.classList.add('dino-themed');
+    if (document.body) {
+        document.body.classList.add('dino-themed');
+        document.body.style.backgroundColor = bg;
+        document.body.style.color = text;
+    }
+    root.style.colorScheme = isLight ? 'light' : 'dark';
+
+    // Kemas kini warna bar status pelayar telefon pintar (Chrome/Safari Mobile)
+    try {
+        let metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (!metaTheme) {
+            metaTheme = document.createElement('meta');
+            metaTheme.setAttribute('name', 'theme-color');
+            document.head.appendChild(metaTheme);
+        }
+        metaTheme.setAttribute('content', headerBg || bg);
+
+        let metaApple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+        if (metaApple) {
+            metaApple.setAttribute('content', isLight ? 'default' : 'black-translucent');
+        }
+    } catch {
+        // abaikan
+    }
 }

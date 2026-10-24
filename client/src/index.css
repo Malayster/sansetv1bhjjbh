@@ -1119,6 +1119,10 @@ button, a, [role="button"] {
 .dino-themed.bg-slate-950,
 .dino-themed .bg-slate-950:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-\[\#020507\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#03080a\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#010304\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#030708\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#030709\]:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-gray-50:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-50:not(.dino-raw-preview):not(.dino-raw-preview *) {
     background-color: var(--dino-bg) !important;
@@ -1128,7 +1132,7 @@ button, a, [role="button"] {
     background-color: color-mix(in srgb, var(--dino-header-bg, var(--dino-bg)) 94%, transparent) !important;
 }
 
-/* 2. Latar Kad, Panel & Kotak Kandungan (Cards & Surfaces) */
+/* 2. Latar Kad, Panel & Kotak Kandungan (Cards & Surfaces - Mobile & Desktop) */
 .dino-themed .bg-slate-900:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-900\/95:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-900\/90:not(.dino-raw-preview):not(.dino-raw-preview *),
@@ -1137,11 +1141,27 @@ button, a, [role="button"] {
 .dino-themed .bg-slate-900\/60:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-900\/50:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-900\/40:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#060d11\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#060c0f\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#090e11\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-\[\#0a141a\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-black\/50:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-black\/60:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-black\/80:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-white:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-white\/\[0\.02\]:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-white\/\[0\.03\]:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-white\/\[0\.04\]:not(.dino-raw-preview):not(.dino-raw-preview *),
-.dino-themed .bg-white\/\[0\.05\]:not(.dino-raw-preview):not(.dino-raw-preview *) {
+.dino-themed .bg-white\/\[0\.05\]:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .from-\[\#0a1518\]\/90:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .via-\[\#06151a\]:not(.dino-raw-preview):not(.dino-raw-preview *) {
+    background-image: none !important;
+    background-color: var(--dino-card) !important;
+}
+
+html[data-dino-mode="light"] .from-white\/\[0\.05\],
+.dino-themed[data-dino-mode="light"] .from-white\/\[0\.05\] {
+    background-image: none !important;
     background-color: var(--dino-card) !important;
 }
 
@@ -1152,6 +1172,9 @@ button, a, [role="button"] {
 .dino-themed .bg-slate-800\/60:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-800\/50:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-slate-800\/40:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-slate-950\/60:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-slate-950\/70:not(.dino-raw-preview):not(.dino-raw-preview *),
+.dino-themed .bg-slate-950\/80:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-black\/40:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-black\/30:not(.dino-raw-preview):not(.dino-raw-preview *),
 .dino-themed .bg-white\/5:not(.dino-raw-preview):not(.dino-raw-preview *),
