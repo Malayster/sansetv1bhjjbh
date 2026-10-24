@@ -18,7 +18,7 @@ export function Header() {
         if (searchQuery.trim()) {
             navigate(`/kedai?search=${encodeURIComponent(searchQuery.trim())}`);
             setShowSearch(false);
-            setMobileMenuOpen(false);
+            setIsNavSidebarOpen(false);
         }
     };
 
@@ -30,7 +30,7 @@ export function Header() {
         }
     };
 
-    const phoneNo = settings?.telefon || cms?.info_kedai?.telefon || '016-6911020';
+    const phoneNo = settings?.telefon || cms?.info_kedai?.telefon || '013-2359647';
 
     return (
         <header className="sticky top-0 left-0 right-0 z-50 font-sans shadow-2xl">

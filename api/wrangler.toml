@@ -38,3 +38,6 @@ bucket_name = "dino-empire-assets"
 
 [[send_email]]
 name = "EMAIL"
+
+[triggers]
+crons = [ "0 0 * * *" ]

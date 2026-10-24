@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { Package, SkipForward, XCircle, RefreshCw, Star, Sparkles } from 'lucide-react';
 import SEO from '../components/SEO';
 import { PointsHistory } from '../components/PointsHistory';
+import { getApiUrl } from '../lib/axios';
 
-const API = import.meta.env.VITE_API_URL || '';
+const API = getApiUrl();
 
 export function MySubscriptionsPage() {
   const [searchParams] = useSearchParams();

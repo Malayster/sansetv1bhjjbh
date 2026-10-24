@@ -33,7 +33,7 @@ app.use('*', cors({
         const allowed = (c.env.CORS_ORIGIN || '').split(',').map((o) => o.trim()).filter(Boolean);
         return allowed.includes(origin) ? origin : null;
     },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['Content-Length'],
     maxAge: 600,

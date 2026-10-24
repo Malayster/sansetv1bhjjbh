@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, ShieldCheck, Zap } from 'lucide-react';
+import { getApiUrl } from '../../lib/axios';
+
+const API = getApiUrl();
 
 export function LiveTelemetryBadge({ onClick }) {
     const [latency, setLatency] = useState(null);
@@ -12,7 +15,7 @@ export function LiveTelemetryBadge({ onClick }) {
         const pingServer = async () => {
             const start = performance.now();
             try {
-                const res = await fetch('/api/v1/enterprise/telemetry');
+                const res = await fetch(`${API}/api/v1/enterprise/telemetry`);
                 const end = performance.now();
                 if (res.ok) {
                     const data = await res.json();

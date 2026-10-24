@@ -168,6 +168,7 @@ export function AdminDashboardPage() {
     const [inventoryHealth, setInventoryHealth] = useState(null);
     const [cmsContent, setCmsContent] = useState(null);
     const [auditLogs, setAuditLogs] = useState([]);
+    const [returnsList, setReturnsList] = useState([]);
 
     // 3 Butang Pantas Pentadbir (Boleh diedit URL bila-bila masa)
     const [quickLinks, setQuickLinks] = useState({
@@ -212,7 +213,7 @@ export function AdminDashboardPage() {
     const loadAllData = useCallback(async () => {
         try {
             setIsLoadingData(true);
-            const [prodRes, orderRes, catRes, setRes, trajRes, analRes, invRes, cmsRes, audRes] = await Promise.all([
+            const [prodRes, orderRes, catRes, setRes, trajRes, analRes, invRes, cmsRes, audRes, retRes] = await Promise.all([
                 api.get('/api/v1/admin/products').catch(() => ({ data: { data: [] } })),
                 api.get('/api/v1/admin/orders').catch(() => ({ data: { data: [] } })),
                 api.get('/api/v1/admin/categories').catch(() => api.get('/api/v1/categories')).catch(() => ({ data: [] })),
@@ -221,7 +222,8 @@ export function AdminDashboardPage() {
                 api.get('/api/v1/admin/analytics').catch(() => ({ data: { data: null } })),
                 api.get('/api/v1/admin/inventory-health').catch(() => ({ data: { data: null } })),
                 api.get('/api/v1/admin/cms').catch(() => ({ data: { data: null } })),
-                api.get('/api/v1/admin/audit-logs').catch(() => ({ data: { data: [] } }))
+                api.get('/api/v1/admin/audit-logs').catch(() => ({ data: { data: [] } })),
+                api.get('/api/v1/admin/returns').catch(() => ({ data: { data: [] } }))
             ]);
 
             const rawProducts = prodRes.data?.data || (Array.isArray(prodRes.data) ? prodRes.data : []);
@@ -239,7 +241,7 @@ export function AdminDashboardPage() {
                 const s = setRes.data?.data || setRes.data;
                 setSettings({
                     siteAdi: s.siteAdi || "DIN'O EMPIRE",
-                    telefon: s.telefon || '016-6911020',
+                    telefon: s.telefon || '013-2359647',
                     whatsapp: s.whatsappNumarasi || s.whatsapp || '013-2359647',
                     email: s.adminEmail || s.iletisimEmail || s.email || 'dinoempireenterprise@gmail.com',
                     alamat: s.adres || s.alamat || 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah',
@@ -278,6 +280,9 @@ export function AdminDashboardPage() {
             }
             if (audRes.data?.data) {
                 setAuditLogs(audRes.data.data);
+            }
+            if (retRes.data?.data && Array.isArray(retRes.data.data)) {
+                setReturnsList(retRes.data.data);
             }
         } catch (error) {
             console.error('Ralat memuatkan data dari API:', error);
@@ -2035,16 +2040,111 @@ export function AdminDashboardPage() {
                 {/* Tab Pemulangan */}
                 {activeTab === 'returns' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-white">Pengurusan Pemulangan & Bayaran Balik</h1>
-                            <p className="text-sm text-slate-400 mt-1">Semakan permohonan pemulangan barangan mengikut Akta Perlindungan Pengguna 1999.</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-black text-white">Pengurusan Pemulangan & Bayaran Balik</h1>
+                                <p className="text-sm text-slate-400 mt-1">Semakan permohonan pemulangan barangan mengikut Akta Perlindungan Pengguna 1999.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={loadAllData}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-xl text-xs font-bold transition cursor-pointer self-start"
+                            >
+                                <RefreshCw size={14} className={isLoadingData ? 'animate-spin' : ''} />
+                                <span>Muat Semula Senarai</span>
+                            </button>
                         </div>
 
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-400">
-                            <CheckCircle size={40} className="mx-auto text-emerald-500 mb-3" />
-                            <h3 className="text-lg font-bold text-white">Tiada Permohonan Pemulangan Tertunggak</h3>
-                            <p className="text-xs text-slate-500 mt-1">Semua pesanan pelanggan selesai dengan memuaskan.</p>
-                        </div>
+                        {returnsList.length === 0 ? (
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-400">
+                                <CheckCircle size={40} className="mx-auto text-emerald-500 mb-3" />
+                                <h3 className="text-lg font-bold text-white">Tiada Permohonan Pemulangan Tertunggak</h3>
+                                <p className="text-xs text-slate-500 mt-1">Semua pesanan pelanggan selesai dengan memuaskan.</p>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead>
+                                            <tr className="border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-950/40">
+                                                <th className="p-4">No. Pesanan</th>
+                                                <th className="p-4">Jenis & Sebab Pemulangan</th>
+                                                <th className="p-4">Status</th>
+                                                <th className="p-4 text-right">Tindakan Kelulusan</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-800/60">
+                                            {returnsList.map((ret) => {
+                                                const orderNo = ret.siparis?.siparisNumarasi || ret.siparisId || '-';
+                                                const buyer = ret.siparis?.ad || 'Pelanggan';
+                                                const statusLabel = ret.durum === 'ONAYLANDI'
+                                                    ? 'Diluluskan'
+                                                    : ret.durum === 'REDDEDILDI'
+                                                        ? 'Ditolak'
+                                                        : 'Menunggu Semakan';
+                                                const statusCls = ret.durum === 'ONAYLANDI'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                    : ret.durum === 'REDDEDILDI'
+                                                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+                                                return (
+                                                    <tr key={ret.id} className="hover:bg-slate-800/30 transition-colors">
+                                                        <td className="p-4">
+                                                            <div className="font-mono font-bold text-white">#{orderNo}</div>
+                                                            <div className="text-xs text-slate-400">{buyer}</div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="font-bold text-amber-400 text-xs uppercase">{ret.talepTipi || 'Pulangan Barang'}</div>
+                                                            <div className="text-xs text-slate-300 mt-1">{ret.aciklama || '-'}</div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${statusCls}`}>
+                                                                {statusLabel}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await api.put(`/api/v1/admin/returns/${ret.id}`, { durum: 'ONAYLANDI' });
+                                                                            showNotif('Permohonan pemulangan telah DILULUSKAN.');
+                                                                            loadAllData();
+                                                                        } catch (e) {
+                                                                            alert(e.response?.data?.errorMessage || 'Gagal mengemas kini status.');
+                                                                        }
+                                                                    }}
+                                                                    className="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                                >
+                                                                    Luluskan
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await api.put(`/api/v1/admin/returns/${ret.id}`, { durum: 'REDDEDILDI' });
+                                                                            showNotif('Permohonan pemulangan telah DITOLAK.');
+                                                                            loadAllData();
+                                                                        } catch (e) {
+                                                                            alert(e.response?.data?.errorMessage || 'Gagal mengemas kini status.');
+                                                                        }
+                                                                    }}
+                                                                    className="px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-bold transition cursor-pointer"
+                                                                >
+                                                                    Tolak
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

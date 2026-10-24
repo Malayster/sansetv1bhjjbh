@@ -340,6 +340,29 @@ router.get('/products', requirePermission('products'), adapt(productController.a
 router.post('/products', requirePermission('products'), adapt(productController.adminCreateProduct));
 router.put('/products/:id', requirePermission('products'), adapt(productController.adminUpdateProduct));
 router.delete('/products/:id', requirePermission('products'), adapt(productController.adminDeleteProduct));
+router.patch('/products/:id/stock', requirePermission('products'), async (c) => {
+  const id = c.req.param('id');
+  const body = await readBody(c);
+  const prisma = getPrisma(c.env);
+  try {
+    const existing = await prisma.urun.findUnique({ where: { id } });
+    if (!existing) {
+      return c.json({ status: 'error', errorMessage: 'Produk tidak dijumpai.' }, 404);
+    }
+    const currentStock = Number(existing.stokAdedi || 0);
+    const nextStock = body.stokAdedi !== undefined
+      ? Math.max(0, Number(body.stokAdedi))
+      : Math.max(0, currentStock + Number(body.delta || 0));
+
+    const updated = await prisma.urun.update({
+      where: { id },
+      data: { stokAdedi: nextStock }
+    });
+    return c.json({ status: 'success', data: updated });
+  } catch (err) {
+    return c.json({ status: 'error', errorMessage: err.message || 'Gagal mengemas kini stok.' }, 500);
+  }
+});
 
 router.get('/categories', requirePermission('categories'), adapt(categoryController.adminGetCategories));
 router.post('/categories', requirePermission('categories'), adapt(categoryController.adminCreateCategory));
@@ -355,6 +378,27 @@ router.get('/orders', requirePermission('orders'), adapt(orderController.adminGe
 router.get('/orders/:id', requirePermission('orders'), adapt(orderController.adminGetOrder));
 router.put('/orders/:id', requirePermission('orders'), adapt(orderController.adminUpdateOrder));
 
+function getMalaysiaStateCode(stateName = '') {
+  const s = String(stateName || '').toLowerCase().trim();
+  if (s.includes('johor')) return 'MY-01';
+  if (s.includes('kedah')) return 'MY-02';
+  if (s.includes('kelantan')) return 'MY-03';
+  if (s.includes('melaka') || s.includes('malacca')) return 'MY-04';
+  if (s.includes('sembilan')) return 'MY-05';
+  if (s.includes('pahang')) return 'MY-06';
+  if (s.includes('pinang') || s.includes('penang')) return 'MY-07';
+  if (s.includes('perak')) return 'MY-08';
+  if (s.includes('perlis')) return 'MY-09';
+  if (s.includes('selangor')) return 'MY-10';
+  if (s.includes('terengganu')) return 'MY-11';
+  if (s.includes('sabah')) return 'MY-12';
+  if (s.includes('sarawak')) return 'MY-13';
+  if (s.includes('kuala lumpur') || s.includes('kl')) return 'MY-14';
+  if (s.includes('labuan')) return 'MY-15';
+  if (s.includes('putrajaya')) return 'MY-16';
+  return 'MY-02';
+}
+
 router.post('/orders/:id/easyparcel-book', requirePermission('orders'), async (c) => {
   const id = c.req.param('id');
   const prisma = getPrisma(c.env);
@@ -368,15 +412,18 @@ router.post('/orders/:id/easyparcel-book', requirePermission('orders'), async (c
   }
 
   const ep = new EasyParcelService(c.env);
-  const receiver = order.teslimatAdresi || {};
-  const cleanPhone = (receiver.telefon || '0123456789').replace(/\D/g, '');
+  const receiver = order.teslimatAdresi || order || {};
+  const receiverStateCode = getMalaysiaStateCode(receiver.sehir || order.sehir || 'Kedah');
+  const receiverPostcode = receiver.postaKodu || order.postaKodu || '09300';
+  const cleanPhone = (receiver.telefon || order.telefon || '0123456789').replace(/\D/g, '');
+  const receiverName = receiver.adSoyad || `${order.ad || ''} ${order.soyad || ''}`.trim() || 'Pelanggan';
 
   try {
     const quotes = await ep.getQuotations({
       senderPostcode: '09300',
       senderState: 'MY-02',
-      receiverPostcode: receiver.postaKodu || '09300',
-      receiverState: 'MY-02',
+      receiverPostcode,
+      receiverState: receiverStateCode,
       weight: 1
     }).catch(() => []);
 
@@ -387,18 +434,18 @@ router.post('/orders/:id/easyparcel-book', requirePermission('orders'), async (c
       service_id: selectedService,
       sender: {
         name: "DIN'O EMPIRE HQ (Kilang Kuala Ketil)",
-        phone: '0166911020',
+        phone: '0132359647',
         postcode: '09300',
         subdivision_code: 'MY-02',
         address: 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah',
         country: 'MY'
       },
       receiver: {
-        name: receiver.adSoyad || 'Pelanggan',
+        name: receiverName,
         phone: cleanPhone,
-        postcode: receiver.postaKodu || '09300',
-        subdivision_code: 'MY-02',
-        address: `${receiver.adres || ''}, ${receiver.ilce || ''}, ${receiver.sehir || ''}`,
+        postcode: receiverPostcode,
+        subdivision_code: receiverStateCode,
+        address: `${receiver.adres || order.adres || ''}, ${receiver.ilce || order.ilce || ''}, ${receiver.sehir || order.sehir || ''}`,
         country: 'MY'
       },
       weight: 1,
@@ -456,6 +503,106 @@ router.put('/cms', requirePermission('settings'), async (c) => {
 });
 
 router.get('/analytics', requirePermission('analytics'), adapt(analyticsController.getDashboard));
+
+router.get('/financial-trajectory', requirePermission('analytics'), async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const orders = await prisma.siparis.findMany({
+      orderBy: { olusturulmaTarihi: 'desc' }
+    });
+    const validOrders = orders.filter(o => !['IPTAL_EDILDI', 'CANCELLED'].includes(o.durum));
+    const pendingOrders = orders.filter(o => ['BEKLEMEDE', 'PENDING'].includes(o.durum));
+    const kutipanKasar = validOrders.reduce((s, o) => s + Number(o.toplamTutar || 0), 0);
+    const kosPosDikutip = validOrders.reduce((s, o) => s + Number(o.kargoUcreti || 0), 0);
+    const kutipanBersih = Math.max(0, kutipanKasar - kosPosDikutip);
+    const kutipanTertunggak = pendingOrders.reduce((s, o) => s + Number(o.toplamTutar || 0), 0);
+    const pesananTertunggakBil = pendingOrders.length;
+    const aov = validOrders.length > 0 ? kutipanKasar / validOrders.length : 0;
+
+    let hariAktif = 1;
+    if (validOrders.length > 1) {
+      const oldest = new Date(validOrders[validOrders.length - 1].olusturulmaTarihi || Date.now()).getTime();
+      const newest = new Date(validOrders[0].olusturulmaTarihi || Date.now()).getTime();
+      hariAktif = Math.max(1, Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24)));
+    }
+    const halajuJualanHarian = kutipanKasar / hariAktif;
+
+    return c.json({
+      status: 'success',
+      data: {
+        kutipanKasar: Number(kutipanKasar.toFixed(2)),
+        kutipanBersih: Number(kutipanBersih.toFixed(2)),
+        kosPosDikutip: Number(kosPosDikutip.toFixed(2)),
+        kutipanTertunggak: Number(kutipanTertunggak.toFixed(2)),
+        pesananTertunggakBil,
+        aov: Number(aov.toFixed(2)),
+        halajuJualanHarian: Number(halajuJualanHarian.toFixed(2)),
+        hariAktif,
+        unjuran: {
+          hari30: Number((halajuJualanHarian * 30).toFixed(2)),
+          hari60: Number((halajuJualanHarian * 60).toFixed(2)),
+          hari90: Number((halajuJualanHarian * 90).toFixed(2)),
+          ayat: validOrders.length > 0
+            ? `Berdasarkan ${validOrders.length} pesanan aktif dengan purata RM ${halajuJualanHarian.toFixed(2)}/hari.`
+            : 'Tiada data pesanan mencukupi.'
+        }
+      }
+    });
+  } catch (err) {
+    return c.json({ status: 'error', errorMessage: err.message }, 500);
+  }
+});
+
+router.get('/inventory-health', requirePermission('products'), async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const products = await prisma.urun.findMany({
+      include: { kategori: true },
+      orderBy: { stokAdedi: 'asc' }
+    });
+    let selamat = 0;
+    let tipis = 0;
+    let habis = 0;
+    let jumlahUnitFizikal = 0;
+    let nilaiAsetGudang = 0;
+    const senaraiStokTipis = [];
+    const senaraiStokHabis = [];
+
+    for (const p of products) {
+      const stok = Number(p.stokAdedi || 0);
+      const harga = Number(p.indirimliFiyat || p.fiyat || 0);
+      jumlahUnitFizikal += Math.max(0, stok);
+      nilaiAsetGudang += Math.max(0, stok) * harga;
+
+      const formatted = {
+        ...p,
+        kategoriAd: p.kategori?.ad || 'Umum'
+      };
+      if (stok <= 0) {
+        habis++;
+        senaraiStokHabis.push(formatted);
+      } else if (stok < 15) {
+        tipis++;
+        senaraiStokTipis.push(formatted);
+      } else {
+        selamat++;
+      }
+    }
+
+    return c.json({
+      status: 'success',
+      data: {
+        kiraan: { selamat, tipis, habis },
+        jumlahUnitFizikal,
+        nilaiAsetGudang: Number(nilaiAsetGudang.toFixed(2)),
+        senaraiStokTipis,
+        senaraiStokHabis
+      }
+    });
+  } catch (err) {
+    return c.json({ status: 'error', errorMessage: err.message }, 500);
+  }
+});
 
 router.get('/notifications', adapt(notificationController.list));
 router.post('/notifications/:id/read', adapt(notificationController.markRead));

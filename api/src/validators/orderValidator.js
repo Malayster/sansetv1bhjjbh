@@ -9,8 +9,12 @@ export const checkoutSchema = z.object({
         quantity: z.coerce.number().int().positive(),
         name: z.string().optional(),
         price: z.coerce.number().optional(),
+        boxDiscountPercent: z.coerce.number().optional(),
         selectedColor: z.string().trim().min(1).max(50).optional()
     })).nonempty("Troli pesanan tidak boleh kosong"),
+
+    pointsToRedeem: z.coerce.number().int().nonnegative().optional(),
+    couponCode: z.string().trim().max(30).optional(),
 
     guestInfo: z.object({
         name: z.string().min(2, "Nama penuh sekurang-kurangnya 2 aksara"),

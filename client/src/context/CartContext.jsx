@@ -36,7 +36,8 @@ export function CartProvider({ children }) {
      */
     const addToCart = (product) => {
         setCartItems((prev) => {
-            const selectedColor = product.selectedColor || null;
+            const rawColor = product.selectedColor || product.secilenRenk || null;
+            const selectedColor = rawColor === 'Standard' ? null : rawColor;
             const cartKey = getCartItemKey(product.id, selectedColor);
             const existing = prev.find((item) => item.cartKey === cartKey);
 

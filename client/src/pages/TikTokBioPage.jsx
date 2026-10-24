@@ -75,7 +75,7 @@ export function TikTokBioPage() {
                     const rawVideos = cms.tiktok_videos || [];
                     setVideos(rawVideos.filter(v => v.active !== false));
 
-                    const prods = prodRes.data?.data || prodRes.data?.urunler || [];
+                    const prods = Array.isArray(prodRes.data) ? prodRes.data : (prodRes.data?.data || prodRes.data?.urunler || []);
                     setProducts(prods.slice(0, 6)); // Ambil 6 produk paling popular
                 }
             } catch (err) {

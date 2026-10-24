@@ -24,6 +24,7 @@ import { ParallaxProductCard } from '../components/enterprise/ParallaxProductCar
 import { TikTokVideoShowcase } from '../components/enterprise/TikTokVideoShowcase';
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
+import api from '../lib/axios';
 
 export function EnterpriseHomePage() {
     const navigate = useNavigate();
@@ -46,10 +47,10 @@ export function EnterpriseHomePage() {
     const discountText = config.discountText || "Jimat 35%";
 
     useEffect(() => {
-        fetch('/api/v1/products')
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setProducts(data);
+        api.get('/api/v1/products')
+            .then(res => {
+                const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                if (Array.isArray(list)) setProducts(list);
             })
             .catch(() => {});
     }, []);

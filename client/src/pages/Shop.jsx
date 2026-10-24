@@ -132,7 +132,7 @@ export function Shop() {
 
     const seoDescription = activeCategory
         ? `Terokai semua barangan berkualiti dalam kategori ${activeCategory.ad}.`
-        : "DIN'O EMPIRE - Portaj, Kilang Kuala Ketil & Barangan Terpilih Malaysia.";
+        : "DIN'O EMPIRE - Penghantaran Pantas, Kilang Kuala Ketil & Barangan Terpilih Malaysia.";
 
     const structuredData = combineSchemas(
         generateWebsiteSchema(),

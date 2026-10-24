@@ -94,7 +94,7 @@ export function CmsManagerTab({ cmsData, onSaveSuccess, showNotif }) {
     const [productList, setProductList] = useState([]);
     useEffect(() => {
         api.get('/api/v1/products?limit=100').then(res => {
-            const list = res.data?.data || res.data?.urunler || [];
+            const list = Array.isArray(res.data) ? res.data : (res.data?.data || res.data?.urunler || []);
             setProductList(list);
         }).catch(() => {});
     }, []);

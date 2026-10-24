@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
+import { getApiUrl } from '../lib/axios';
 
-const API = import.meta.env.VITE_API_URL || '';
+const API = getApiUrl();
 
 export function PointsRedeem({ email, onRedeem, appliedPoints = 0 }) {
   const [balance, setBalance] = useState(0);

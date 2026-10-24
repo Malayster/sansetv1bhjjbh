@@ -30,13 +30,13 @@ export const SEO = ({
     const siteTitle = settings.siteAdi || "DIN'O EMPIRE";
     const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
     const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dinoempire.my';
-    const defaultDescription = settings.hakkindaMetni || "DIN'O EMPIRE - Portaj, Kilang Kuala Ketil & Barangan Terpilih Malaysia.";
+    const defaultDescription = settings.hakkindaMetni || "DIN'O EMPIRE - Penghantaran Pantas, Kilang Kuala Ketil & Barangan Terpilih Malaysia.";
     const defaultKeywords = "dino empire, kilang kuala ketil, tepung goreng, sos char koey teow, toyyibpay, malaysia";
 
     const resolveImageUrl = (img) => {
         if (!img) return `${siteUrl}/images/og-image.png`;
         if (img.startsWith('http')) return img;
-        return `${settings.cdnUrl || 'https://dino-empire-assets.r2.cloudflarestorage.com'}/${img}`;
+        return `${settings.cdnUrl || 'https://cdn.dinoempire.my'}/${img}`;
     };
 
     const metaDescription = description || defaultDescription;
@@ -64,7 +64,7 @@ export const SEO = ({
             <meta property="og:image" content={metaImage} />
             <meta property="og:url" content={metaUrl} />
             <meta property="og:site_name" content={siteTitle} />
-            <meta property="og:locale" content="tr_TR" />
+            <meta property="og:locale" content="ms_MY" />
 
             {/* Twitter Card Tags */}
             <meta name="twitter:card" content="summary_large_image" />

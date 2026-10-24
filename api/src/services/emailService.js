@@ -160,7 +160,7 @@ export class EmailService {
         const orderLink = `${config.clientUrl}/jejak-pesanan?token=${orderDetails.trackingToken}`;
 
         const content = `
-            <p>Yang berhormat <strong>${esc(toName)}</strong>,</p>
+            <p>Pelanggan yang dihormati <strong>${esc(toName)}</strong>,</p>
             <p>Pesanan anda telah diterima dan sedang diproses. Terima kasih!</p>
 
             <div style="background-color: #F4F4F4; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #4f46e5;">
@@ -199,7 +199,7 @@ export class EmailService {
             : '';
 
         const content = `
-            <p>Yang berhormat <strong>${esc(toName)}</strong>,</p>
+            <p>Pelanggan yang dihormati <strong>${esc(toName)}</strong>,</p>
             <p>Pesanan <strong>#${esc(details.orderNumber)}</strong> telah dibatalkan.</p>
 
             ${reasonHtml}
@@ -253,13 +253,23 @@ export class EmailService {
             `;
         }).join('');
 
+        const statusMap = {
+            'BEKLEMEDE': 'Menunggu Pembayaran',
+            'HAZIRLANIYOR': 'Sedang Dibungkus',
+            'KARGOLANDI': 'Telah Diposkan',
+            'TESLIM_EDILDI': 'Telah Dihantar',
+            'TAMAMLANDI': 'Selesai',
+            'IPTAL_EDILDI': 'Dibatalkan'
+        };
+        const statusDisplay = statusMap[order.durum] || order.durum || '-';
+
         const content = `
             <p>Pesanan baru diterima.</p>
 
             <div style="background-color: #F4F4F4; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4f46e5;">
                 <p style="margin: 5px 0;"><strong>No. Pesanan:</strong> #${esc(order.siparisNumarasi || '-')}</p>
                 <p style="margin: 5px 0;"><strong>ID:</strong> ${esc(order.id || '-')}</p>
-                <p style="margin: 5px 0;"><strong>Status:</strong> ${esc(order.durum || '-')}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> ${esc(statusDisplay)}</p>
                 <p style="margin: 5px 0;"><strong>Status Bayaran:</strong> ${esc(order.odemeDurumu || '-')}</p>
                 <p style="margin: 5px 0;"><strong>Jumlah:</strong> <strong>RM${Number(order.toplamTutar || 0).toFixed(2)}</strong></p>
                 <p style="margin: 5px 0;"><strong>Penghantaran:</strong> RM${Number(order.kargoUcreti || 0).toFixed(2)}</p>

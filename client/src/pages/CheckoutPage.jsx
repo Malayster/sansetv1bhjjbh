@@ -57,8 +57,11 @@ export function CheckoutPage() {
     const [districts, setDistricts] = useState([]);
     const [errors, setErrors] = useState({});
     const [agreements, setAgreements] = useState({ salesAgreement: false });
-    const { settings } = useSettings();
+    const { settings, cms } = useSettings();
     const [appliedPoints, setAppliedPoints] = useState(0);
+    const [couponInput, setCouponInput] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponMsg, setCouponMsg] = useState({ text: '', isError: false });
 
     useEffect(() => {
         if (cartItems && cartItems.length > 0) {
@@ -76,7 +79,40 @@ export function CheckoutPage() {
         stateName: formData.city
     });
 
-    const displayTotal = Math.max(0, subTotal + (shippingFee || 0) - appliedPoints);
+    const couponDiscount = appliedCoupon
+        ? Number(((subTotal * appliedCoupon.percent) / 100).toFixed(2))
+        : 0;
+
+    const displayTotal = Math.max(0, subTotal - couponDiscount + (shippingFee || 0) - appliedPoints);
+
+    const handleApplyCoupon = () => {
+        const code = (couponInput || '').trim().toUpperCase();
+        if (!code) {
+            setCouponMsg({ text: 'Sila masukkan kod kupon.', isError: true });
+            return;
+        }
+        const dynamicCode = (cms?.bio_links?.voucherCode || 'TIKTOK10').trim().toUpperCase();
+        const validCoupons = {
+            [dynamicCode]: 10,
+            'TIKTOK10': 10,
+            'WELCOME10': 10,
+            'DINO10': 10,
+            'KILANG15': 15
+        };
+        if (validCoupons[code]) {
+            const pct = validCoupons[code];
+            setAppliedCoupon({ code, percent: pct });
+            setCouponMsg({ text: `Kupon ${code} aktif! Diskaun ${pct}% ditolak.`, isError: false });
+        } else {
+            setCouponMsg({ text: 'Kod kupon tidak sah atau telah tamat tempoh.', isError: true });
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponInput('');
+        setCouponMsg({ text: '', isError: false });
+    };
 
     const validateStep1 = () => {
         const newErrors = {};
@@ -162,7 +198,8 @@ export function CheckoutPage() {
                     isCorporate: formData.isCorporate, companyName: formData.companyName,
                     taxOffice: formData.taxOffice, taxNumber: formData.taxNumber
                 },
-                pointsToRedeem: appliedPoints
+                pointsToRedeem: appliedPoints,
+                couponCode: appliedCoupon?.code || undefined
             });
 
             if (orderResponse.data.status !== 'pending_payment') {
@@ -464,6 +501,50 @@ export function CheckoutPage() {
                                 ))}
                             </div>
 
+                            {/* Kotak Kupon Diskaun (cth: TIKTOK10) */}
+                            <div className="mb-4 p-3.5 rounded-xl bg-black/40 border border-white/10">
+                                <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                    Kod Kupon / Baucar Diskaun
+                                </label>
+                                {appliedCoupon ? (
+                                    <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 text-xs">
+                                        <div>
+                                            <span className="font-mono font-black text-emerald-400">{appliedCoupon.code}</span>
+                                            <span className="text-white/70 ml-2">(-{appliedCoupon.percent}%)</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveCoupon}
+                                            className="text-rose-400 hover:text-rose-300 font-bold text-[11px] cursor-pointer"
+                                        >
+                                            Buang
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={couponInput}
+                                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                            placeholder="cth: TIKTOK10"
+                                            className="flex-1 bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 font-mono uppercase focus:outline-none focus:border-emerald-400"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleApplyCoupon}
+                                            className="bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-black text-xs px-3.5 py-2 rounded-lg transition cursor-pointer"
+                                        >
+                                            Tebus
+                                        </button>
+                                    </div>
+                                )}
+                                {couponMsg.text && (
+                                    <p className={`text-[11px] mt-1.5 ${couponMsg.isError ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                        {couponMsg.text}
+                                    </p>
+                                )}
+                            </div>
+
                             <PointsRedeem
                                 email={formData.email}
                                 appliedPoints={appliedPoints}
@@ -475,6 +556,12 @@ export function CheckoutPage() {
                                     <span>Jumlah Kecil</span>
                                     <span className="font-mono font-bold text-white">RM {subTotal.toFixed(2)}</span>
                                 </div>
+                                {couponDiscount > 0 && (
+                                    <div className="flex justify-between text-emerald-400">
+                                        <span>Diskaun Kupon ({appliedCoupon?.code})</span>
+                                        <span className="font-mono font-bold">- RM {couponDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span>Kadar Pos Kurier</span>
                                     <span className="font-mono font-bold text-white">

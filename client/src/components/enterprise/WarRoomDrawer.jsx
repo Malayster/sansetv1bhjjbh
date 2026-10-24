@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Activity, Server, Zap, ShieldCheck, Play, RefreshCw, Terminal, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { getApiUrl } from '../../lib/axios';
+
+const API = getApiUrl();
 
 export function WarRoomDrawer({ isOpen, onClose }) {
     const [telemetry, setTelemetry] = useState(null);
@@ -16,8 +19,8 @@ export function WarRoomDrawer({ isOpen, onClose }) {
         setLoading(true);
         try {
             const [telRes, logRes] = await Promise.all([
-                fetch('/api/v1/enterprise/telemetry'),
-                fetch('/api/v1/enterprise/logs')
+                fetch(`${API}/api/v1/enterprise/telemetry`),
+                fetch(`${API}/api/v1/enterprise/logs`)
             ]);
             if (telRes.ok) {
                 const telData = await telRes.json();
@@ -45,7 +48,7 @@ export function WarRoomDrawer({ isOpen, onClose }) {
     const handleSimulateOrder = async () => {
         setSimulating(true);
         try {
-            const res = await fetch('/api/v1/enterprise/simulate-order', {
+            const res = await fetch(`${API}/api/v1/enterprise/simulate-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

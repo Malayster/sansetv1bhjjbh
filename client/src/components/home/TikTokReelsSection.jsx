@@ -28,7 +28,7 @@ export function TikTokReelsSection() {
                     const activeVideos = rawVideos.filter(v => v.active !== false);
                     setVideos(activeVideos);
 
-                    const prodList = prodRes.data?.data || prodRes.data?.urunler || [];
+                    const prodList = Array.isArray(prodRes.data) ? prodRes.data : (prodRes.data?.data || prodRes.data?.urunler || []);
                     setProducts(prodList);
                 }
             } catch (err) {

@@ -19,8 +19,8 @@ export class EasyParcelService {
     this.env = env;
     this.token = env.EASYPARCEL_ACCESS_TOKEN || '';
     this.refreshToken = env.EASYPARCEL_REFRESH_TOKEN || '';
-    this.clientId = env.EASYPARCEL_CLIENT_ID || '2f7ae6b2-4835-48e6-9bff-a3f7e49d4936';
-    this.clientSecret = env.EASYPARCEL_CLIENT_SECRET || '06311766-68d5-4b1b-8264-7cd5a8462333';
+    this.clientId = env.EASYPARCEL_CLIENT_ID || '';
+    this.clientSecret = env.EASYPARCEL_CLIENT_SECRET || '';
     this.base = env.EASYPARCEL_BASE_URL || BASE;
     this.db = env.DB || null;
   }

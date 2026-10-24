@@ -26,8 +26,8 @@ router.get('/callback', async (c) => {
     `);
   }
 
-  const clientId = c.env.EASYPARCEL_CLIENT_ID || '2f7ae6b2-4835-48e6-9bff-a3f7e49d4936';
-  const clientSecret = c.env.EASYPARCEL_CLIENT_SECRET || '06311766-68d5-4b1b-8264-7cd5a8462333';
+  const clientId = c.env.EASYPARCEL_CLIENT_ID || '';
+  const clientSecret = c.env.EASYPARCEL_CLIENT_SECRET || '';
   const redirectUri = c.env.EASYPARCEL_REDIRECT_URI || `https://www.dinoempire.my/api/v1/easyparcel/callback`;
 
   const basic = btoa(`${clientId}:${clientSecret}`);

@@ -22,13 +22,14 @@ export function generateOrderNumber() {
     return value;
 }
 
-async function awardPoints(eposta, amount, orderNumber) {
+async function awardPoints(db, eposta, amount, orderNumber) {
     if (!eposta || amount <= 0) return;
     const points = Math.floor(amount);
     if (points <= 0) return;
+    const client = db || prisma;
 
     try {
-        await prisma.points.upsert({
+        await client.points.upsert({
             where: { eposta },
             update: {
                 baki: { increment: points },
@@ -41,7 +42,7 @@ async function awardPoints(eposta, amount, orderNumber) {
             }
         });
 
-        await prisma.pointsLog.create({
+        await client.pointsLog.create({
             data: {
                 eposta,
                 jumlah: points,
@@ -51,7 +52,7 @@ async function awardPoints(eposta, amount, orderNumber) {
             }
         });
 
-        await prisma.siparis.updateMany({
+        await client.siparis.updateMany({
             where: { siparisNumarasi: orderNumber },
             data: { pointsEarned: points }
         });
@@ -60,17 +61,18 @@ async function awardPoints(eposta, amount, orderNumber) {
     }
 }
 
-async function deductPoints(eposta, amount, orderNumber) {
+async function deductPoints(db, eposta, amount, orderNumber) {
     if (!eposta || amount <= 0) return;
+    const client = db || prisma;
     try {
-        await prisma.points.update({
+        await client.points.update({
             where: { eposta },
             data: {
                 baki: { decrement: amount },
                 jumlahDigunakan: { increment: amount }
             }
         });
-        await prisma.pointsLog.create({
+        await client.pointsLog.create({
             data: {
                 eposta,
                 jumlah: -amount,
@@ -126,7 +128,8 @@ export class OrderService {
     }
 
     async processCheckout(checkoutData) {
-        const { items, guestInfo: customerInfo, pointsToRedeem = 0 } = checkoutData;
+        const { items, guestInfo: customerInfo, pointsToRedeem = 0, couponCode } = checkoutData;
+        const db = this.orderRepository?.prisma || prisma;
 
         let subTotal = 0;
         let totalWeight = 0;
@@ -173,16 +176,19 @@ export class OrderService {
                 ? product.renkSecenekleri.filter(Boolean)
                 : [];
             let selectedColor = typeof item.selectedColor === 'string' ? item.selectedColor.trim() : '';
+            if (selectedColor === 'Standard' && !productColors.includes('Standard')) {
+                selectedColor = '';
+            }
 
             if (productColors.length > 0 && !selectedColor) {
                 selectedColor = productColors[0];
             }
 
-            if (selectedColor && !productColors.includes(selectedColor)) {
+            if (productColors.length > 0 && selectedColor && !productColors.includes(selectedColor)) {
                 throw clientError(`Warna untuk ${product.ad} tidak sah.`);
             }
 
-            const finalColorName = selectedColor;
+            const finalColorName = selectedColor || 'Standard';
 
             subTotal += unitPrice * item.quantity;
             totalWeight += Number(product.agirlik || 1) * item.quantity;
@@ -203,7 +209,7 @@ export class OrderService {
             throw clientError('Berat melebihi had 100kg. Sila hubungi kami.');
         }
 
-        let settings = await prisma.sistemAyarlari.findUnique({ where: { id: 'global-settings' } }).catch(() => null);
+        let settings = await db.sistemAyarlari.findUnique({ where: { id: 'global-settings' } }).catch(() => null);
         const state = (customerInfo.city || '').toLowerCase().trim();
         const isKedah = state.includes('kedah');
         const isBorneo = state.includes('sabah') || state.includes('sarawak') || state.includes('labuan');
@@ -215,12 +221,22 @@ export class OrderService {
         const freeShippingLimit = Number(settings?.freeShippingMin ?? settings?.ucretsizKargoAltLimit ?? 100.00);
         if (subTotal >= freeShippingLimit && !isBorneo) shippingFee = 0.00;
 
+        let couponDiscount = 0;
+        if (couponCode && typeof couponCode === 'string') {
+            const cleanCode = couponCode.trim().toUpperCase();
+            const validCoupons = { 'TIKTOK10': 10, 'WELCOME10': 10, 'DINO10': 10, 'KILANG15': 15 };
+            const pct = validCoupons[cleanCode] || 0;
+            if (pct > 0) {
+                couponDiscount = Number(((subTotal * pct) / 100).toFixed(2));
+            }
+        }
+
         shippingFee = Number(shippingFee.toFixed(2));
-        let toplamTutar = subTotal + shippingFee;
+        let toplamTutar = Math.max(0, subTotal - couponDiscount + shippingFee);
 
         let pointsUsed = 0;
         if (pointsToRedeem > 0 && customerInfo.email) {
-            const pts = await prisma.points.findUnique({ where: { eposta: customerInfo.email } });
+            const pts = await db.points.findUnique({ where: { eposta: customerInfo.email } });
             if (pts && pts.baki >= pointsToRedeem) {
                 pointsUsed = Math.min(pointsToRedeem, Math.floor(toplamTutar));
                 toplamTutar = Math.max(0, toplamTutar - pointsUsed);
@@ -386,11 +402,12 @@ export class OrderService {
 
         await this.orderRepository.adjustStock(siparis.kalemler, -1);
 
+        const db = this.orderRepository?.prisma || prisma;
         if (siparis.pointsEarned < 0) {
-            await deductPoints(siparis.eposta, Math.abs(siparis.pointsEarned), siparis.siparisNumarasi);
+            await deductPoints(db, siparis.eposta, Math.abs(siparis.pointsEarned), siparis.siparisNumarasi);
         }
 
-        await awardPoints(siparis.eposta, Number(siparis.toplamTutar), siparis.siparisNumarasi);
+        await awardPoints(db, siparis.eposta, Number(siparis.toplamTutar), siparis.siparisNumarasi);
 
         const freshOrder = await this.orderRepository.getOrderById(siparis.id);
         if (freshOrder) {

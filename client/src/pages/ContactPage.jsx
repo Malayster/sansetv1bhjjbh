@@ -9,8 +9,8 @@ export function ContactPage() {
     const email = settings.iletisimEmail || 'dinoempire.my@gmail.com';
     const phone = settings.telefon || '016-6911020';
     const address = settings.adres || 'Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah, Malaysia';
-    const rawNum = settings.whatsappNumarasi || '60166911020';
-    const cleanNum = rawNum.replace(/[^0-9]/g, '') || '60166911020';
+    const rawNum = settings.whatsappNumarasi || '60132359647';
+    const cleanNum = rawNum.replace(/[^0-9]/g, '') || '60132359647';
     const waText = encodeURIComponent(`Salam ${siteTitle}, saya ingin bertanyakan mengenai pesanan atau barangan kilang.`);
 
     return (

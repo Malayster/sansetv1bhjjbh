@@ -149,7 +149,7 @@ export function TikTokVideoShowcase({ products }) {
                                         {vid.title || vid.caption || "Proses Pengeluaran & Kawalan Kualiti DIN'O EMPIRE"}
                                     </h3>
                                     <p className="text-[11px] text-white/50 line-clamp-2 leading-relaxed">
-                                        {vid.caption || vid.author || "Terus dari Kilang Kuala Ketil. Portaj terus ke depan pintu anda."}
+                                        {vid.caption || vid.author || "Terus dari Kilang Kuala Ketil. Penghantaran terus ke depan pintu anda."}
                                     </p>
                                 </div>
                             </div>

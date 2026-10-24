@@ -188,7 +188,7 @@ export const fetchSettings = async () => {
             ucretsizKargoAltLimit: 100,
             kargoDesiCarpani: 8,
             telefon: "016-6911020",
-            whatsappNumarasi: "60166911020",
+            whatsappNumarasi: "60132359647",
             iletisimEmail: "dinoempire.my@gmail.com",
             adres: "Kawasan Perusahaan Kuala Ketil, 09300 Kuala Ketil, Kedah, Malaysia"
         };

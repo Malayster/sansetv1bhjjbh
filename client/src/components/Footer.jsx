@@ -69,7 +69,7 @@ export function Footer() {
                             )}
                         </Link>
                         <p className="text-gray-400 leading-relaxed text-sm">
-                            Kilang Kuala Ketil & Barangan Terpilih Malaysia. Portaj pantas dan kualiti dijamin Halal.
+                            Kilang Kuala Ketil & Barangan Terpilih Malaysia. Penghantaran pantas dan kualiti dijamin Halal.
                         </p>
                         <div className="space-y-4 pt-2">
                             <a href={`mailto:${email}`} className="flex items-center gap-3 text-gray-300 hover:text-amber-500 transition-colors bg-white/5 p-4 rounded-lg border border-white/10 hover:border-amber-500/30">

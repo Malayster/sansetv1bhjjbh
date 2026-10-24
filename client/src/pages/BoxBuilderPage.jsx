@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useProducts } from '../hooks/useProducts';
 import { Plus, Minus, Package, ShoppingBag, AlertCircle, Repeat, Copy, Check } from 'lucide-react';
 import SEO from '../components/SEO';
+import { getApiUrl } from '../lib/axios';
 
 const TIERS = [
   { min: 50, discount: 5, label: '5% off' },
@@ -11,7 +12,7 @@ const TIERS = [
   { min: 150, discount: 15, label: '15% off' },
 ];
 
-const API = import.meta.env.VITE_API_URL || '';
+const API = getApiUrl();
 
 function getCurrentTier(total) {
   let current = null;
