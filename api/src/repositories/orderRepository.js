@@ -26,19 +26,46 @@ export class OrderRepository extends BaseRepository {
     }
 
     /**
-     * Updates payment and order status.
+     * Updates payment and order status, with optional tracking and courier.
      * @param {string} id - Order ID.
      * @param {string} paymentStatus - New payment status.
      * @param {string} status - New order status.
+     * @param {string} [trackingNo] - Courier tracking number.
+     * @param {string} [courier] - Courier provider name.
      * @returns {Promise<Object>} The updated order.
      */
-    async updateStatus(id, paymentStatus, status) {
+    async updateStatus(id, paymentStatus, status, trackingNo = undefined, courier = undefined) {
+        const data = {
+            odemeDurumu: paymentStatus,
+            durum: status
+        };
+        if (trackingNo !== undefined) data.kargoTakipNo = trackingNo;
+        if (courier !== undefined) data.kargoFirmasi = courier;
+
         return this.model.update({
             where: { id },
-            data: {
-                odemeDurumu: paymentStatus,
-                durum: status
-            }
+            data
+        });
+    }
+
+    /**
+     * Updates administrative order details including shipping tracking and invoice.
+     * @param {string} id - Order ID.
+     * @param {Object} data - Update fields.
+     * @returns {Promise<Object>} The updated order.
+     */
+    async updateOrderDetails(id, data = {}) {
+        const updateData = {};
+        if (data.odemeDurumu !== undefined) updateData.odemeDurumu = data.odemeDurumu;
+        if (data.durum !== undefined) updateData.durum = data.durum;
+        if (data.kargoTakipNo !== undefined) updateData.kargoTakipNo = data.kargoTakipNo;
+        if (data.kargoFirmasi !== undefined) updateData.kargoFirmasi = data.kargoFirmasi;
+        if (data.faturaDurumu !== undefined) updateData.faturaDurumu = data.faturaDurumu;
+        if (data.faturaNo !== undefined) updateData.faturaNo = data.faturaNo;
+
+        return this.model.update({
+            where: { id },
+            data: updateData
         });
     }
 
@@ -161,6 +188,51 @@ export class OrderRepository extends BaseRepository {
                 }
             }
         });
+    }
+
+    /**
+     * Cari pesanan menggunakan query: takipTokeni (UUID), siparisNumarasi, atau kargoTakipNo.
+     * @param {string} rawQuery - Kata carian daripada pelanggan.
+     * @returns {Promise<Object|null>} Maklumat pesanan atau null jika tiada padanan.
+     */
+    async findOrderByQuery(rawQuery) {
+        if (!rawQuery || typeof rawQuery !== 'string') return null;
+        const q = rawQuery.trim();
+        const cleanNo = q.replace(/^#/, '');
+
+        // 1. Semak padanan takipTokeni (UUID)
+        let order = await this.model.findUnique({
+            where: { takipTokeni: q },
+            include: { kalemler: { include: { urun: true } } }
+        }).catch(() => null);
+
+        if (order) return order;
+
+        // 2. Semak padanan siparisNumarasi (No Pesanan)
+        order = await this.model.findFirst({
+            where: {
+                OR: [
+                    { siparisNumarasi: q },
+                    { siparisNumarasi: cleanNo }
+                ]
+            },
+            include: { kalemler: { include: { urun: true } } }
+        }).catch(() => null);
+
+        if (order) return order;
+
+        // 3. Semak padanan kargoTakipNo (Nombor Tracking Kurier)
+        order = await this.model.findFirst({
+            where: {
+                OR: [
+                    { kargoTakipNo: q },
+                    { kargoTakipNo: cleanNo }
+                ]
+            },
+            include: { kalemler: { include: { urun: true } } }
+        }).catch(() => null);
+
+        return order;
     }
 
     /**

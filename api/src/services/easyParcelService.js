@@ -76,11 +76,11 @@ export class EasyParcelService {
     if (this.db) {
       try {
         await this.db.prepare(
-          `INSERT INTO sistem_ayarlari (id, kargo_ayarlari, guncellenme_tarihi) 
+          `INSERT INTO sistem_ayarlari (id, kargo_ayarlari, updatedAt) 
            VALUES ('global-settings', ?1, datetime('now'))
            ON CONFLICT(id) DO UPDATE SET 
              kargo_ayarlari = json_patch(coalesce(kargo_ayarlari, '{}'), ?1),
-             guncellenme_tarihi = datetime('now')`
+             updatedAt = datetime('now')`
         ).bind(JSON.stringify({
           easyparcel: {
             access_token: this.token,

@@ -33,22 +33,23 @@ export class OrderController {
      * @param {import('express').NextFunction} next - Express next fonksiyonu.
      */
     trackOrder = asyncHandler(async (req, res, next) => {
-        const { token } = req.query;
+        const query = (req.query.token || req.query.q || req.query.query || req.query.orderNumber || req.query.trackingNo || '').trim();
 
-        if (!token) {
-            return res.status(400).json({ status: 'failure', errorMessage: 'Token penjejakan tidak lengkap.' });
+        if (!query) {
+            return res.status(400).json({ status: 'failure', errorMessage: 'Sila masukkan nombor pesanan atau nombor tracking kurier.' });
         }
 
-        const order = await this.orderService.getOrderByTrackingToken(token);
+        const order = await this.orderService.findOrderByQuery(query);
 
         if (!order) {
-            return res.status(404).json({ status: 'failure', errorMessage: 'Pesanan tidak dijumpai.' });
+            return res.status(404).json({ status: 'failure', errorMessage: 'Pesanan tidak dijumpai. Sila pastikan nombor pesanan atau no. tracking anda betul.' });
         }
 
         res.json({
             status: 'success',
             data: {
                 siparisNumarasi: order.siparisNumarasi,
+                takipTokeni: order.takipTokeni,
                 durum: order.durum,
                 olusturulmaTarihi: order.olusturulmaTarihi,
                 kargoTakipNo: order.kargoTakipNo || null,
@@ -60,7 +61,7 @@ export class OrderController {
                 araToplam: (Number(order.toplamTutar) - Number(order.kargoUcreti)).toFixed(2),
 
                 // Items
-                kalemler: order.kalemler.map(item => ({
+                kalemler: (order.kalemler || []).map(item => ({
                     urunAd: item.urunAdSnapshot,
                     secilenRenk: item.secilenRenk,
                     adet: item.adet,

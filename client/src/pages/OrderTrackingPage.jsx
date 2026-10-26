@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/axios';
-import { CheckCircle, Clock, Package, AlertCircle, Phone, XCircle, MapPin, Truck, MessageCircle, Sparkles } from 'lucide-react';
+import { CheckCircle, Clock, Package, AlertCircle, Phone, XCircle, MapPin, Truck, MessageCircle, Sparkles, Search, Copy, Check, ExternalLink, ArrowRight } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
 import SEO from '../components/SEO';
 
 export function OrderTrackingPage() {
-    const [searchParams] = useSearchParams();
-    const token = searchParams.get('token');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const token = searchParams.get('token') || searchParams.get('q') || searchParams.get('order') || searchParams.get('tracking') || '';
+    const [searchInput, setSearchInput] = useState(token || '');
     const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [copiedTracking, setCopiedTracking] = useState(false);
 
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
@@ -19,18 +22,88 @@ export function OrderTrackingPage() {
     const [returnType, setReturnType] = useState("KUSURLU_URUN");
     const [returnReason, setReturnReason] = useState("");
 
+    const getCourierTrackingUrl = (courier, trackingNo) => {
+        if (!trackingNo) return '#';
+        const c = (courier || '').toLowerCase();
+        const no = encodeURIComponent(trackingNo.trim());
+        if (c.includes('j&t') || c.includes('jnt')) return `https://www.tracking.my/jt/${no}`;
+        if (c.includes('pos laju') || c.includes('poslaju')) return `https://www.tracking.my/poslaju/${no}`;
+        if (c.includes('ninja')) return `https://www.tracking.my/ninjavan/${no}`;
+        if (c.includes('flash')) return `https://www.tracking.my/flashexpress/${no}`;
+        return `https://www.tracking.my/track/${no}`;
+    };
+
+    const handleCopyTracking = (trackingNo) => {
+        if (!trackingNo) return;
+        navigator.clipboard.writeText(trackingNo.trim());
+        setCopiedTracking(true);
+        setTimeout(() => setCopiedTracking(false), 2500);
+    };
+
+    const fetchOrderByQuery = async (queryStr) => {
+        const cleanQuery = (queryStr || '').trim();
+        if (!cleanQuery) {
+            setOrder(null);
+            setError(null);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await api.get(`/api/v1/orders/track?q=${encodeURIComponent(cleanQuery)}`);
+            if (response.data.status === 'success' && response.data.data) {
+                setOrder(response.data.data);
+                setError(null);
+            } else {
+                setOrder(null);
+                setError('Tiada pesanan dijumpai dengan nombor tersebut. Sila semak semula nombor pesanan atau nombor tracking anda.');
+            }
+        } catch (err) {
+            setOrder(null);
+            setError(err.response?.data?.errorMessage || 'Tiada pesanan dijumpai. Sila pastikan nombor pesanan atau kod tracking anda betul.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (token) {
+            setSearchInput(token);
+            fetchOrderByQuery(token);
+        } else {
+            setOrder(null);
+            setError(null);
+            setLoading(false);
+        }
+    }, [token]);
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        const val = searchInput.trim();
+        if (!val) return;
+        setSearchParams({ q: val });
+        fetchOrderByQuery(val);
+    };
+
     const submitReturnRequest = async () => {
+        const activeToken = order?.takipTokeni || token;
+        if (!activeToken) {
+            alert('Ralat: Token keselamatan pesanan diperlukan untuk mohon pemulangan.');
+            return;
+        }
         try {
             setLoading(true);
             await api.post(`/api/v1/returns/request`, {
-                token,
+                token: activeToken,
                 iadeTipi: returnType,
                 sebepAciklamasi: returnReason
             });
             alert('Permohonan pemulangan anda telah diterima! Pihak kami akan menghubungi anda dalam tempoh 1-2 hari bekerja.');
             setIsReturnModalOpen(false);
-            const response = await api.get(`/api/v1/orders/track?token=${token}`);
-            if (response.data.status === 'success') setOrder(response.data.data);
+            await fetchOrderByQuery(activeToken);
         } catch (err) {
             alert(err.response?.data?.errorMessage || 'Ralat berlaku semasa menghantar permohonan pemulangan.');
         } finally {
@@ -38,45 +111,22 @@ export function OrderTrackingPage() {
         }
     };
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            if (!token) {
-                setError('Kod penjejakan tidak dijumpai. Sila pastikan pautan pesanan anda lengkap.');
-                setLoading(false);
-                return;
-            }
-
-            try {
-                const response = await api.get(`/api/v1/orders/track?token=${token}`);
-                if (response.data.status === 'success') {
-                    setOrder(response.data.data);
-                } else {
-                    setError('Maklumat pesanan tidak dijumpai dalam rekod.');
-                }
-            } catch (err) {
-                setError('Ralat berlaku semasa mendapatkan maklumat pesanan atau kod penjejakan tidak sah.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchOrder();
-    }, [token]);
-
     const handleCancelClick = () => {
         setIsCancelModalOpen(true);
     };
 
     const confirmCancel = async () => {
+        const activeToken = order?.takipTokeni || token;
+        if (!activeToken) {
+            alert('Ralat: Token keselamatan pesanan diperlukan untuk membatalkan pesanan.');
+            return;
+        }
         try {
             setLoading(true);
-            await api.post(`/api/v1/orders/cancel`, { token, reason: cancelReason });
-            const response = await api.get(`/api/v1/orders/track?token=${token}`);
-            if (response.data.status === 'success') {
-                setOrder(response.data.data);
-                setIsCancelModalOpen(false);
-                setCancelReason("");
-            }
+            await api.post(`/api/v1/orders/cancel`, { token: activeToken, reason: cancelReason });
+            await fetchOrderByQuery(activeToken);
+            setIsCancelModalOpen(false);
+            setCancelReason("");
         } catch (err) {
             alert(err.response?.data?.errorMessage || 'Ralat berlaku semasa membatalkan pesanan.');
         } finally {
@@ -99,31 +149,113 @@ export function OrderTrackingPage() {
     };
 
     const whatsappLink = `https://wa.me/60166911020?text=${encodeURIComponent(
-        `Salam DIN'O EMPIRE, saya ingin bertanya status pesanan saya #${order?.siparisNumarasi || ''}`
+        `Salam DIN'O EMPIRE, saya ingin bertanya status pesanan saya #${order?.siparisNumarasi || searchInput || ''}`
     )}`;
 
     const renderContent = () => {
-        if (loading) {
+        if (loading && !order) {
             return (
-                <div className="max-w-2xl mx-auto my-16 p-8 text-center text-white font-sans">
+                <div className="max-w-2xl mx-auto my-24 p-8 text-center text-white font-sans">
                     <Clock className="w-12 h-12 text-emerald-400 mx-auto animate-spin mb-4" />
-                    <p className="text-white/60 font-mono text-sm">Memuatkan maklumat pesanan kilang...</p>
+                    <p className="text-white/60 font-mono text-sm">Menyemak maklumat pesanan kilang...</p>
                 </div>
             );
         }
 
-        if (error) {
+        if (!order) {
             return (
-                <div className="max-w-2xl mx-auto my-16 p-8 bg-[#060d11] rounded-2xl border border-white/10 text-center text-white font-sans shadow-2xl">
-                    <AlertCircle className="w-16 h-16 text-rose-400 mx-auto mb-4" />
-                    <h2 className="text-2xl font-black text-white mb-2">Maklumat Tidak Dijumpai</h2>
-                    <p className="text-white/60 mb-6 text-sm">{error}</p>
-                    <Link
-                        to="/"
-                        className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase font-mono tracking-wider px-6 py-3 rounded-xl transition shadow-[0_0_15px_rgba(16,185,129,0.35)]"
-                    >
-                        Kembali ke Laman Utama
-                    </Link>
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative font-sans">
+                    <SEO
+                        title="Jejak Pesanan Kilang - DIN'O EMPIRE"
+                        description="Semak status bungkusan dan pesanan anda dari kilang DIN'O EMPIRE Kuala Ketil."
+                    />
+
+                    <div className="text-center max-w-2xl mx-auto mb-10">
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider mb-4">
+                            <Truck size={14} />
+                            <span>SISTEM PENJEJAKAN PESANAN KILANG</span>
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
+                            Jejak Status Bungkusan Anda
+                        </h1>
+                        <p className="mt-3 text-sm text-white/60">
+                            Masukkan Nombor Pesanan (cth: <span className="font-mono text-emerald-400">4339995211</span>) atau Nombor Tracking Kurier anda untuk semakan status terkini secara langsung.
+                        </p>
+                    </div>
+
+                    {/* Search Card */}
+                    <div className="bg-[#060d11] rounded-3xl border border-white/10 p-6 sm:p-10 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+                        <form onSubmit={handleSearchSubmit} className="space-y-4">
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+                                    <input
+                                        type="text"
+                                        value={searchInput}
+                                        onChange={(e) => setSearchInput(e.target.value)}
+                                        placeholder="Nombor Pesanan (cth: 4339995211) atau Tracking Kurier"
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-black/40 border border-white/10 text-white font-mono text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-500 transition shadow-inner"
+                                        autoFocus
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={loading || !searchInput.trim()}
+                                    className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-black font-mono text-sm uppercase tracking-wider rounded-2xl transition shadow-[0_0_20px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Clock className="w-5 h-5 animate-spin" />
+                                            <span>Menyemak...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Semak Pesanan</span>
+                                            <ArrowRight size={18} />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+
+                        {error && (
+                            <div className="mt-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300 text-xs sm:text-sm">
+                                <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-400" />
+                                <div>
+                                    <strong className="font-bold block text-rose-200 mb-0.5">Pesanan Tidak Dijumpai</strong>
+                                    <span>{error}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Guide Grid */}
+                        <div className="mt-8 pt-8 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+                            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                                <span className="text-xs font-mono font-bold text-emerald-400 block mb-1">
+                                    1. Di Mana No. Pesanan?
+                                </span>
+                                <p className="text-[11px] text-white/60">
+                                    Boleh didapati di e-mel invois rasmi ToyyibPay atau resit pesanan anda.
+                                </p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                                <span className="text-xs font-mono font-bold text-emerald-400 block mb-1">
+                                    2. Rakan Kurier Rasmi
+                                </span>
+                                <p className="text-[11px] text-white/60">
+                                    Penghantaran pos melalui Pos Laju Malaysia, J&T Express, Ninja Van & Flash Express.
+                                </p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                                <span className="text-xs font-mono font-bold text-emerald-400 block mb-1">
+                                    3. Perlukan Bantuan?
+                                </span>
+                                <p className="text-[11px] text-white/60">
+                                    Hubungi kilang di <a href="https://wa.me/60166911020" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">016-6911020</a> untuk bantuan semakan segera.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -134,6 +266,25 @@ export function OrderTrackingPage() {
                     title={`Penjejakan Pesanan #${order.siparisNumarasi} - DIN'O EMPIRE`}
                     description="Semak status dan butiran penghantaran pesanan DIN'O EMPIRE anda."
                 />
+
+                {/* Sub-header navigation: Cari Pesanan Lain */}
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                    <button
+                        onClick={() => {
+                            setOrder(null);
+                            setSearchParams({});
+                            setSearchInput('');
+                        }}
+                        className="flex items-center gap-2 text-xs font-mono font-bold text-white/60 hover:text-white transition cursor-pointer px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10"
+                    >
+                        <Search size={14} className="text-emerald-400" />
+                        <span>Jejak Pesanan Lain</span>
+                    </button>
+
+                    <div className="text-xs text-white/50 font-mono">
+                        Kilang Kuala Ketil • Penghantaran Selamat Seluruh Malaysia
+                    </div>
+                </div>
 
                 <div className="bg-[#060d11] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
                     {/* Header */}
@@ -165,9 +316,9 @@ export function OrderTrackingPage() {
                         </div>
                     </div>
 
-                    {/* Status Bar */}
+                    {/* Status Bar & Kurier Section */}
                     <div className="p-6 border-b border-white/10 bg-white/[0.02] flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="font-mono text-xs text-white/60 uppercase font-bold">Status:</span>
                             <span className={`px-4 py-1.5 rounded-full text-xs font-mono font-black uppercase tracking-wider ${
                                 order.durum === 'TAMAMLANDI' || order.durum === 'TESLIM_EDILDI' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
@@ -180,10 +331,35 @@ export function OrderTrackingPage() {
                                 {getStatusLabel(order.durum)}
                             </span>
 
-                            {order.kargoTakipNo && (
-                                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
-                                    <Truck size={14} />
-                                    <span>Tracking: {order.kargoFirmasi || 'Kurier'} - {order.kargoTakipNo}</span>
+                            {order.kargoTakipNo ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/30">
+                                        <Truck size={14} />
+                                        <span>{order.kargoFirmasi || 'Kurier'}: <strong>{order.kargoTakipNo}</strong></span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCopyTracking(order.kargoTakipNo)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white rounded-xl text-xs font-mono font-bold border border-white/10 transition cursor-pointer"
+                                        title="Salin Nombor Tracking"
+                                    >
+                                        {copiedTracking ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                                        <span>{copiedTracking ? 'Disalin!' : 'Salin'}</span>
+                                    </button>
+                                    <a
+                                        href={getCourierTrackingUrl(order.kargoFirmasi, order.kargoTakipNo)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-mono font-black uppercase tracking-wider transition shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                                    >
+                                        <span>Buka Portal {order.kargoFirmasi || 'Kurier'}</span>
+                                        <ExternalLink size={13} />
+                                    </a>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 text-xs font-mono text-amber-300/90 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/30">
+                                    <Package size={14} />
+                                    <span>Bungkusan sedang diproses di kilang.</span>
                                 </div>
                             )}
                         </div>

@@ -124,7 +124,14 @@ export class OrderService {
             });
         }
 
-        return this.orderRepository.updateStatus(id, existing.odemeDurumu, data.durum || existing.durum);
+        return this.orderRepository.updateOrderDetails(id, {
+            odemeDurumu: data.odemeDurumu || existing.odemeDurumu,
+            durum: data.durum || existing.durum,
+            kargoTakipNo: data.kargoTakipNo !== undefined ? data.kargoTakipNo : existing.kargoTakipNo,
+            kargoFirmasi: data.kargoFirmasi !== undefined ? data.kargoFirmasi : existing.kargoFirmasi,
+            faturaDurumu: data.faturaDurumu !== undefined ? data.faturaDurumu : existing.faturaDurumu,
+            faturaNo: data.faturaNo !== undefined ? data.faturaNo : existing.faturaNo
+        });
     }
 
     async processCheckout(checkoutData) {
@@ -475,6 +482,10 @@ export class OrderService {
 
     async getOrderByTrackingToken(token) {
         return this.orderRepository.getOrderByTrackingToken(token);
+    }
+
+    async findOrderByQuery(query) {
+        return this.orderRepository.findOrderByQuery(query);
     }
 
     async getInstallmentOptions(bin, amount) {
