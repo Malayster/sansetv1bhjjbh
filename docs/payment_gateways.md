@@ -1,189 +1,118 @@
-# Ödeme Sağlayıcıları Yapılandırma Rehberi
+# Panduan Integrasi Gerbang Pembayaran DIN'O EMPIRE (ToyyibPay)
 
-E-Market, Türkiye'nin önde gelen üç ödeme sağlayıcısını tek ve bağımsız bir
-arayüz üzerinden destekler. Sağlayıcı değiştirmek için tek bir ortam
-değişkenini değiştirmek yeterlidir; kod değişikliği gerekmez.
+DIN'O EMPIRE menggunakan **ToyyibPay** sebagai gerbang pembayaran rasmi (*payment gateway*) untuk pasaran Malaysia. Integrasi ini menyokong perbankan atas talian **FPX (semua bank tempatan Malaysia)** dan **Kad Kredit/Debit**.
+
+Seni bina pembayaran direka menggunakan corak reka bentuk *Strategy Pattern* (`api/src/services/toyyibpayService.js`), membolehkan transaksi diproses dengan selamat tanpa menyimpan sebarang maklumat perbankan pelanggan di dalam pangkalan data.
 
 ---
 
-## Desteklenen sağlayıcılar
+## 🇲🇾 Kaedah Pembayaran Yang Disokong
 
-| Sağlayıcı | Protokol | 3D Secure | Test ortamı |
+| Kaedah Pembayaran | Rangkaian / Protokol | Pengesahan | Persekitaran Ujian |
 | :--- | :--- | :--- | :--- |
-| **Param POS** | HTTPS üzerinden SOAP/XML | ✅ | ✅ |
-| **iyzico** | REST/JSON | ✅ | ✅ (sandbox) |
-| **PayTR** | HMAC imzalı doğrudan POST | ✅ | ✅ (mağaza panelinden test modu) |
+| **FPX Perbankan Atas Talian** | Semua bank utama Malaysia (Maybank2u, CIMB Clicks, Bank Islam, RHB, Public Bank, dll.) | Kod Resit & Status Transaksi ToyyibPay | Sandbox ToyyibPay / Production Live |
+| **Kad Kredit & Kad Debit** | Visa & Mastercard (3D Secure OTP Bank) | 3D Secure Bank Penerbit | Sandbox ToyyibPay / Production Live |
 
 ---
 
-## Sağlayıcı seçimi
+## ⚙️ Pemboleh Ubah Konfigurasi & Kunci Rahsia
 
-Sağlayıcı, `api/wrangler.toml` içinde ortam bazında `PAYMENT_PROVIDER`
-değişkeniyle seçilir:
+Konfigurasi disimpan di dua lokasi: pemboleh ubah awam di dalam `api/wrangler.toml` dan kunci rahsia disuntik terus ke Cloudflare Worker secrets.
+
+### 1. Pemboleh Ubah Awam (`api/wrangler.toml`)
 
 ```toml
-[env.staging.vars]
-PAYMENT_PROVIDER = "iyzico"   # param | iyzico | paytr
+[vars]
+PAYMENT_PROVIDER = "toyyibpay"
+TOYYIBPAY_BASE_URL = "https://toyyibpay.com"
+TOYYIBPAY_CATEGORY_CODE = "b4gn1lj7"
 ```
 
-API'nin ödeme servisi (`api/src/services/paymentService.js`) bu değeri her
-istekte okur ve işlemi ilgili sağlayıcı servisine yönlendirir (Strategy
-deseni). Değişiklik bir sonraki deploy ile devreye girer.
-
-**Sırlar `vars` içine yazılmaz.** API anahtarları, parolalar ve merchant
-key'ler `wrangler secret put <AD> --env <ortam>` ile verilir. CI'daki Conftest
-politikası `vars` içinde sır benzeri bir anahtar görürse deploy'u durdurur.
-Yerel geliştirmede bu değerler `api/.dev.vars` dosyasına yazılır (gitignore'da;
-şablon: `api/.dev.vars.example`).
-
-Geri dönüş (callback) adresleri `API_URL` değişkeninden türetilir
-(ör. `https://staging-api.ecommerceflaredev.web.tr`).
-
----
-
-## Ödeme akışı
-
-Üç sağlayıcı da aynı akışı izler:
-
-```text
-Vitrin                      Worker API                    Sağlayıcı / Banka
-  |-- POST /api/v1/orders/checkout -->|                          |
-  |<-- { orderId } (sipariş bekliyor) |                          |
-  |-- POST /api/v1/payment/initiate ->|                          |
-  |                                   |-- 3D Secure başlatma --->|
-  |                                   |<-- 3D Secure HTML -------|
-  |<-- { ucdHtml } -------------------|                          |
-  |-- HTML sayfaya yazılır, tarayıcı bankanın 3D sayfasına gider |
-  |-- Kullanıcı SMS şifresini bankanın sayfasında girer -------->|
-  |                                   |<-- POST /api/v1/payment/callback/<sağlayıcı>
-  |                                   |-- sonucu doğrular, siparişi günceller
-  |<-- vitrindeki sonuç sayfasına yönlendirme                    |
-```
-
-Sipariş gövdesi API'de zod şemasıyla doğrulanır
-(`api/src/validators/orderValidator.js`). Kart bilgisi yalnızca ödeme
-başlatma isteğinde sağlayıcıya iletilir ve veritabanına yazılmaz. Sağlayıcıya
-giden XML ve HTML içindeki müşteri verileri `escapeMarkup` ile kaçışlanır.
-
-| Sağlayıcı | Callback yolu |
-| --- | --- |
-| Param POS | `/api/v1/payment/callback/param/success`, `/api/v1/payment/callback/param/error` |
-| iyzico | `/api/v1/payment/callback/iyzico` |
-| PayTR | `/api/v1/payment/callback/paytr` |
-
-Taksit seçenekleri `GET /api/v1/payment/installments` ile alınır (destekleyen
-sağlayıcılarda).
-
----
-
-## 1. Param POS (SOAP)
-
-Param POS yaygın kullanılan bir Türk ödeme altyapısıdır. E-Market, Param'ın
-SOAP/XML web servisiyle harici bir SOAP kütüphanesi kullanmadan doğrudan
-`fetch` ile konuşur (`api/src/services/paramService.js`).
-
-| Değişken | Tür | Açıklama |
-| --- | --- | --- |
-| `PAYMENT_PROVIDER` | var | `param` |
-| `PARAM_BASE_URL` | var | Test: `https://testposws.param.com.tr/turkpos.ws/service_turkpos_prod.asmx?wsdl`, canlı: `https://posws.param.com.tr/turkpos.ws/service_turkpos_prod.asmx?wsdl` |
-| `PARAM_CLIENT_CODE` | secret | Müşteri kodu |
-| `PARAM_CLIENT_USERNAME` | secret | Kullanıcı adı |
-| `PARAM_CLIENT_PASSWORD` | secret | Parola |
-| `PARAM_GUID` | secret | Üye işyeri GUID'i |
-
-3D Secure başlatma `TP_WMD_UCD` çağrısıyla yapılır. Param, sonucu başarı veya
-hata callback'ine POST eder.
-
-**Kimlik bilgileri:** Üye işyeri hesabı için [Param](https://www.param.com.tr)
-ile iletişime geçin. Test ortamı bilgileri başvuru sürecinde verilir.
-
----
-
-## 2. iyzico (REST)
-
-iyzico, REST API sunan yaygın bir Türk ödeme kuruluşudur
-(`api/src/services/iyzicoService.js`).
-
-| Değişken | Tür | Açıklama |
-| --- | --- | --- |
-| `PAYMENT_PROVIDER` | var | `iyzico` |
-| `IYZICO_BASE_URL` | var | Sandbox: `https://sandbox-api.iyzipay.com`, canlı: `https://api.iyzipay.com` |
-| `IYZICO_API_KEY` | secret | API anahtarı |
-| `IYZICO_SECRET_KEY` | secret | Gizli anahtar |
-
-iyzico 3D Secure başlatma çağrısı bir HTML içeriği döner; vitrin bunu sayfaya
-yazar. iyzico sonucu `/api/v1/payment/callback/iyzico` adresine POST eder ve
-API ödemeyi iyzico'da doğrular.
-
-**Kimlik bilgileri:** [iyzico.com](https://www.iyzico.com) → Üye İşyeri Paneli
-→ API Anahtarları. Sandbox bilgileri kayıttan hemen sonra verilir.
-
----
-
-## 3. PayTR (HMAC imzalı doğrudan POST)
-
-PayTR, HMAC imzalı token sistemiyle çalışır
-(`api/src/services/paytrService.js`).
-
-| Değişken | Tür | Açıklama |
-| --- | --- | --- |
-| `PAYMENT_PROVIDER` | var | `paytr` |
-| `PAYTR_BASE_URL` | var | `https://www.paytr.com` |
-| `PAYTR_MERCHANT_ID` | secret | Mağaza numarası |
-| `PAYTR_MERCHANT_KEY` | secret | Mağaza parolası (HMAC anahtarı) |
-| `PAYTR_MERCHANT_SALT` | secret | Mağaza gizli anahtarı (salt) |
-
-> [!NOTE]
-> PayTR ayrı bir sandbox ortamı sunmaz. Mağaza panelinden test modunu açıp
-> PayTR'nin test kartlarıyla canlı entegrasyon üzerinde deneme yapın.
-
-API, sipariş bilgileri ve mağaza bilgilerinden PayTR'nin istediği
-`paytr_token` değerini HMAC-SHA256 ile üretir ve tarayıcıyı PayTR'nin
-`/odeme` adresine otomatik gönderilen bir formla yönlendirir. Sonuç
-`/api/v1/payment/callback/paytr` adresine gelir.
-
-**Kimlik bilgileri:** [paytr.com](https://www.paytr.com) üzerinden mağaza
-başvurusu yapın. Onaydan sonra bilgiler mağaza panelinde yer alır.
-
----
-
-## Yerel geliştirme
-
-Yerelde yalnızca test/sandbox bilgilerini kullanın; canlı bilgileri asla
-yerelde kullanmayın. `api/.dev.vars` örneği:
-
-```env
-IYZICO_API_KEY=sandbox-anahtariniz
-IYZICO_SECRET_KEY=sandbox-gizli-anahtariniz
-```
+### 2. Kunci Rahsia (*Secrets*) — Wajib Disuntik Menggunakan Wrangler
 
 > [!IMPORTANT]
-> `api/.dev.vars` gitignore'dadır ve asla commit edilmemelidir. Pre-commit
-> hook'undaki Gitleaks taraması ve CI'daki Gitleaks kapısı yanlışlıkla eklenen
-> sırları yakalar.
+> **JANGAN SESEKALI HARDCODE KUNCI RAHSIA DALAM KOD ATAU REPO GITHUB!**
+> Kunci rahsia ToyyibPay mesti dimasukkan secara selamat menggunakan arahan `wrangler secret put`:
+
+```bash
+cd api
+echo "buy5h8p1-0jls-u5h6-66yk-1nybygutf16y" | npx wrangler secret put TOYYIBPAY_USER_SECRET_KEY
+```
+
+| Nama Kunci Rahsia | Jenis | Penerangan |
+| :--- | :--- | :--- |
+| `TOYYIBPAY_USER_SECRET_KEY` | Secret | Kunci rahsia akaun ToyyibPay peniaga (format: 8-4-4-4-12 aksara) |
+| `TOYYIBPAY_CATEGORY_CODE` | Var | Kod kategori ToyyibPay yang didaftarkan untuk pesanan kedai (`b4gn1lj7`) |
+| `TOYYIBPAY_BASE_URL` | Var | URL asas API ToyyibPay (`https://toyyibpay.com` atau `https://dev.toyyibpay.com`) |
 
 ---
 
-## Yeni sağlayıcı ekleme
+## 🔄 Aliran Pembayaran Penuh (*Payment Workflow*)
 
-Ödeme servisi **Strategy deseni** ile yazılmıştır. Yeni bir sağlayıcı (ör.
-`stripe`) eklemek için:
+Aliran transaksi antara Pelanggan, Cloudflare Worker API, ToyyibPay, dan Bank:
 
-1. `api/src/services/stripeService.js` dosyasını, `paymentService.js`
-   içindeki `IPaymentProvider` sözleşmesine uyacak şekilde oluşturun:
-   - `startPaymentProcess(order, basketItems, buyer)` → en az
-     `{ status, ucdHtml }`
-   - `verifyCallback(callbackData)` → `{ status, paymentId, siparisNumarasi, ... }`
-   - `cancelPayment(paymentId, reason)` → `{ status, message }`
-   - `getInstallmentOptions(bin, amount)` → desteklenmiyorsa boş dizi
-2. Servisi `api/src/container.js` içinde oluşturup `PaymentService`'e verin
-   ve `paymentService.js` içindeki sağlayıcı seçimine yeni bir dal ekleyin.
-3. Callback yolunu `api/src/routes/paymentRoutes.js` dosyasına ekleyin.
-4. Ortamda `PAYMENT_PROVIDER = "stripe"` yapın.
+```text
+Pelanggan (Storefront)            API (Cloudflare Worker)               ToyyibPay / Bank
+      |                                      |                                  |
+      |-- 1. POST /api/v1/orders/checkout -->|                                  |
+      |      (Cipta pesanan PENDING D1)     |                                  |
+      |<-- { orderNumber, orderId } ---------|                                  |
+      |                                      |                                  |
+      |-- 2. POST /api/v1/payment/initiate ->|                                  |
+      |      (Hantar orderId)                |-- 3. createBill (POST) --------->|
+      |                                      |      (Jumlah, No Pesanan, Return)|
+      |                                      |<-- Respon Bill Code (s071imm8) --|
+      |<-- { paymentUrl: https://... } ------|                                  |
+      |                                                                         |
+      |-- 4. Pelanggan dihalakan ke portal ToyyibPay (Pilih Bank / FPX) ------->|
+      |-- 5. Sahkan bayaran di portal perbankan (Maybank2u, CIMB, dll.) ------->|
+      |                                                                         |
+      |                                      |<-- 6. Webhook Callback / Return -|
+      |                                      |      status_id=1, billcode=...   |
+      |                                      |-- 7. Sahkan status & jumlah D1   |
+      |                                      |      Kemas kini: ON_HOLD / PAID  |
+      |<-- 8. Pengalihan ke /payment/success |                                  |
+```
 
 ---
 
-## İlgili dokümanlar
+## 🌐 Laluan Webhook & Callback
 
-- [KVKK Uyumu](kvkk_compliance.md): kişisel verilerin uçta nasıl işlendiği
-- [Cloudflare Deploy Rehberi](cloudflare_deployment_guide.md): ortamlar ve sırlar
+ToyyibPay menyokong dwi-pemberitahuan: pemulangan pelayar pengguna (*browser return*) dan panggilan terus pelayan (*server webhook callback*).
+
+Kedua-dua laluan dipetakan secara automatik:
+- `ALL /api/v1/payment/toyyibpay/callback`
+- `ALL /api/v1/payment/callback/toyyibpay`
+
+### Pengesahan Status Pembayaran:
+- **`status_id = 1`**: Pembayaran BERJAYA. Status pesanan dikemas kini ke `ON_HOLD` / `PAID`, emel invois dihantar, dan mata ganjaran dikreditkan.
+- **`status_id = 2`**: Pembayaran MENUNGGU (*Pending*).
+- **`status_id = 3`**: Pembayaran GAGAL. Pelanggan dihalakan ke laman `/payment/failure` dengan mesej ralat.
+
+---
+
+## 🔒 Langkah Keselamatan (*Security Hardening*)
+
+1. **Pengesahan Jumlah Transaksi (*Amount Tamper Check*)**:
+   - Backend mengesahkan jumlah yang dibayar oleh ToyyibPay berbanding jumlah pesanan sebenar di pangkalan data D1. Jika wujud perbezaan jumlah, status bayaran akan disekat serta-merta bagi menghalang penipuan manipulasi harga.
+2. **Idempotensi Pembayaran (*Double-Payment Prevention*)**:
+   - Sekiranya ToyyibPay menghantar webhook berkali-kali untuk pesanan yang sama, sistem hanya mengemas kini pesanan sekali sahaja tanpa menduplikasi emel atau mata ganjaran.
+3. **Tiada Penyimpanan Nombor Kad**:
+   - Maklumat perbankan dan kad dikendalikan sepenuhnya oleh infrastruktur keselamatan ToyyibPay dan FPX PayNet — pelayan Cloudflare Worker langsung tidak memproses data sensitif kad.
+
+---
+
+## 🛠️ Ujian Diagnostik Pantas
+
+Untuk menyemak status perkhidmatan ToyyibPay dan kesahihan kunci rahsia:
+
+```bash
+# Semak kesahihan Category Code & Secret Key terus ke ToyyibPay API
+curl -s -X POST https://toyyibpay.com/index.php/api/getCategoryDetails \
+  -d "userSecretKey=buy5h8p1-0jls-u5h6-66yk-1nybygutf16y&categoryCode=b4gn1lj7"
+```
+
+Respon yang sah:
+```json
+[{"CategoryName":"dinoempire.my","categoryDescription":"dinoempire.my","categoryStatus":"1"}]
+```
