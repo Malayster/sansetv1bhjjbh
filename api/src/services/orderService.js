@@ -103,35 +103,32 @@ export class OrderService {
     }
 
     async updateOrder(id, data) {
-        const allowed = {};
-        if (data.durum !== undefined) allowed.durum = data.durum;
-        if (data.kargoTakipNo !== undefined) allowed.kargoTakipNo = data.kargoTakipNo;
-        if (data.kargoFirmasi !== undefined) allowed.kargoFirmasi = data.kargoFirmasi;
-        if (data.faturaDurumu !== undefined) allowed.faturaDurumu = data.faturaDurumu;
-        if (data.faturaNo !== undefined) allowed.faturaNo = data.faturaNo;
-        if (data.adminNotu !== undefined) allowed.adminNotu = data.adminNotu;
-
         const existing = await this.orderRepository.getOrderById(id);
         if (!existing) throw new Error('Pesanan tidak dijumpai.');
 
         if (data.durum && data.durum !== existing.durum) {
-            await this.orderRepository.createOrderHistory({
-                siparisId: id,
-                eskiDurum: existing.durum,
-                yeniDurum: data.durum,
-                not: data.not || 'Status dikemaskini',
-                islemYapan: 'ADMIN'
-            });
+            try {
+                await this.orderRepository.createOrderHistory({
+                    siparisId: id,
+                    eskiDurum: existing.durum,
+                    yeniDurum: data.durum,
+                    not: data.not || 'Status dikemaskini',
+                    islemYapan: 'ADMIN'
+                });
+            } catch (err) {
+                console.warn('[AuditHistory] Failed to log order status history:', err.message);
+            }
         }
 
-        return this.orderRepository.updateOrderDetails(id, {
-            odemeDurumu: data.odemeDurumu || existing.odemeDurumu,
-            durum: data.durum || existing.durum,
-            kargoTakipNo: data.kargoTakipNo !== undefined ? data.kargoTakipNo : existing.kargoTakipNo,
-            kargoFirmasi: data.kargoFirmasi !== undefined ? data.kargoFirmasi : existing.kargoFirmasi,
-            faturaDurumu: data.faturaDurumu !== undefined ? data.faturaDurumu : existing.faturaDurumu,
-            faturaNo: data.faturaNo !== undefined ? data.faturaNo : existing.faturaNo
-        });
+        const updatePayload = {};
+        if (data.durum !== undefined) updatePayload.durum = data.durum;
+        if (data.odemeDurumu !== undefined) updatePayload.odemeDurumu = data.odemeDurumu;
+        if (data.kargoTakipNo !== undefined) updatePayload.kargoTakipNo = data.kargoTakipNo;
+        if (data.kargoFirmasi !== undefined) updatePayload.kargoFirmasi = data.kargoFirmasi;
+        if (data.faturaDurumu !== undefined) updatePayload.faturaDurumu = data.faturaDurumu;
+        if (data.faturaNo !== undefined) updatePayload.faturaNo = data.faturaNo;
+
+        return this.orderRepository.updateOrderDetails(id, updatePayload);
     }
 
     async processCheckout(checkoutData) {

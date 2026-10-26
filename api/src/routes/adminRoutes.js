@@ -404,7 +404,7 @@ router.post('/orders/:id/easyparcel-book', requirePermission('orders'), async (c
   const prisma = getPrisma(c.env);
   const order = await prisma.siparis.findUnique({
     where: { id },
-    include: { teslimatAdresi: true, kalemler: true }
+    include: { kalemler: true }
   });
 
   if (!order) {

@@ -281,14 +281,20 @@ export class OrderRepository extends BaseRepository {
      * @param {Object} historyData
      */
     async createOrderHistory(historyData) {
-        return this.prisma.islemGecmisi.create({
-            data: {
-                siparisId: historyData.siparisId,
-                eskiDurum: historyData.eskiDurum,
-                yeniDurum: historyData.yeniDurum,
-                not: historyData.not,
-                islemYapan: historyData.islemYapan || 'SYSTEM'
-            }
-        });
+        try {
+            return await this.prisma.islemGecmisi.create({
+                data: {
+                    id: crypto.randomUUID(),
+                    siparisId: historyData.siparisId,
+                    eskiDurum: historyData.eskiDurum,
+                    yeniDurum: historyData.yeniDurum,
+                    not: historyData.not || null,
+                    islemYapan: historyData.islemYapan || 'SYSTEM'
+                }
+            });
+        } catch (err) {
+            console.warn('[OrderRepository] Gagal simpan sejarah pesanan:', err.message);
+            return null;
+        }
     }
 }
