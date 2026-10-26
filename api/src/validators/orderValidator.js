@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const phoneRegex = /^((\+?60)?0?1[0-9]{8,9}|01[0-9]{7,9})$/; // Format nombor telefon Malaysia
+const phoneRegex = /^(?:(?:\+?60|0060|0)?[1-9][0-9]{7,10})$/; // Format nombor telefon Malaysia (mobile 01x & talian tetap)
 const taxNumberRegex = /^[0-9]{9,12}$/;
 
 export const checkoutSchema = z.object({

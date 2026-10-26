@@ -18,19 +18,19 @@ export const formatPrice = (price, decimals = 2) => {
 };
 
 /**
- * Format phone number to Turkish format (0XXX XXX XX XX)
- * @param {string} phone - Raw phone number
- * @returns {string} Formatted phone number
+ * Format nombor telefon Malaysia (cth: 012 345 6789 atau 011 1234 5678)
+ * @param {string} phone - Nombor telefon mentah
+ * @returns {string} Nombor telefon terformat
  */
 export const formatPhone = (phone) => {
-    const cleaned = phone.replace(/\D/g, '');
+    if (!phone) return '';
+    const cleaned = String(phone).replace(/\D/g, '');
 
     if (cleaned.length === 0) return '';
     if (cleaned.length <= 4) return cleaned;
     if (cleaned.length <= 7) return `${cleaned.slice(0, 4)} ${cleaned.slice(4)}`;
-    if (cleaned.length <= 9) return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
-
-    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7, 9)} ${cleaned.slice(9, 11)}`;
+    if (cleaned.length <= 10) return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
+    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7, 10)} ${cleaned.slice(10, 14)}`;
 };
 
 /**

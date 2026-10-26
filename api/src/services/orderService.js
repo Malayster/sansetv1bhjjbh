@@ -255,9 +255,11 @@ export class OrderService {
         const soyad = fullNameParts.length > 1 ? fullNameParts.pop() : '';
         const ad = fullNameParts.join(' ');
 
-        let rawPhone = customerInfo.phone.replace(/\s/g, '').replace(/-/g, '');
-        if (rawPhone.startsWith('0')) rawPhone = '+60' + rawPhone.substring(1);
-        else if (!rawPhone.startsWith('+')) rawPhone = '+60' + rawPhone;
+        let rawPhone = customerInfo.phone.replace(/\D/g, '');
+        if (rawPhone.startsWith('0060')) rawPhone = rawPhone.substring(4);
+        else if (rawPhone.startsWith('60')) rawPhone = rawPhone.substring(2);
+        else if (rawPhone.startsWith('0')) rawPhone = rawPhone.substring(1);
+        rawPhone = '+60' + rawPhone;
 
         const ulke = 'Malaysia';
         const takipTokeni = crypto.randomUUID();

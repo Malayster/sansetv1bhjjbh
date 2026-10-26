@@ -3,7 +3,7 @@ import { PointsRedeem } from '../components/PointsRedeem';
 import { useCart } from '../context/CartContext';
 import api from '../lib/axios';
 import malaysiaStates from '../data/malaysiaStates.json';
-import { MapPin, CreditCard, CheckCircle, ChevronRight, Truck, ShieldCheck, Lock, ArrowLeft, Building2, Sparkles } from 'lucide-react';
+import { MapPin, CreditCard, CheckCircle, ChevronRight, Truck, ShieldCheck, Lock, ArrowLeft, Building2, Sparkles, AlertCircle } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { useSettings } from '../context/SettingsContext';
 import { calculateShippingFee } from '../utils/shippingCalculator';
@@ -47,7 +47,7 @@ function StepIndicator({ currentStep }) {
 }
 
 export function CheckoutPage() {
-    const { cartItems, cartTotal } = useCart();
+    const { cartItems, cartTotal, removeFromCart } = useCart();
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
         fullName: '', email: '', phone: '', address: '', city: '', district: '', zipCode: '',
@@ -62,6 +62,33 @@ export function CheckoutPage() {
     const [couponInput, setCouponInput] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [couponMsg, setCouponMsg] = useState({ text: '', isError: false });
+    const [submitError, setSubmitError] = useState(null);
+
+    // Semak dan bersihkan produk lama/tidak aktif secara automatik semasa checkout dibuka
+    useEffect(() => {
+        const validateCartOnMount = async () => {
+            if (!cartItems || cartItems.length === 0) return;
+            try {
+                const res = await api.get('/api/v1/products?limit=100');
+                const products = res.data || [];
+                const activeMap = new Map(products.filter(p => p.aktif !== false).map(p => [p.id, p]));
+
+                let purged = 0;
+                cartItems.forEach(item => {
+                    if (!activeMap.has(item.id)) {
+                        removeFromCart(item.cartKey);
+                        purged++;
+                    }
+                });
+                if (purged > 0) {
+                    setSubmitError(`${purged} produk lama yang tidak lagi aktif telah dikeluarkan dari troli anda.`);
+                }
+            } catch {
+                // abaikan jika gagal semak produk
+            }
+        };
+        validateCartOnMount();
+    }, []);
 
     useEffect(() => {
         if (cartItems && cartItems.length > 0) {
@@ -119,7 +146,7 @@ export function CheckoutPage() {
         if (!formData.fullName || formData.fullName.trim().length < 2) newErrors.fullName = 'Sila masukkan nama penuh anda.';
         if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Sila masukkan e-mel yang sah.';
         const cleanDigits = formData.phone.replace(/\D/g, '');
-        if (cleanDigits.length < 9 || cleanDigits.length > 12) newErrors.phone = 'Nombor telefon tidak sah.';
+        if (cleanDigits.length < 8 || cleanDigits.length > 14) newErrors.phone = 'Sila masukkan nombor telefon yang sah (cth: 0123456789 atau +60123456789).';
         if (!formData.address || formData.address.trim().length < 8) newErrors.address = 'Alamat tidak lengkap.';
         if (!formData.city) newErrors.city = 'Sila pilih Negeri.';
         if (!formData.district) newErrors.district = 'Sila pilih Daerah.';
@@ -179,7 +206,9 @@ export function CheckoutPage() {
 
     const handleSubmit = async () => {
         setLoading(true);
+        setSubmitError(null);
         try {
+            const cleanPhone = formData.phone.replace(/\D/g, '');
             const orderResponse = await api.post('/api/v1/orders/checkout', {
                 items: cartItems.map(item => ({
                     id: item.id,
@@ -189,14 +218,19 @@ export function CheckoutPage() {
                     selectedColor: item.selectedColor || undefined
                 })),
                 guestInfo: {
-                    name: formData.fullName, email: formData.email,
-                    phone: formData.phone.replace(/\D/g, ''),
-                    address: formData.address, city: formData.city,
-                    district: formData.district, zipCode: formData.zipCode
+                    name: formData.fullName,
+                    email: formData.email,
+                    phone: cleanPhone,
+                    address: formData.address,
+                    city: formData.city,
+                    district: formData.district,
+                    zipCode: formData.zipCode
                 },
                 invoiceInfo: {
-                    isCorporate: formData.isCorporate, companyName: formData.companyName,
-                    taxOffice: formData.taxOffice, taxNumber: formData.taxNumber
+                    isCorporate: formData.isCorporate,
+                    companyName: formData.companyName,
+                    taxOffice: formData.taxOffice,
+                    taxNumber: formData.taxNumber
                 },
                 pointsToRedeem: appliedPoints,
                 couponCode: appliedCoupon?.code || undefined
@@ -208,8 +242,13 @@ export function CheckoutPage() {
 
             const { orderId } = orderResponse.data;
             const paymentResponse = await api.post('/api/v1/payment/initiate', {
-                orderId, paymentMethod: 'fpx',
-                buyerInfo: { fullName: formData.fullName, email: formData.email, phone: formData.phone.replace(/\D/g, '') }
+                orderId,
+                paymentMethod: 'fpx',
+                buyerInfo: {
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    phone: cleanPhone
+                }
             });
 
             if (paymentResponse.data.status === 'success') {
@@ -225,8 +264,25 @@ export function CheckoutPage() {
             }
             throw new Error(paymentResponse.data.errorMessage || 'Gagal memulakan pembayaran.');
         } catch (error) {
-            const msg = error.response?.data?.errorMessage || error.message || 'Ralat';
-            alert('Ralat Pembayaran: ' + msg);
+            console.error('Ralat Checkout / Pembayaran:', error);
+            const msg = error.response?.data?.errorMessage || error.response?.data?.error || error.message || 'Ralat pembayaran tidak dijangka.';
+            setSubmitError(msg);
+
+            // Jika produk sudah tiada dalam katalog jualan (stale cart), bersihkan automatik
+            if (msg.includes('tidak lagi dijual') || msg.includes('stok tidak mencukupi')) {
+                try {
+                    const productsRes = await api.get('/api/v1/products?limit=100');
+                    const activeProducts = productsRes.data || [];
+                    const activeIds = new Set(activeProducts.filter(p => p.aktif !== false).map(p => p.id));
+                    const invalidItems = cartItems.filter(item => !activeIds.has(item.id));
+                    if (invalidItems.length > 0) {
+                        invalidItems.forEach(item => removeFromCart(item.cartKey));
+                        setSubmitError('Produk yang tidak lagi dijual telah dikeluarkan dari troli anda secara automatik. Sila buat semakan dan tekan Bayar sekali lagi.');
+                    }
+                } catch {
+                    // abaikan
+                }
+            }
         } finally {
             setLoading(false);
         }
@@ -457,6 +513,16 @@ export function CheckoutPage() {
                                             Selepas pembayaran berjaya, status pesanan dan resit penjejakan kurier akan dikemukakan serta-merta.
                                         </p>
                                     </div>
+
+                                    {submitError && (
+                                        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/40 text-xs text-rose-300 space-y-1">
+                                            <p className="font-bold text-rose-200 flex items-center gap-2">
+                                                <AlertCircle size={15} className="text-rose-400 shrink-0" />
+                                                <span>Makluman Pembayaran:</span>
+                                            </p>
+                                            <p className="font-mono text-rose-300 pl-6 leading-relaxed">{submitError}</p>
+                                        </div>
+                                    )}
 
                                     <button
                                         type="button"
