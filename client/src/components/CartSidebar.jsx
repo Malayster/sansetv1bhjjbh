@@ -115,30 +115,44 @@ export function CartSidebar() {
                                                 )}
                                             </div>
 
-                                            {/* Quantity Controls */}
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center border border-white/15 rounded-xl bg-black/60">
+                                            {/* Quantity Controls & Delete */}
+                                            <div className="flex items-center justify-between pt-1">
+                                                <div className="flex items-center border border-white/15 rounded-xl bg-black/60 overflow-hidden shadow-inner">
                                                     <button
-                                                        className="w-7 h-7 flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors rounded-l-xl cursor-pointer"
+                                                        type="button"
+                                                        aria-label={item.quantity <= 1 ? "Padam barangan" : "Kurangkan kuantiti"}
+                                                        title={item.quantity <= 1 ? "Padam daripada beg" : "Kurangkan 1"}
+                                                        className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center transition-colors cursor-pointer ${
+                                                            item.quantity <= 1 
+                                                                ? 'text-rose-400 hover:bg-rose-500/20 hover:text-rose-300' 
+                                                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                                        }`}
                                                         onClick={() => updateQuantity(item.cartKey || item.id, -1)}
                                                     >
-                                                        <Minus size={13} />
+                                                        {item.quantity <= 1 ? <Trash2 size={14} className="text-rose-400" /> : <Minus size={14} />}
                                                     </button>
-                                                    <span className="w-7 text-center font-bold text-xs text-white font-mono">{item.quantity}</span>
+                                                    <span className="w-8 sm:w-9 text-center font-bold text-xs text-white font-mono select-none">
+                                                        {item.quantity}
+                                                    </span>
                                                     <button
-                                                        className="w-7 h-7 flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors rounded-r-xl cursor-pointer"
+                                                        type="button"
+                                                        aria-label="Tambah kuantiti"
+                                                        title="Tambah 1"
+                                                        className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
                                                         onClick={() => updateQuantity(item.cartKey || item.id, 1)}
                                                     >
-                                                        <Plus size={13} />
+                                                        <Plus size={14} />
                                                     </button>
                                                 </div>
 
                                                 <button
+                                                    type="button"
                                                     onClick={() => removeFromCart(item.cartKey || item.id)}
-                                                    className="w-7 h-7 flex items-center justify-center text-white/40 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
-                                                    title="Padam"
+                                                    className="h-8 px-2.5 sm:h-9 sm:px-3 flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all cursor-pointer font-mono font-medium"
+                                                    title="Padam barangan ini"
                                                 >
-                                                    <Trash2 size={15} />
+                                                    <Trash2 size={14} />
+                                                    <span className="hidden sm:inline">Padam</span>
                                                 </button>
                                             </div>
                                         </div>

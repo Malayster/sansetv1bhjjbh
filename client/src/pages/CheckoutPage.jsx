@@ -3,7 +3,7 @@ import { PointsRedeem } from '../components/PointsRedeem';
 import { useCart } from '../context/CartContext';
 import api from '../lib/axios';
 import malaysiaStates from '../data/malaysiaStates.json';
-import { MapPin, CreditCard, CheckCircle, ChevronRight, Truck, ShieldCheck, Lock, ArrowLeft, Building2, Sparkles, AlertCircle } from 'lucide-react';
+import { MapPin, CreditCard, CheckCircle, ChevronRight, Truck, ShieldCheck, Lock, ArrowLeft, Building2, Sparkles, AlertCircle, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { useSettings } from '../context/SettingsContext';
 import { calculateShippingFee } from '../utils/shippingCalculator';
@@ -47,7 +47,7 @@ function StepIndicator({ currentStep }) {
 }
 
 export function CheckoutPage() {
-    const { cartItems, cartTotal, removeFromCart } = useCart();
+    const { cartItems, cartTotal, removeFromCart, updateQuantity, openSidebar } = useCart();
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
         fullName: '', email: '', phone: '', address: '', city: '', district: '', zipCode: '',
@@ -548,23 +548,95 @@ export function CheckoutPage() {
                     {/* Order Summary Sidebar */}
                     <div>
                         <div className="bg-[#060d11] rounded-2xl border border-white/10 p-6 sticky top-28 shadow-2xl">
-                            <h3 className="font-mono font-black text-sm uppercase tracking-wider text-emerald-400 mb-4 pb-2 border-b border-white/10">
-                                Ringkasan Pesanan Kilang
-                            </h3>
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                <h3 className="font-mono font-black text-sm uppercase tracking-wider text-emerald-400">
+                                    Ringkasan Pesanan Kilang
+                                </h3>
+                                {typeof openSidebar === 'function' && (
+                                    <button
+                                        type="button"
+                                        onClick={openSidebar}
+                                        className="text-[11px] font-mono text-white/50 hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
+                                        title="Buka paparan penuh troli"
+                                    >
+                                        <ShoppingBag size={12} />
+                                        <span>Buka Beg</span>
+                                    </button>
+                                )}
+                            </div>
 
-                            {/* Item List Preview */}
-                            <div className="space-y-3 mb-6 max-h-60 overflow-y-auto pr-1">
-                                {cartItems.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between text-xs py-1.5 border-b border-white/5">
-                                        <div className="min-w-0 pr-2">
-                                            <div className="font-bold text-white truncate">{item.ad}</div>
-                                            <div className="text-[10px] text-white/50 font-mono">x{item.quantity} unit</div>
+                            {/* Item List with Interactive Quantity & Delete Controls */}
+                            <div className="space-y-3 mb-6 max-h-72 overflow-y-auto pr-1 divide-y divide-white/5">
+                                {cartItems.map((item, idx) => {
+                                    const itemPrice = Number(item.indirimliFiyat || item.fiyat) || 0;
+                                    const lineTotal = itemPrice * (item.quantity || 1);
+                                    const itemKey = item.cartKey || item.id;
+
+                                    return (
+                                        <div key={itemKey || idx} className="pt-2.5 first:pt-0">
+                                            <div className="flex items-start justify-between gap-2 text-xs">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="font-bold text-white leading-snug line-clamp-2">
+                                                        {item.ad}
+                                                    </div>
+                                                    {item.selectedColor && (
+                                                        <div className="text-[10px] text-emerald-400/80 font-mono mt-0.5">
+                                                            {item.varyantBasligi || 'Pilihan'}: {item.selectedColor}
+                                                        </div>
+                                                    )}
+                                                    <div className="text-[10px] text-white/40 font-mono mt-0.5">
+                                                        RM {itemPrice.toFixed(2)} seunit
+                                                    </div>
+                                                </div>
+
+                                                <div className="font-mono font-bold text-emerald-400 text-right shrink-0">
+                                                    RM {lineTotal.toFixed(2)}
+                                                </div>
+                                            </div>
+
+                                            {/* Baris Kawalan Kuantiti & Padam */}
+                                            <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/[0.03]">
+                                                <div className="flex items-center border border-white/15 rounded-lg bg-black/60 overflow-hidden">
+                                                    <button
+                                                        type="button"
+                                                        aria-label={item.quantity <= 1 ? "Padam barangan" : "Kurangkan kuantiti"}
+                                                        title={item.quantity <= 1 ? "Padam daripada pesanan" : "Kurangkan 1"}
+                                                        className={`w-6 h-6 flex items-center justify-center transition-colors cursor-pointer ${
+                                                            item.quantity <= 1
+                                                                ? 'text-rose-400 hover:bg-rose-500/20 hover:text-rose-300'
+                                                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                                        }`}
+                                                        onClick={() => updateQuantity(itemKey, -1)}
+                                                    >
+                                                        {item.quantity <= 1 ? <Trash2 size={12} className="text-rose-400" /> : <Minus size={12} />}
+                                                    </button>
+                                                    <span className="w-7 text-center font-bold text-xs text-white font-mono select-none">
+                                                        {item.quantity}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        aria-label="Tambah kuantiti"
+                                                        title="Tambah 1"
+                                                        className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+                                                        onClick={() => updateQuantity(itemKey, 1)}
+                                                    >
+                                                        <Plus size={12} />
+                                                    </button>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFromCart(itemKey)}
+                                                    className="flex items-center gap-1 text-[11px] text-white/40 hover:text-rose-400 hover:bg-rose-500/10 px-2 py-1 rounded-md transition-colors cursor-pointer font-mono"
+                                                    title="Padam barangan daripada pesanan"
+                                                >
+                                                    <Trash2 size={12} />
+                                                    <span>Padam</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="font-mono font-bold text-emerald-400 shrink-0">
-                                            RM {(Number(item.indirimliFiyat || item.fiyat) * item.quantity).toFixed(2)}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Kotak Kupon Diskaun (cth: TIKTOK10) */}

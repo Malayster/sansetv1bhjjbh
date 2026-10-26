@@ -52,24 +52,59 @@ export function CartProvider({ children }) {
     };
 
     /**
-     * Removes a product from the cart by ID.
-     * @param {string} productId - The product ID to remove.
+     * Removes a product from the cart by cartKey or id.
+     * @param {string} identifier - The cartKey or product ID to remove.
      */
-    const removeFromCart = (cartKey) => {
-        setCartItems((prev) => prev.filter((item) => item.cartKey !== cartKey));
+    const removeFromCart = (identifier) => {
+        if (!identifier) return;
+        setCartItems((prev) =>
+            prev.filter((item) => {
+                const itemKey = item.cartKey || getCartItemKey(item.id, item.selectedColor);
+                return itemKey !== identifier && item.id !== identifier;
+            })
+        );
     };
 
     /**
      * Updates the quantity of a cart item.
-     * @param {string} productId - The product ID.
+     * Pilihan A: Automatically removes item if new quantity reaches 0 or below.
+     * @param {string} identifier - The cartKey or product ID.
      * @param {number} delta - The change in quantity (+1 or -1).
      */
-    const updateQuantity = (cartKey, delta) => {
+    const updateQuantity = (identifier, delta) => {
+        if (!identifier) return;
+        setCartItems((prev) =>
+            prev.flatMap((item) => {
+                const itemKey = item.cartKey || getCartItemKey(item.id, item.selectedColor);
+                if (itemKey === identifier || item.id === identifier) {
+                    const newQuantity = (Number(item.quantity) || 1) + delta;
+                    if (newQuantity <= 0) {
+                        return []; // Buang barangan serta-merta apabila kuantiti ditolak sehingga 0
+                    }
+                    return [{ ...item, quantity: newQuantity, cartKey: itemKey }];
+                }
+                return [item];
+            })
+        );
+    };
+
+    /**
+     * Sets exact quantity for an item. If quantity <= 0, item is removed.
+     * @param {string} identifier - The cartKey or product ID.
+     * @param {number|string} qty - The target quantity.
+     */
+    const setQuantity = (identifier, qty) => {
+        if (!identifier) return;
+        const targetQty = parseInt(qty, 10);
+        if (isNaN(targetQty) || targetQty <= 0) {
+            removeFromCart(identifier);
+            return;
+        }
         setCartItems((prev) =>
             prev.map((item) => {
-                if (item.cartKey === cartKey) {
-                    const newQuantity = Math.max(1, item.quantity + delta);
-                    return { ...item, quantity: newQuantity };
+                const itemKey = item.cartKey || getCartItemKey(item.id, item.selectedColor);
+                if (itemKey === identifier || item.id === identifier) {
+                    return { ...item, quantity: targetQty, cartKey: itemKey };
                 }
                 return item;
             })
@@ -79,6 +114,7 @@ export function CartProvider({ children }) {
     const clearCart = () => setCartItems([]);
 
     const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+    const openSidebar = () => setIsSidebarOpen(true);
     const closeSidebar = () => setIsSidebarOpen(false);
 
     // Using Turkish field 'fiyat' from schema, prefer indirimliFiyat if available
@@ -95,9 +131,12 @@ export function CartProvider({ children }) {
                 addToCart,
                 removeFromCart,
                 updateQuantity,
+                setQuantity,
                 clearCart,
                 isSidebarOpen,
+                setIsSidebarOpen,
                 toggleSidebar,
+                openSidebar,
                 closeSidebar,
                 cartTotal,
                 cartCount,
